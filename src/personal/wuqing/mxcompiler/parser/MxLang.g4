@@ -5,8 +5,8 @@ package personal.wuqing.mxcompiler.parser;
 }
 
 StringConstant: '"' (~["\t\b\n\r\f\\] | '\\' [tbnrf\\"])* '"';
-NotationSingleLine: '//' .*? {'\n'|EOF};
-NotationMultiline: '/*' .*? '*/';
+NotationSingleLine: '//' .*? ('\n'|EOF) -> skip;
+NotationMultiline: '/*' .*? '*/' -> skip;
 
 BlankCharacter : [ \r\t\n]+ -> skip;
 
@@ -82,4 +82,4 @@ classDefinition: Class Identifier '{' variableDefinition* '}';
 
 variableDefinition: type Identifier ('=' expression)? (',' Identifier ('=' expression)?)* ';';
 
-program: (classDefinition | functionDefinition | variableDefinition | NotationSingleLine | NotationMultiline)* EOF;
+program: (classDefinition | functionDefinition | variableDefinition)* EOF;
