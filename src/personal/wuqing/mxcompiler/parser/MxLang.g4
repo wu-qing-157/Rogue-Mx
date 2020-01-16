@@ -29,7 +29,7 @@ New: 'new';
 IntegerConstant: [0-9]+;
 nullConstant: Null;
 boolConstant: True|False;
-Identifier: [a-zA-Z_][0-9a-zA-Z_]*;
+Identifier: [a-zA-Z_\u0080-\uffff][0-9a-zA-Z_\u0080-\uffff]*;
 
 constant: IntegerConstant|StringConstant|nullConstant|boolConstant;
 

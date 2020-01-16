@@ -1,4 +1,8 @@
+/out/
+
+/.idea
+
 /src/personal/wuqing/mxcompiler/parser/MxLang*
 !/src/personal/wuqing/mxcompiler/parser/MxLang.g4
-/out/
+
 /antlr-4.7.2-complete.jar

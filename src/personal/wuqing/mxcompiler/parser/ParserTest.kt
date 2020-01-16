@@ -4,7 +4,7 @@ import org.antlr.v4.gui.Trees
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
-const val fileName = "test/102.mx"
+const val fileName = "test/103.mx"
 
 fun main() {
     println("Lexer Test:")
@@ -13,6 +13,7 @@ fun main() {
     println("Parser Test:")
     val parser = MxLangParser(CommonTokenStream(MxLangLexer(CharStreams.fromFileName(fileName))))
     val tree = parser.program()
-    Trees.inspect(tree, parser)
     println(tree.toStringTree(parser))
+    println("Close the GUI version to continue...")
+    Trees.inspect(tree, parser)
 }
