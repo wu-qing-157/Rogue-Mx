@@ -1,0 +1,9 @@
+void f() {
+    return;
+}
+int main() {
+    for (int i = 1; i <= 10; i++)
+    if (i == 4)
+    System.out./*println(123);
+    return 0;*/println("123  456"); return 0;
+} //i love you

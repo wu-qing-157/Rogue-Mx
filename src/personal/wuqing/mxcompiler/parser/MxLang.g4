@@ -1,9 +1,5 @@
 grammar MxLang;
 
-@header {
-package personal.wuqing.mxcompiler.parser;
-}
-
 StringConstant: '"' (~["\t\b\n\r\f\\] | '\\' [tbnrf\\"])* '"';
 NotationSingleLine: '//' .*? ('\n'|EOF) -> skip;
 NotationMultiline: '/*' .*? '*/' -> skip;
@@ -35,7 +31,7 @@ nullConstant: Null;
 boolConstant: True|False;
 Identifier: [a-zA-Z_][0-9a-zA-Z_]*;
 
-constant: IntegerConstant|StringConstant|nullConstant|boolConstant|Identifier;
+constant: IntegerConstant|StringConstant|nullConstant|boolConstant;
 
 simpleType: Bool|Int|String|Void|Identifier;
 
