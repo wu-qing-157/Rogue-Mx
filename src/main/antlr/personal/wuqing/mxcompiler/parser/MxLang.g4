@@ -1,5 +1,9 @@
 grammar MxLang;
 
+@header {
+package personal.wuqing.mxcompiler.parser;
+}
+
 StringConstant: '"' (~["\t\b\n\r\f\\] | '\\' [tbnrf\\"])* '"';
 NotationSingleLine: '//' .*? ('\n'|EOF) -> skip;
 NotationMultiline: '/*' .*? '*/' -> skip;

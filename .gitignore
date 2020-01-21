@@ -1,8 +1,4 @@
-/out/
+/.idea/workspace.xml
 
-/.idea
-
-/src/personal/wuqing/mxcompiler/parser/MxLang*
-!/src/personal/wuqing/mxcompiler/parser/MxLang.g4
-
-/antlr-4.7.2-complete.jar
+/.gradle/
+/build/
