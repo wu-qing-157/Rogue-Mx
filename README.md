@@ -20,3 +20,4 @@ File Name|Test Description|Status
 + 2020.01.14 Add a lexer & parser full of bugs
 + 2020.01.16 Lexer & Parser pass incomplete tests
 + 2020.01.16 Support non-ascii characters
++ 2020.01.22 Add Commandline Args Interface
