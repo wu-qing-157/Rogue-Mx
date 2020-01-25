@@ -1,9 +1,5 @@
 grammar MxLang;
 
-@header {
-package personal.wuqing.mxcompiler.parser;
-}
-
 StringConstant: '"' (~["\t\b\n\r\f\\] | '\\' [tbnrf\\"])* '"';
 NotationSingleLine: '//' .*? ('\n'|EOF) -> skip;
 NotationMultiline: '/*' .*? '*/' -> skip;
@@ -39,47 +35,59 @@ constant: IntegerConstant|StringConstant|nullConstant|boolConstant;
 
 simpleType: Bool|Int|String|Void|Identifier;
 
-type: simpleType ('[]')*;
+arrayType: simpleType ('[]')+;
+
+type: simpleType|arrayType;
 
 expression: '('expression')' #Parentheses
     | expression '.' Identifier #MemberAccess
-    | New simpleType ('[' expression? ']')* #NewAccess
+    | New simpleType ('[' expression? ']')* #NewOperator
     | expression '(' expressionList ')' #FunctionCall
     | expression '[' expression ']' #IndexAccess
-    | expression ('++'|'--') #SuffixOperator
-    | <assoc=right> ('++'|'--'|'+'|'-'|'!'|'~') expression #PrefixOperator
-    | expression op=('*'|'/'|'%') expression #MultiOperator
-    | expression op=('+'|'-') expression #PlusOperator
-    | expression op=('<<'|'>>'|'>>>') expression #ShiftOperator
-    | expression op=('<'|'>'|'<='|'>=') expression #CompareOperator
-    | expression op=('=='|'!=') expression #EqualOperator
-    | expression '&' expression #NumericalAndOperator
-    | expression '^' expression #NumericalXorOperator
-    | expression '|' expression #NumericalOrOperator
-    | expression '&&' expression #LogicalAndOperator
-    | expression '||' expression #BinaryOperator
+    | expression ('++'|'--') #SuffixUnaryOperator
+    | <assoc=right> ('++'|'--'|'+'|'-'|'!'|'~') expression #PrefixUnaryOperator
+    | expression op=('*'|'/'|'%') expression #BinaryOperator
+    | expression op=('+'|'-') expression #BinaryOperator
+    | expression op=('<<'|'>>'|'>>>') expression #BinaryOperator
+    | expression op=('<'|'>'|'<='|'>=') expression #BinaryOperator
+    | expression op=('=='|'!=') expression #BinaryOperator
+    | expression op='&' expression #BinaryOperator
+    | expression op='^' expression #BinaryOperator
+    | expression op='|' expression #BinaryOperator
+    | expression op='&&' expression #BinaryOperator
+    | expression op='||' expression #BinaryOperator
     | <assoc=right> expression '?' expression':' expression #TernaryOperator
-    | <assoc=right> expression op=('='|'+='|'-='|'*='|'/='|'%='|'&='|'^='|'|='|'<<='|'>>='|'>>>=') expression #AssignOperator
+    | <assoc=right> expression op=('='|'+='|'-='|'*='|'/='|'%='|'&='|'^='|'|='|'<<='|'>>='|'>>>=') expression
+        #BinaryOperator
     | Identifier #Identifiers
     | constant #Constants;
 
 expressionList: (expression(','expression)*)?;
 
-statement: expression ';' #SimpleStatement
-    | (Return expression?|Break|Continue) ';' #ControlStatement
-    | If '(' expression ')' (statement|block) #IfStatement
-    | If '(' expression ')' (statement|block) Else (statement|block) #IfElseStatement
-    | While '(' expression ')' (statement|block) #WhileStatement
-    | For '(' variableDefinition expression? ';' expression ')' (statement|block) #ForStatement;
+statement: block #BlockStatement
+    | expression ';' #ExpressionStatement
+    | variableDeclaration #VariableDeclarationStatement
+    | Return expression ';' #ReturnStatement
+    | Break ';' #BreakStatement
+    | Continue ';' #ContinueStatement
+    | If '(' expression ')' statement #IfStatement
+    | If '(' expression ')' thenStatement=statement Else elseStatement=statement #IfElseStatement
+    | While '(' expression ')' statement #WhileStatement
+    | For '(' (initExpression=expression|initVariableDeclaration=variableDeclaration) condition=expression ';'
+        step=expression? ')' statement #ForStatement;
 
-block: '{' (statement|variableDefinition)* '}';
+block: '{' statement* '}';
 
-functionDefinition: type Identifier '(' parameterList ')' block;
+functionDeclaration: type Identifier '(' (parameter (',' parameter)*)? ')' block;
 
-parameterList: (type Identifier(',' type Identifier)*)?;
+parameter: type Identifier;
 
-classDefinition: Class Identifier '{' variableDefinition* '}';
+classDeclaration: Class Identifier '{' variableDeclaration* '}';
 
-variableDefinition: type Identifier ('=' expression)? (',' Identifier ('=' expression)?)* ';';
+variableDeclaration: type variable (',' variable)* ';';
 
-program: (classDefinition | functionDefinition | variableDefinition)* EOF;
+variable: Identifier ('=' expression)?;
+
+section: classDeclaration|functionDeclaration|variableDeclaration;
+
+program: section* EOF;

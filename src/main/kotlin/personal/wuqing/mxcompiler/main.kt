@@ -20,7 +20,7 @@ import java.io.IOException
 import kotlin.system.exitProcess
 
 const val PROJECT_NAME = "Mx-Compiler"
-const val USAGE = "\u001B[37;1mjava -jar <jar file> <source code list> [options]\u001B[0m"
+const val USAGE = "\u001B[37;1mMx-Compiler <sourcefiles> [options]\u001B[0m"
 const val VERSION = "0.9"
 
 enum class Target {
@@ -30,8 +30,8 @@ enum class Target {
     LEXER {
         override fun ext() = ".tokens"
     },
-    LR {
-        override fun ext() = ".lr"
+    IR {
+        override fun ext() = ".ir"
     };
 
     abstract fun ext(): String
@@ -51,8 +51,8 @@ fun main(args: Array<String>) {
     val targetOption = OptionGroup()
     val lexerOption = Option("l", "lexer", false, "Tokenize Source File Only")
     targetOption.addOption(lexerOption)
-    val lrOption = Option("L", "LR", false, "Generate LR Result Only")
-    targetOption.addOption(lrOption)
+    val irOption = Option("I", "IR", false, "Generate IR Result Only")
+    targetOption.addOption(irOption)
     options.addOptionGroup(targetOption)
 
     try {
@@ -86,7 +86,7 @@ fun main(args: Array<String>) {
                 }
                 val target = when {
                     commandLine.hasOption("lexer") -> Target.LEXER
-                    commandLine.hasOption("LR") -> Target.LR
+                    commandLine.hasOption("IR") -> Target.IR
                     else -> Target.ALL
                 }
                 val outputFileName =
@@ -111,13 +111,13 @@ fun compile(inputFileName: String, outputFileName: String, target: Target) {
         val lexerListener = LexerErrorListener(inputFileName)
         lexer.addErrorListener(lexerListener)
         if (target == Target.LEXER) {
-            val result = lexer.allTokens.joinToString(" ") {it.text}.toByteArray()
+            val result = lexer.allTokens.joinToString(" ") { it.text }.toByteArray()
             lexerListener.report()
             output(result, outputFileName)
             return
         }
-        if (target == Target.LR) {
-            println("$Unsupported generate LR file")
+        if (target == Target.IR) {
+            println("$Unsupported generate IR file")
             throw CompilationFailedException()
         }
         println("$Unsupported full compilation")
