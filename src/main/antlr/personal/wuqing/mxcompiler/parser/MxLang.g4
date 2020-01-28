@@ -73,7 +73,7 @@ statement: block #BlockStatement
     | If '(' expression ')' statement #IfStatement
     | If '(' expression ')' thenStatement=statement Else elseStatement=statement #IfElseStatement
     | While '(' expression ')' statement #WhileStatement
-    | For '(' (initExpression=expression|initVariableDeclaration=variableDeclaration) condition=expression ';'
+    | For '(' (initExpression=expression? ';'|initVariableDeclaration=variableDeclaration) condition=expression ';'
         step=expression? ')' statement #ForStatement;
 
 block: '{' statement* '}';

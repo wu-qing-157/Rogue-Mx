@@ -2,8 +2,8 @@ package personal.wuqing.mxcompiler.ast
 
 import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
-import personal.wuqing.mxcompiler.parser.MxLangParserException
-import personal.wuqing.mxcompiler.parser.parserExceptionInfo
+import personal.wuqing.mxcompiler.MxLangParserException
+import personal.wuqing.mxcompiler.astErrorInfo
 import personal.wuqing.mxcompiler.utils.Location
 
 class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
@@ -23,7 +23,12 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ctx.classDeclaration() != null -> visit(ctx.classDeclaration())!!
         ctx.variableDeclaration() != null -> visit(ctx.variableDeclaration())!!
         else -> {
-            println(parserExceptionInfo(Location(filename, ctx), "Unknown Section"))
+            println(
+                astErrorInfo(
+                    Location(filename, ctx),
+                    "Unknown Section"
+                )
+            )
             throw MxLangParserException()
         }
     }

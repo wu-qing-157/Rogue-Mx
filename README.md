@@ -10,6 +10,7 @@ Currently only a seemingly useful lexer & parser using ANTLR4
 
 File Name|Test Description|Status
 ---|---|---
+000|CE Lexer|
 100|Hello World!|
 101|Notation Test|
 102|Associativity Test|
@@ -22,3 +23,4 @@ File Name|Test Description|Status
 + 2020.01.16 Support non-ascii characters
 + 2020.01.22 Add Commandline Args Interface
 + 2020.01.25 Add ASTNode and Parts of ASTBuilder
++ 2020.01.28 Add Commandline Interface for Generating Parse Tree

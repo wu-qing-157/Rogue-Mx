@@ -26,7 +26,7 @@ dependencies {
 }
 
 generateGrammarSource {
-    arguments += ['-no-listener', '-visitor', '-package', 'personal.wuqing.mxcompiler.parser']
+    arguments += ['-listener', '-visitor', '-package', 'personal.wuqing.mxcompiler.parser']
 }
 
 compileKotlin {
