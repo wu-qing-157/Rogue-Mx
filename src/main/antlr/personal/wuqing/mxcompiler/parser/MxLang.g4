@@ -1,6 +1,6 @@
 grammar MxLang;
 
-StringConstant: '"' (~["\t\b\n\r\f\\] | '\\' [tbnrf\\"])* '"';
+StringConstant: '"' (~["\t\b\n\r\\] | '\\' [tbnr\\"])* '"';
 NotationSingleLine: '//' .*? ('\n'|EOF) -> skip;
 NotationMultiline: '/*' .*? '*/' -> skip;
 
@@ -26,26 +26,27 @@ New: 'new';
 
 // keyword: Bool|Int|String|Null|True|False|Void|If|Else|For|While|Return|Break|Continue;
 
-IntegerConstant: [0-9]+;
-nullConstant: Null;
-boolConstant: True|False;
+IntConstant: [0-9]+;
 Identifier: [a-zA-Z_\u0080-\uffff][0-9a-zA-Z_\u0080-\uffff]*;
 
-constant: IntegerConstant|StringConstant|nullConstant|boolConstant;
+constant: IntConstant|StringConstant|Null|True|False;
 
 simpleType: Bool|Int|String|Void|Identifier;
 
-arrayType: simpleType ('[]')+;
+brack: '[]';
+
+arrayType: simpleType brack+;
 
 type: simpleType|arrayType;
 
 expression: '('expression')' #Parentheses
+    | New type '[' expression? ']' #NewOperator // TODO: new array now in inverse order
+    | expression '.' Identifier '(' expressionList ')' #MemberFunctionCall
     | expression '.' Identifier #MemberAccess
-    | New simpleType ('[' expression? ']')* #NewOperator
-    | expression '(' expressionList ')' #FunctionCall
+    | Identifier '(' expressionList ')' #FunctionCall
     | expression '[' expression ']' #IndexAccess
-    | expression ('++'|'--') #SuffixUnaryOperator
-    | <assoc=right> ('++'|'--'|'+'|'-'|'!'|'~') expression #PrefixUnaryOperator
+    | expression op=('++'|'--') #SuffixUnaryOperator
+    | <assoc=right> op=('++'|'--'|'+'|'-'|'!'|'~') expression #PrefixUnaryOperator
     | expression op=('*'|'/'|'%') expression #BinaryOperator
     | expression op=('+'|'-') expression #BinaryOperator
     | expression op=('<<'|'>>'|'>>>') expression #BinaryOperator
@@ -64,7 +65,8 @@ expression: '('expression')' #Parentheses
 
 expressionList: (expression(','expression)*)?;
 
-statement: block #BlockStatement
+statement: ';' #EmptyStatement
+    | block #BlockStatement
     | expression ';' #ExpressionStatement
     | variableDeclaration #VariableDeclarationStatement
     | Return expression ';' #ReturnStatement

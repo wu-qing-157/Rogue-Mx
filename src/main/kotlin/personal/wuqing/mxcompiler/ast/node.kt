@@ -1,13 +1,14 @@
 package personal.wuqing.mxcompiler.ast
 
 import personal.wuqing.mxcompiler.astErrorInfo
-import personal.wuqing.mxcompiler.type.ArrayType
-import personal.wuqing.mxcompiler.type.BoolType
-import personal.wuqing.mxcompiler.type.FunctionType
-import personal.wuqing.mxcompiler.type.IntType
-import personal.wuqing.mxcompiler.type.Type
-import personal.wuqing.mxcompiler.type.UnknownType
-import personal.wuqing.mxcompiler.type.VoidType
+import personal.wuqing.mxcompiler.frontend.ArrayType
+import personal.wuqing.mxcompiler.frontend.BoolType
+import personal.wuqing.mxcompiler.frontend.IntType
+import personal.wuqing.mxcompiler.frontend.NullType
+import personal.wuqing.mxcompiler.frontend.StringType
+import personal.wuqing.mxcompiler.frontend.Type
+import personal.wuqing.mxcompiler.frontend.UnknownType
+import personal.wuqing.mxcompiler.frontend.VoidType
 import personal.wuqing.mxcompiler.utils.Location
 
 sealed class ASTNode {
@@ -47,6 +48,10 @@ class ClassDeclarationNode(
 ) : DeclarationNode()
 
 sealed class StatementNode : ASTNode()
+
+class EmptyStatementNode(
+    override val location: Location
+) : StatementNode()
 
 class BlockNode(
     override val location: Location,
@@ -101,23 +106,9 @@ sealed class ExpressionNode : ASTNode() {
     abstract val lvalue: Boolean
 }
 
-class MemberAccessNode(
-    override val location: Location,
-    private val parent: ExpressionNode, private val child: String
-) : ExpressionNode() {
-    override val lvalue = true
-    override val type by lazy {
-        if (parent.type is UnknownType) UnknownType
-        else parent.type.members[child] ?: {
-            println(astErrorInfo(location, "unknown member $child of $parent"))
-            UnknownType
-        }()
-    }
-}
-
 class NewOperatorNode(
     override val location: Location,
-    private val baseType: TypeNode, private val length: Int?
+    private val baseType: TypeNode, private val length: ExpressionNode?
 ) : ExpressionNode() {
     override val lvalue = true
     override val type by lazy {
@@ -126,34 +117,42 @@ class NewOperatorNode(
     }
 }
 
-class FunctionCallNode(
+class MemberAccessNode(
     override val location: Location,
-    private val name: String,
-    private val function: ExpressionNode, private val parameters: List<ExpressionNode>
+    private val parent: ExpressionNode, private val child: String
+) : ExpressionNode() {
+    override val lvalue = true
+    override val type by lazy {
+        if (parent.type is UnknownType) UnknownType
+        else parent.type.variables[child]?.type ?: {
+            println(astErrorInfo(location, "unknown member $child of $parent"))
+            UnknownType
+        }()
+    }
+}
+
+class ExpressionListNode(
+    override val location: Location,
+    val list: List<ExpressionNode>
+) : ASTNode()
+
+class MemberFunctionCallNode(
+    override val location: Location,
+    private val parent: ExpressionNode, private val name: String, private val parameters: List<ExpressionNode>
 ) : ExpressionNode() {
     override val lvalue = false
     override val type by lazy {
-        when (val f = function.type) {
-            is UnknownType -> UnknownType
-            !is FunctionType -> {
-                println(astErrorInfo(location, "$name is not a function"))
-                UnknownType
-            }
-            else -> when {
-                parameters.any { it.type == UnknownType } -> UnknownType
-                f.parameterList != parameters.map { it.type } -> {
-                    println(
-                        astErrorInfo(
-                            location,
-                            "$name has a signature of (${f.parameterList.joinToString()}), " +
-                                    "but (${parameters.map { it.type }}) was found"
-                        )
-                    )
-                    UnknownType
-                }
-                else -> f.returnType
-            }
-        }
+        UnknownType // TODO: function call return type
+    }
+}
+
+class FunctionCallNode(
+    override val location: Location,
+    private val name: String, private val parameters: List<ExpressionNode>
+) : ExpressionNode() {
+    override val lvalue = false
+    override val type by lazy {
+        UnknownType // TODO: function call return type
     }
 }
 
@@ -405,19 +404,71 @@ class TernaryNode(
 
 class IdentifierExpressionNode(
     override val location: Location,
-    override val type: Type, override val lvalue: Boolean,
-    val name: ExpressionNode
-) : ExpressionNode()
+    val name: String
+) : ExpressionNode() {
+    override val lvalue = true
+    override val type by lazy {
+        UnknownType // TODO: identifier type
+    }
+}
 
 sealed class ConstantNode : ExpressionNode()
 
 class IntConstantNode(
     override val location: Location,
-    override val type: Type, override val lvalue: Boolean,
     val value: Int
-) : ConstantNode()
+) : ConstantNode() {
+    override val lvalue = false
+    override val type = IntType
+}
 
-class TypeNode(
+class StringConstantNode(
     override val location: Location,
-    val type: Type
-) : ASTNode()
+    val value: String
+) : ConstantNode() {
+    override val lvalue = false
+    override val type = StringType
+}
+
+class TrueConstantNode(
+    override val location: Location
+) : ConstantNode() {
+    override val lvalue = false
+    override val type = BoolType
+}
+
+class FalseConstantNode(
+    override val location: Location
+) : ConstantNode() {
+    override val lvalue = false
+    override val type = BoolType
+}
+
+class NullConstantNode(
+    override val location: Location
+) : ConstantNode() {
+    override val lvalue = false
+    override val type = NullType
+}
+
+sealed class TypeNode : ASTNode() {
+    abstract val type: Type
+}
+
+class SimpleTypeNode(
+    override val location: Location,
+    val name: String
+) : TypeNode() {
+    override val type by lazy {
+        UnknownType // TODO: type node
+    }
+}
+
+class ArrayTypeNode(
+    override val location: Location,
+    val name: String, val dimension: Int
+) : TypeNode() {
+    override val type by lazy {
+        UnknownType // TODO: type node
+    }
+}

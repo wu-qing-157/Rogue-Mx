@@ -14,6 +14,7 @@ import personal.wuqing.mxcompiler.parser.LexerErrorListener
 import personal.wuqing.mxcompiler.parser.MxLangLexer
 import personal.wuqing.mxcompiler.parser.MxLangParser
 import personal.wuqing.mxcompiler.parser.ParserErrorListener
+import personal.wuqing.mxcompiler.utils.ANSI
 import personal.wuqing.mxcompiler.utils.FatalError
 import personal.wuqing.mxcompiler.utils.Info
 import personal.wuqing.mxcompiler.utils.Unsupported
@@ -23,23 +24,26 @@ import java.io.IOException
 import kotlin.system.exitProcess
 
 const val PROJECT_NAME = "Mx-Compiler"
-const val USAGE = "\u001B[37;1mMx-Compiler <sourcefiles> [options]\u001B[0m"
+val USAGE = ANSI.bold("Mx-Compiler <sourcefiles> [options]")
 const val VERSION = "0.9"
 
 enum class Target(val ext: String) {
-    ALL(""), LEXER(".tokens"), TREE(".tree"), IR(".ir")
+    ALL(""), LEXER(".tokens"), TREE(".tree"), AST(".ast"), IR(".ir")
 }
 
 fun main(args: Array<String>) {
     val options = Options()
-    options.addOption("h", "help", false, "Display this information")
-    options.addOption("v", "version", false, "Display version information")
-    options.addOption("in", "input-name", false, "Read file name from stdin")
-    options.addOption("o", "output", true, "Specifying the destination")
+    options.addOption(Option("h", "help", false, "Display this information"))
+    options.addOption(Option("v", "version", false, "Display version information"))
+    options.addOption(Option("in", "input-name", false, "Read input filename from stdin"))
+    options.addOption(Option("o", "output", true, "Specifying the output filename").apply {
+        argName = "filename"
+    })
     val targetOption = OptionGroup()
     targetOption.addOption(Option("l", "lexer", false, "Tokenize Source File Only"))
     targetOption.addOption(Option("t", "tree", false, "Generate Parser Tree Only"))
     targetOption.addOption(Option("I", "IR", false, "Generate IR Result Only"))
+    targetOption.addOption(Option("A", "AST", false, "Generate AST Only"))
     options.addOptionGroup(targetOption)
 
     try {
@@ -75,6 +79,7 @@ fun main(args: Array<String>) {
                     commandLine.hasOption("lexer") -> Target.LEXER
                     commandLine.hasOption("IR") -> Target.IR
                     commandLine.hasOption("tree") -> Target.TREE
+                    commandLine.hasOption("AST") -> Target.AST
                     else -> Target.ALL
                 }
                 val outputFileName =
@@ -110,13 +115,21 @@ fun compile(inputFileName: String, outputFileName: String, target: Target) {
         val parserListener = ParserErrorListener(inputFileName)
         parser.addErrorListener(parserListener)
 
-        val builder = ASTBuilder(inputFileName)
         val tree = parser.program()
+        lexerListener.report()
         parserListener.report()
         if (target == Target.TREE) {
             val result = tree.toStringTree(parser).toByteArray()
             output(result, outputFileName)
             return
+        }
+
+        val builder = ASTBuilder(inputFileName)
+        builder.visit(tree)
+
+        if (target == Target.AST) {
+            println("$Unsupported generate AST (partly)")
+            throw CompilationFailedException()
         }
 
         if (target == Target.IR) {

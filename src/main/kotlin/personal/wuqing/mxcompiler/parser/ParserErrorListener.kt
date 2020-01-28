@@ -1,6 +1,7 @@
 package personal.wuqing.mxcompiler.parser
 
 import org.antlr.v4.runtime.BaseErrorListener
+import org.antlr.v4.runtime.CommonToken
 import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.Recognizer
 import personal.wuqing.mxcompiler.MxLangParserException
@@ -19,7 +20,10 @@ class ParserErrorListener(private val filename: String) : BaseErrorListener() {
         e: RecognitionException?
     ) {
         fail = true
-        println(parserExceptionInfo(Location(filename, line, charPositionInLine), msg ?: "unknown error"))
+        println(
+            parserExceptionInfo(
+                Location(filename, line, charPositionInLine),
+                (offendingSymbol as? CommonToken)?.let { "unexpected token ${it.text}" } ?: "unknown error"))
     }
 
     fun report() = if (fail) throw MxLangParserException() else Unit

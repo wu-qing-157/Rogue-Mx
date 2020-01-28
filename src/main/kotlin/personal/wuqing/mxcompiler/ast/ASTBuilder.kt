@@ -1,8 +1,9 @@
 package personal.wuqing.mxcompiler.ast
 
+import org.antlr.v4.runtime.tree.ParseTree
+import personal.wuqing.mxcompiler.ASTException
 import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
-import personal.wuqing.mxcompiler.MxLangParserException
 import personal.wuqing.mxcompiler.astErrorInfo
 import personal.wuqing.mxcompiler.utils.Location
 
@@ -23,13 +24,8 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ctx.classDeclaration() != null -> visit(ctx.classDeclaration())!!
         ctx.variableDeclaration() != null -> visit(ctx.variableDeclaration())!!
         else -> {
-            println(
-                astErrorInfo(
-                    Location(filename, ctx),
-                    "Unknown Section"
-                )
-            )
-            throw MxLangParserException()
+            println(astErrorInfo(Location(filename, ctx), "Unknown Section"))
+            throw ASTException()
         }
     }
 
@@ -62,6 +58,10 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                 init = it.expression()?.let { expression -> visit(expression) as ExpressionNode }
             )
         }
+    )
+
+    override fun visitEmptyStatement(ctx: MxLangParser.EmptyStatementContext?) = EmptyStatementNode(
+        location = Location(filename, ctx!!)
     )
 
     override fun visitBlockStatement(ctx: MxLangParser.BlockStatementContext?) = BlockNode(
@@ -122,5 +122,170 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
 
     override fun visitParentheses(ctx: MxLangParser.ParenthesesContext?) = visit(ctx!!.expression())!!
 
-    // TODO: visiting all other expressions
+    // TODO: new array now in inverse order
+    override fun visitNewOperator(ctx: MxLangParser.NewOperatorContext?) = NewOperatorNode(
+        location = Location(filename, ctx!!),
+        baseType = visit(ctx.type()) as TypeNode,
+        length = ctx.expression()?.let { visit(it) as ExpressionNode }
+    )
+
+    override fun visitExpressionList(ctx: MxLangParser.ExpressionListContext?) = ExpressionListNode(
+        location = Location(filename, ctx!!),
+        list = ctx.expression().map { visit(it) as ExpressionNode }
+    )
+
+    override fun visitMemberAccess(ctx: MxLangParser.MemberAccessContext?) = MemberAccessNode(
+        location = Location(filename, ctx!!),
+        parent = visit(ctx.expression()) as ExpressionNode,
+        child = ctx.Identifier().text
+    )
+
+    override fun visitMemberFunctionCall(ctx: MxLangParser.MemberFunctionCallContext?) = MemberFunctionCallNode(
+        location = Location(filename, ctx!!),
+        parent = visit(ctx.expression()) as ExpressionNode,
+        name = ctx.Identifier().text,
+        parameters = (visit(ctx.expressionList()) as ExpressionListNode).list
+    )
+
+    override fun visitFunctionCall(ctx: MxLangParser.FunctionCallContext?) = FunctionCallNode(
+        location = Location(filename, ctx!!),
+        name = ctx.Identifier().text,
+        parameters = (visit(ctx.expressionList()) as ExpressionListNode).list
+    )
+
+    override fun visitIndexAccess(ctx: MxLangParser.IndexAccessContext?) = IndexAccessNode(
+        location = Location(filename, ctx!!),
+        parent = visit(ctx.expression(0)) as ExpressionNode,
+        child = visit(ctx.expression(1)) as ExpressionNode
+    )
+
+    override fun visitSuffixUnaryOperator(ctx: MxLangParser.SuffixUnaryOperatorContext?) = SuffixUnaryNode(
+        location = Location(filename, ctx!!),
+        operand = visit(ctx.expression()) as ExpressionNode,
+        operator = when (ctx.op.text) {
+            "++" -> SuffixUnaryNode.SuffixOperator.INC
+            "--" -> SuffixUnaryNode.SuffixOperator.DEC
+            else -> {
+                println(astErrorInfo(Location(filename, ctx), "unknown suffix unary operator"))
+                throw ASTException()
+            }
+        }
+    )
+
+    override fun visitPrefixUnaryOperator(ctx: MxLangParser.PrefixUnaryOperatorContext?) = PrefixUnaryNode(
+        location = Location(filename, ctx!!),
+        operand = visit(ctx.expression()) as ExpressionNode,
+        operator = when (ctx.op.text) {
+            "++" -> PrefixUnaryNode.PrefixOperator.INC
+            "--" -> PrefixUnaryNode.PrefixOperator.DEC
+            "+" -> PrefixUnaryNode.PrefixOperator.POSITIVE
+            "-" -> PrefixUnaryNode.PrefixOperator.NEGATIVE
+            "!" -> PrefixUnaryNode.PrefixOperator.LOGIC_NEGATION
+            "~" -> PrefixUnaryNode.PrefixOperator.ARITHMETIC_NEGATION
+            else -> {
+                println(astErrorInfo(Location(filename, ctx), "unknown prefix unary operator"))
+                throw ASTException()
+            }
+        }
+    )
+
+    override fun visitBinaryOperator(ctx: MxLangParser.BinaryOperatorContext?) = BinaryNode(
+        location = Location(filename, ctx!!),
+        lhs = visit(ctx.expression(0)) as ExpressionNode,
+        rhs = visit(ctx.expression(1)) as ExpressionNode,
+        operator = when (ctx.op.text) {
+            "*" -> BinaryNode.BinaryOperator.TIMES
+            "/" -> BinaryNode.BinaryOperator.DIVIDE
+            "%" -> BinaryNode.BinaryOperator.REM
+            "+" -> BinaryNode.BinaryOperator.PLUS
+            "-" -> BinaryNode.BinaryOperator.MINUS
+            "<<" -> BinaryNode.BinaryOperator.SHIFT_LEFT
+            ">>" -> BinaryNode.BinaryOperator.ARITHMETIC_SHIFT_RIGHT
+            ">>>" -> BinaryNode.BinaryOperator.LOGIC_SHIFT_RIGHT
+            "<" -> BinaryNode.BinaryOperator.LESS
+            ">" -> BinaryNode.BinaryOperator.GREATER
+            "<=" -> BinaryNode.BinaryOperator.LESS_EQUAL
+            ">=" -> BinaryNode.BinaryOperator.GREATER_EQUAL
+            "==" -> BinaryNode.BinaryOperator.EQUAL
+            "!=" -> BinaryNode.BinaryOperator.NOT_EQUAL
+            "&" -> BinaryNode.BinaryOperator.ARITHMETIC_AND
+            "^" -> BinaryNode.BinaryOperator.ARITHMETIC_XOR
+            "|" -> BinaryNode.BinaryOperator.ARITHMETIC_OR
+            "&&" -> BinaryNode.BinaryOperator.LOGIC_AND
+            "||" -> BinaryNode.BinaryOperator.LOGIC_OR
+            "=" -> BinaryNode.BinaryOperator.ASSIGN
+            "+=" -> BinaryNode.BinaryOperator.PLUS_ASSIGN
+            "-=" -> BinaryNode.BinaryOperator.MINUS_ASSIGN
+            "*=" -> BinaryNode.BinaryOperator.TIMES_ASSIGN
+            "/=" -> BinaryNode.BinaryOperator.DIVIDE_ASSIGN
+            "%=" -> BinaryNode.BinaryOperator.REM_ASSIGN
+            "&=" -> BinaryNode.BinaryOperator.AND_ASSIGN
+            "^=" -> BinaryNode.BinaryOperator.XOR_ASSIGN
+            "|=" -> BinaryNode.BinaryOperator.OR_ASSIGN
+            "<<=" -> BinaryNode.BinaryOperator.SHIFT_LEFT_ASSIGN
+            ">>=" -> BinaryNode.BinaryOperator.ARITHMETIC_SHIFT_RIGHT_ASSIGN
+            ">>>=" -> BinaryNode.BinaryOperator.LOGIC_SHIFT_RIGHT_ASSIGN
+            else -> {
+                println(astErrorInfo(Location(filename, ctx), "unknown binary operator"))
+                throw ASTException()
+            }
+        }
+    )
+
+    override fun visitTernaryOperator(ctx: MxLangParser.TernaryOperatorContext?) = TernaryNode(
+        location = Location(filename, ctx!!),
+        condition = visit(ctx.expression(0)) as ExpressionNode,
+        trueExpression = visit(ctx.expression(1)) as ExpressionNode,
+        falseExpression = visit(ctx.expression(2)) as ExpressionNode
+    )
+
+    override fun visitIdentifiers(ctx: MxLangParser.IdentifiersContext?) = IdentifierExpressionNode(
+        location = Location(filename, ctx!!),
+        name = ctx.Identifier().text
+    )
+
+    override fun visitConstants(ctx: MxLangParser.ConstantsContext?) = visit(ctx!!.constant()) as ExpressionNode
+
+    override fun visitConstant(ctx: MxLangParser.ConstantContext?) = when {
+        ctx!!.IntConstant() != null -> IntConstantNode(
+            location = Location(filename, ctx),
+            value = ctx.IntConstant().text.toInt()
+        )
+        ctx.StringConstant() != null -> StringConstantNode(
+            location = Location(filename, ctx),
+            value = ctx.StringConstant().text
+                .replace("\\t", "\t")
+                .replace("\\b", "\b")
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .replace("\\\\", "\\")
+        )
+        ctx.Null() != null -> NullConstantNode(Location(filename, ctx))
+        ctx.True() != null -> TrueConstantNode(Location(filename, ctx))
+        ctx.False() != null -> FalseConstantNode(Location(filename, ctx))
+        else -> {
+            println(astErrorInfo(Location(filename, ctx), "unknown constant expression"))
+            throw ASTException()
+        }
+    }
+
+    override fun visitType(ctx: MxLangParser.TypeContext?) = when {
+        ctx!!.simpleType() != null -> visitSimpleType(ctx.simpleType())
+        ctx.arrayType() != null -> visitArrayType(ctx.arrayType())
+        else -> {
+            println(astErrorInfo(Location(filename, ctx), "unknown type"))
+            throw ASTException()
+        }
+    }
+
+    override fun visitSimpleType(ctx: MxLangParser.SimpleTypeContext?) = SimpleTypeNode(
+        location = Location(filename, ctx!!),
+        name = ctx.text
+    )
+
+    override fun visitArrayType(ctx: MxLangParser.ArrayTypeContext?) = ArrayTypeNode(
+        location = Location(filename, ctx!!),
+        name = ctx.simpleType().text,
+        dimension = ctx.brack().size
+    )
 }
