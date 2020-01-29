@@ -1,10 +1,9 @@
 package personal.wuqing.mxcompiler.ast
 
-import org.antlr.v4.runtime.tree.ParseTree
 import personal.wuqing.mxcompiler.ASTException
+import personal.wuqing.mxcompiler.astErrorInfo
 import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
-import personal.wuqing.mxcompiler.astErrorInfo
 import personal.wuqing.mxcompiler.utils.Location
 
 class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
@@ -29,6 +28,11 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         }
     }
 
+    override fun visitBlock(ctx: MxLangParser.BlockContext?) = BlockNode(
+        location = Location(filename, ctx!!),
+        statements = ctx.statement().map { visit(it) as StatementNode }
+    )
+
     override fun visitFunctionDeclaration(ctx: MxLangParser.FunctionDeclarationContext?) = FunctionDeclarationNode(
         location = Location(filename, ctx!!),
         name = ctx.Identifier().text,
@@ -39,13 +43,15 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                 type = visit(it.type()) as TypeNode,
                 name = it.Identifier().text
             )
-        }
+        },
+        body = visit(ctx.block()) as BlockNode
     )
 
     override fun visitClassDeclaration(ctx: MxLangParser.ClassDeclarationContext?) = ClassDeclarationNode(
         location = Location(filename, ctx!!),
         name = ctx.Identifier().text,
-        variables = ctx.variableDeclaration().map { (visit(it) as VariableDeclarationListNode).list }.flatten()
+        variables = ctx.variableDeclaration().map { (visit(it) as VariableDeclarationListNode).list }.flatten(),
+        functions = ctx.functionDeclaration().map { visit(it) as FunctionDeclarationNode }
     )
 
     override fun visitVariableDeclaration(ctx: MxLangParser.VariableDeclarationContext?) = VariableDeclarationListNode(
@@ -82,7 +88,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
 
     override fun visitReturnStatement(ctx: MxLangParser.ReturnStatementContext?) = ReturnNode(
         location = Location(filename, ctx!!),
-        expression = visit(ctx.expression()) as ExpressionNode
+        expression = ctx.expression()?.let { visit(it) as ExpressionNode }
     )
 
     override fun visitBreakStatement(ctx: MxLangParser.BreakStatementContext?) = BreakNode(Location(filename, ctx!!))
@@ -122,11 +128,11 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
 
     override fun visitParentheses(ctx: MxLangParser.ParenthesesContext?) = visit(ctx!!.expression())!!
 
-    // TODO: new array now in inverse order
     override fun visitNewOperator(ctx: MxLangParser.NewOperatorContext?) = NewOperatorNode(
         location = Location(filename, ctx!!),
-        baseType = visit(ctx.type()) as TypeNode,
-        length = ctx.expression()?.let { visit(it) as ExpressionNode }
+        baseType = visit(ctx.simpleType()) as TypeNode,
+        dimension = ctx.indexBrack().size + ctx.brack().size,
+        length = ctx.indexBrack().map { visit(it.expression()) as ExpressionNode }
     )
 
     override fun visitExpressionList(ctx: MxLangParser.ExpressionListContext?) = ExpressionListNode(
@@ -235,8 +241,8 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
     override fun visitTernaryOperator(ctx: MxLangParser.TernaryOperatorContext?) = TernaryNode(
         location = Location(filename, ctx!!),
         condition = visit(ctx.expression(0)) as ExpressionNode,
-        trueExpression = visit(ctx.expression(1)) as ExpressionNode,
-        falseExpression = visit(ctx.expression(2)) as ExpressionNode
+        thenExpression = visit(ctx.expression(1)) as ExpressionNode,
+        elseExpression = visit(ctx.expression(2)) as ExpressionNode
     )
 
     override fun visitIdentifiers(ctx: MxLangParser.IdentifiersContext?) = IdentifierExpressionNode(
@@ -254,11 +260,14 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ctx.StringConstant() != null -> StringConstantNode(
             location = Location(filename, ctx),
             value = ctx.StringConstant().text
+                .removePrefix("\"")
+                .removeSuffix("\"")
                 .replace("\\t", "\t")
                 .replace("\\b", "\b")
                 .replace("\\n", "\n")
                 .replace("\\r", "\r")
                 .replace("\\\\", "\\")
+                .replace("\\\"", "\"")
         )
         ctx.Null() != null -> NullConstantNode(Location(filename, ctx))
         ctx.True() != null -> TrueConstantNode(Location(filename, ctx))

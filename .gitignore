@@ -3,5 +3,8 @@
 /.gradle/
 /build/
 
-*.tokens
-*.tree
+/test/9*
+/test/*.tokens
+/test/*.tree
+/test/*.ast
+/test/*.test

@@ -1,6 +1,8 @@
 package personal.wuqing.mxcompiler.frontend
 
-sealed class Type {
+import java.io.Serializable
+
+sealed class Type : Serializable {
     abstract val variables: Map<String, Variable>
     abstract val functions: Map<FunctionDefinition, Function>
 }

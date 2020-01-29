@@ -21,6 +21,7 @@ import personal.wuqing.mxcompiler.utils.Unsupported
 import personal.wuqing.mxcompiler.utils.Warning
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.ObjectOutputStream
 import kotlin.system.exitProcess
 
 const val PROJECT_NAME = "Mx-Compiler"
@@ -43,7 +44,7 @@ fun main(args: Array<String>) {
     targetOption.addOption(Option("l", "lexer", false, "Tokenize Source File Only"))
     targetOption.addOption(Option("t", "tree", false, "Generate Parser Tree Only"))
     targetOption.addOption(Option("I", "IR", false, "Generate IR Result Only"))
-    targetOption.addOption(Option("A", "AST", false, "Generate AST Only"))
+    targetOption.addOption(Option("A", "AST", false, "Generate AST Only (in Java serialization format)"))
     options.addOptionGroup(targetOption)
 
     try {
@@ -125,11 +126,11 @@ fun compile(inputFileName: String, outputFileName: String, target: Target) {
         }
 
         val builder = ASTBuilder(inputFileName)
-        builder.visit(tree)
+        val root = builder.visit(tree)
 
         if (target == Target.AST) {
-            println("$Unsupported generate AST (partly)")
-            throw CompilationFailedException()
+            output(root, outputFileName)
+            return
         }
 
         if (target == Target.IR) {
@@ -155,6 +156,17 @@ fun output(bytes: ByteArray, outputFileName: String) {
         val outputStream = FileOutputStream(outputFileName)
         outputStream.write(bytes)
         outputStream.close()
+    } catch (e: IOException) {
+        println("$FatalError unable to output: ${e.message}")
+        throw OutputFailedException()
+    }
+}
+
+fun output(target: Any, outputFileName: String) {
+    try {
+        val objectStream = ObjectOutputStream(FileOutputStream(outputFileName))
+        objectStream.writeObject(target)
+        objectStream.close()
     } catch (e: IOException) {
         println("$FatalError unable to output: ${e.message}")
         throw OutputFailedException()

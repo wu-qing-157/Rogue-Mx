@@ -27,20 +27,21 @@ New: 'new';
 // keyword: Bool|Int|String|Null|True|False|Void|If|Else|For|While|Return|Break|Continue;
 
 IntConstant: [0-9]+;
-Identifier: [a-zA-Z_\u0080-\uffff][0-9a-zA-Z_\u0080-\uffff]*;
+Identifier: [a-zA-Z_\u0080-\u{10ffff}][0-9a-zA-Z_\u0080-\u{10ffff}]*;
 
 constant: IntConstant|StringConstant|Null|True|False;
 
 simpleType: Bool|Int|String|Void|Identifier;
 
 brack: '[]';
+indexBrack: '[' expression ']';
 
 arrayType: simpleType brack+;
 
 type: simpleType|arrayType;
 
 expression: '('expression')' #Parentheses
-    | New type '[' expression? ']' #NewOperator // TODO: new array now in inverse order
+    | New simpleType indexBrack* brack* #NewOperator
     | expression '.' Identifier '(' expressionList ')' #MemberFunctionCall
     | expression '.' Identifier #MemberAccess
     | Identifier '(' expressionList ')' #FunctionCall
@@ -69,7 +70,7 @@ statement: ';' #EmptyStatement
     | block #BlockStatement
     | expression ';' #ExpressionStatement
     | variableDeclaration #VariableDeclarationStatement
-    | Return expression ';' #ReturnStatement
+    | Return expression? ';' #ReturnStatement
     | Break ';' #BreakStatement
     | Continue ';' #ContinueStatement
     | If '(' expression ')' statement #IfStatement
@@ -84,7 +85,7 @@ functionDeclaration: type Identifier '(' (parameter (',' parameter)*)? ')' block
 
 parameter: type Identifier;
 
-classDeclaration: Class Identifier '{' variableDeclaration* '}';
+classDeclaration: Class Identifier '{' (variableDeclaration|functionDeclaration)* '}';
 
 variableDeclaration: type variable (',' variable)* ';';
 

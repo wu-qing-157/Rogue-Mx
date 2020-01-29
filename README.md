@@ -4,17 +4,21 @@ The project for Compiler Design and Implementation at SJTU
 
 ## Progress
 
-Currently only a seemingly useful lexer & parser using ANTLR4
+Currently only a seemingly useful lexer & parser using _ANTLR4_
 
 ## Test Cases
 
 File Name|Test Description|Status
 ---|---|---
 000|CE Lexer|
+001|CE Parser|
 100|Hello World!|
 101|Notation Test|
 102|Associativity Test|
 103|Non-ASCII Character Test|
+104|Complicated Test|
+
+Test cases starting with "9" is not shared through _git_
 
 ## Timeline
 
@@ -25,3 +29,5 @@ File Name|Test Description|Status
 + 2020.01.25 Add ASTNode and parts of ASTBuilder
 + 2020.01.28 Add commandline interface for generating parse tree
 + 2020.01.28 Add primary ASTBuilder (not tested)
++ 2020.01.29 Test ASTBuilder
++ 2020.01.29 Support output AST into file
