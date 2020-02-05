@@ -31,3 +31,4 @@ Test cases starting with "9" is not shared through _git_
 + 2020.01.28 Add primary ASTBuilder (not tested)
 + 2020.01.29 Test ASTBuilder
 + 2020.01.29 Support output AST into file
++ 2020.02.05 Reconstruct part of ASTNode

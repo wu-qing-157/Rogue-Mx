@@ -1,6 +1,8 @@
 package personal.wuqing.mxcompiler.frontend
 
-data class FunctionDefinition(val name: String, val parameterList: List<Type>)
+import personal.wuqing.mxcompiler.ast.BlockNode
 
-class Function {
+data class FunctionDefinition(val base: Type?, val name: String, val parameterList: List<Type>)
+
+class Function(val definition: FunctionDefinition, val body: BlockNode) {
 }

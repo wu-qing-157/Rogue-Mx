@@ -5,6 +5,7 @@ import personal.wuqing.mxcompiler.astErrorInfo
 import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
 import personal.wuqing.mxcompiler.utils.Location
+import personal.wuqing.mxcompiler.utils.LogPrinter
 
 class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
     override fun visitProgram(ctx: MxLangParser.ProgramContext?) = ProgramNode(
@@ -23,7 +24,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ctx.classDeclaration() != null -> visit(ctx.classDeclaration())!!
         ctx.variableDeclaration() != null -> visit(ctx.variableDeclaration())!!
         else -> {
-            println(astErrorInfo(Location(filename, ctx), "Unknown Section"))
+            LogPrinter.println(astErrorInfo(Location(filename, ctx), "Unknown Section"))
             throw ASTException()
         }
     }
@@ -47,11 +48,26 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         body = visit(ctx.block()) as BlockNode
     )
 
+    override fun visitConstructorDeclaration(ctx: MxLangParser.ConstructorDeclarationContext?) =
+        ConstructorDeclarationNode(
+            location = Location(filename, ctx!!),
+            type = visit(ctx.type()) as TypeNode,
+            parameterList = ctx.parameter().map {
+                ParameterNode(
+                    location = Location(filename, it),
+                    type = visit(it.type()) as TypeNode,
+                    name = it.Identifier().text
+                )
+            },
+            body = visit(ctx.block()) as BlockNode
+        )
+
     override fun visitClassDeclaration(ctx: MxLangParser.ClassDeclarationContext?) = ClassDeclarationNode(
         location = Location(filename, ctx!!),
         name = ctx.Identifier().text,
         variables = ctx.variableDeclaration().map { (visit(it) as VariableDeclarationListNode).list }.flatten(),
-        functions = ctx.functionDeclaration().map { visit(it) as FunctionDeclarationNode }
+        functions = ctx.functionDeclaration().map { visit(it) as FunctionDeclarationNode },
+        constructors = ctx.constructorDeclaration().map { visit(it) as ConstructorDeclarationNode }
     )
 
     override fun visitVariableDeclaration(ctx: MxLangParser.VariableDeclarationContext?) = VariableDeclarationListNode(
@@ -128,7 +144,15 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
 
     override fun visitParentheses(ctx: MxLangParser.ParenthesesContext?) = visit(ctx!!.expression())!!
 
-    override fun visitNewOperator(ctx: MxLangParser.NewOperatorContext?) = NewOperatorNode(
+    override fun visitNewObject(ctx: MxLangParser.NewObjectContext?) = NewObjectNode(
+        location = Location(filename, ctx!!),
+        baseType = visit(ctx.simpleType()) as TypeNode,
+        parameters = ctx.expressionList()?.let {
+            (visit(it) as ExpressionListNode).list
+        } ?: listOf()
+    )
+
+    override fun visitNewArray(ctx: MxLangParser.NewArrayContext?) = NewArrayNode(
         location = Location(filename, ctx!!),
         baseType = visit(ctx.simpleType()) as TypeNode,
         dimension = ctx.indexBrack().size + ctx.brack().size,
@@ -172,7 +196,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             "++" -> SuffixUnaryNode.SuffixOperator.INC
             "--" -> SuffixUnaryNode.SuffixOperator.DEC
             else -> {
-                println(astErrorInfo(Location(filename, ctx), "unknown suffix unary operator"))
+                LogPrinter.println(astErrorInfo(Location(filename, ctx), "unknown suffix unary operator"))
                 throw ASTException()
             }
         }
@@ -189,7 +213,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             "!" -> PrefixUnaryNode.PrefixOperator.LOGIC_NEGATION
             "~" -> PrefixUnaryNode.PrefixOperator.ARITHMETIC_NEGATION
             else -> {
-                println(astErrorInfo(Location(filename, ctx), "unknown prefix unary operator"))
+                LogPrinter.println(astErrorInfo(Location(filename, ctx), "unknown prefix unary operator"))
                 throw ASTException()
             }
         }
@@ -232,7 +256,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             ">>=" -> BinaryNode.BinaryOperator.ARITHMETIC_SHIFT_RIGHT_ASSIGN
             ">>>=" -> BinaryNode.BinaryOperator.LOGIC_SHIFT_RIGHT_ASSIGN
             else -> {
-                println(astErrorInfo(Location(filename, ctx), "unknown binary operator"))
+                LogPrinter.println(astErrorInfo(Location(filename, ctx), "unknown binary operator"))
                 throw ASTException()
             }
         }
@@ -243,6 +267,10 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         condition = visit(ctx.expression(0)) as ExpressionNode,
         thenExpression = visit(ctx.expression(1)) as ExpressionNode,
         elseExpression = visit(ctx.expression(2)) as ExpressionNode
+    )
+
+    override fun visitThisExpression(ctx: MxLangParser.ThisExpressionContext?) = ThisExpressionNode(
+        location = Location(filename, ctx!!)
     )
 
     override fun visitIdentifiers(ctx: MxLangParser.IdentifiersContext?) = IdentifierExpressionNode(
@@ -260,8 +288,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ctx.StringConstant() != null -> StringConstantNode(
             location = Location(filename, ctx),
             value = ctx.StringConstant().text
-                .removePrefix("\"")
-                .removeSuffix("\"")
+                .removeSurrounding("\"")
                 .replace("\\t", "\t")
                 .replace("\\b", "\b")
                 .replace("\\n", "\n")
@@ -273,7 +300,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ctx.True() != null -> TrueConstantNode(Location(filename, ctx))
         ctx.False() != null -> FalseConstantNode(Location(filename, ctx))
         else -> {
-            println(astErrorInfo(Location(filename, ctx), "unknown constant expression"))
+            LogPrinter.println(astErrorInfo(Location(filename, ctx), "unknown constant expression"))
             throw ASTException()
         }
     }
@@ -282,7 +309,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ctx!!.simpleType() != null -> visitSimpleType(ctx.simpleType())
         ctx.arrayType() != null -> visitArrayType(ctx.arrayType())
         else -> {
-            println(astErrorInfo(Location(filename, ctx), "unknown type"))
+            LogPrinter.println(astErrorInfo(Location(filename, ctx), "unknown type"))
             throw ASTException()
         }
     }

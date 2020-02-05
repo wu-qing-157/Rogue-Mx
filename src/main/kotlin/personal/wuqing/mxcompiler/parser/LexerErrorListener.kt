@@ -6,6 +6,7 @@ import org.antlr.v4.runtime.Recognizer
 import personal.wuqing.mxcompiler.MxLangLexerException
 import personal.wuqing.mxcompiler.lexerExceptionInfo
 import personal.wuqing.mxcompiler.utils.Location
+import personal.wuqing.mxcompiler.utils.LogPrinter
 
 class LexerErrorListener(private val fileName: String) : BaseErrorListener() {
     private var fail = false
@@ -19,7 +20,7 @@ class LexerErrorListener(private val fileName: String) : BaseErrorListener() {
         e: RecognitionException?
     ) {
         fail = true
-        println(lexerExceptionInfo(Location(fileName, line, charPositionInLine), msg ?: "unknown error"))
+        LogPrinter.println(lexerExceptionInfo(Location(fileName, line, charPositionInLine), msg ?: "unknown error"))
     }
 
     fun report() = if (fail) throw MxLangLexerException() else Unit

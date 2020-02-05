@@ -41,7 +41,9 @@ arrayType: simpleType brack+;
 type: simpleType|arrayType;
 
 expression: '('expression')' #Parentheses
-    | New simpleType indexBrack* brack* #NewOperator
+    | New simpleType indexBrack+ brack* #NewArray
+    | New simpleType brack+ #NewArray
+    | New simpleType '(' expressionList ')' #NewObject
     | expression '.' Identifier '(' expressionList ')' #MemberFunctionCall
     | expression '.' Identifier #MemberAccess
     | Identifier '(' expressionList ')' #FunctionCall
@@ -50,7 +52,7 @@ expression: '('expression')' #Parentheses
     | <assoc=right> op=('++'|'--'|'+'|'-'|'!'|'~') expression #PrefixUnaryOperator
     | expression op=('*'|'/'|'%') expression #BinaryOperator
     | expression op=('+'|'-') expression #BinaryOperator
-    | expression op=('<<'|'>>'|'>>>') expression #BinaryOperator
+    | expression op=('<<'|'>>'/*|'>>>'*/) expression #BinaryOperator
     | expression op=('<'|'>'|'<='|'>=') expression #BinaryOperator
     | expression op=('=='|'!=') expression #BinaryOperator
     | expression op='&' expression #BinaryOperator
@@ -59,9 +61,10 @@ expression: '('expression')' #Parentheses
     | expression op='&&' expression #BinaryOperator
     | expression op='||' expression #BinaryOperator
     | <assoc=right> expression '?' expression':' expression #TernaryOperator
-    | <assoc=right> expression op=('='|'+='|'-='|'*='|'/='|'%='|'&='|'^='|'|='|'<<='|'>>='|'>>>=') expression
+    | <assoc=right> expression op=('='|'+='|'-='|'*='|'/='|'%='|'&='|'^='|'|='|'<<='|'>>='/*|'>>>='*/) expression
         #BinaryOperator
     | Identifier #Identifiers
+    | This #ThisExpression
     | constant #Constants;
 
 expressionList: (expression(','expression)*)?;
@@ -83,9 +86,11 @@ block: '{' statement* '}';
 
 functionDeclaration: type Identifier '(' (parameter (',' parameter)*)? ')' block;
 
+constructorDeclaration: type '(' (parameter (',' parameter)*)? ')' block;
+
 parameter: type Identifier;
 
-classDeclaration: Class Identifier '{' (variableDeclaration|functionDeclaration)* '}';
+classDeclaration: Class Identifier '{' (variableDeclaration|functionDeclaration|constructorDeclaration)* '}';
 
 variableDeclaration: type variable (',' variable)* ';';
 

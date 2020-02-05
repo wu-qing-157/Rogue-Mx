@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.Recognizer
 import personal.wuqing.mxcompiler.MxLangParserException
 import personal.wuqing.mxcompiler.parserExceptionInfo
 import personal.wuqing.mxcompiler.utils.Location
+import personal.wuqing.mxcompiler.utils.LogPrinter
 
 class ParserErrorListener(private val filename: String) : BaseErrorListener() {
     private var fail = false
@@ -20,7 +21,7 @@ class ParserErrorListener(private val filename: String) : BaseErrorListener() {
         e: RecognitionException?
     ) {
         fail = true
-        println(
+        LogPrinter.println(
             parserExceptionInfo(
                 Location(filename, line, charPositionInLine),
                 (offendingSymbol as? CommonToken)?.let { "unexpected token ${it.text}" } ?: "unknown error"))

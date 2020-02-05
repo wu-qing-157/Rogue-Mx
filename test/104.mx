@@ -2,11 +2,15 @@ A a, b;
 
 class A {
     int a, b;
+    A c;
     int sum() {
         return a + b;
     }
     void incA(int delta) {
         a += delta;
+    }
+    A itself() {
+        return this;
     }
 }
 
@@ -77,7 +81,7 @@ int[][][] expression() {
     ret[16] %= c % d;
     ret[17] <<= c << d;
     ret[18] >>= c >> d;
-    ret[19] >>>= c >>> d;
+    // ret[19] >>>= c >>> d;
     ret[20] = c < d ? c : d;
     ret[21] = c > d ? c : d;
     ret[22] = c <= d ? c : d;
@@ -89,6 +93,7 @@ int[][][] expression() {
     ret[28] ^= c ^ d;
     ret[29] = s && t ? c : d;
     ret[30] = s || t ? c : d;
+    ret[31] = a.itself().c.sum();
     return result;
 }
 

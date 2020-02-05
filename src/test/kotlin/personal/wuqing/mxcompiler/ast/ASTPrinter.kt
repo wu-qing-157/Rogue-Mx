@@ -25,6 +25,16 @@ object ASTPrinter {
                 write(indent + "body: ")
                 summary(root.body, depth + 1)
             }
+            is ConstructorDeclarationNode -> {
+                write(indent + "type: ")
+                summary(root.type, depth + 1)
+                root.parameterList.forEach {
+                    write(indent + "p: ")
+                    summary(it, depth + 1)
+                }
+                write(indent + "body: ")
+                summary(root.body, depth + 1)
+            }
             is VariableDeclarationNode -> {
                 write(indent + "type: ")
                 summary(root.type, depth + 1)
@@ -39,6 +49,10 @@ object ASTPrinter {
                     summary(it, depth + 1)
                 }
                 root.functions.forEach {
+                    write(indent)
+                    summary(it, depth + 1)
+                }
+                root.constructors.forEach {
                     write(indent)
                     summary(it, depth + 1)
                 }
@@ -95,7 +109,15 @@ object ASTPrinter {
                 write(indent)
                 summary(it, depth + 1)
             }
-            is NewOperatorNode -> {
+            is NewObjectNode -> {
+                write(indent + "type: ")
+                summary(root.baseType, depth + 1)
+                root.parameters.forEach {
+                    write(indent + "p: ")
+                    summary(it, depth + 1)
+                }
+            }
+            is NewArrayNode -> {
                 write(indent + "type: ")
                 summary(root.baseType, depth + 1)
                 root.length.forEach {
@@ -147,7 +169,7 @@ object ASTPrinter {
                 write(indent + "else: ")
                 summary(root.elseExpression, depth + 1)
             }
-            is IdentifierExpressionNode, is ConstantNode, is TypeNode -> {}
+            is IdentifierExpressionNode, is ThisExpressionNode, is ConstantNode, is TypeNode -> {}
         }
     }
     fun summary(root: ASTNode): String {
