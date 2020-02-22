@@ -5,17 +5,17 @@ object ASTPrinter {
     private fun write(s: String) = builder.append(s)
     private fun summary(root: ASTNode, depth: Int) {
         write(root.summary + "\n")
-        val indent = (0..depth).joinToString("") {"    "}
+        val indent = (0..depth).joinToString("") { "    " }
         when (root) {
-            is ProgramNode -> root.declarations.forEach {
+            is ASTNode.Program -> root.declarations.forEach {
                 write(indent)
                 summary(it, depth + 1)
             }
-            is ParameterNode -> {
+            is ASTNode.Parameter -> {
                 write(indent + "type: ")
                 summary(root.type, depth + 1)
             }
-            is FunctionDeclarationNode -> {
+            is ASTNode.Declaration.Function -> {
                 write(indent + "return: ")
                 summary(root.returnType, depth + 1)
                 root.parameterList.forEach {
@@ -25,7 +25,7 @@ object ASTPrinter {
                 write(indent + "body: ")
                 summary(root.body, depth + 1)
             }
-            is ConstructorDeclarationNode -> {
+            is ASTNode.Declaration.Constructor -> {
                 write(indent + "type: ")
                 summary(root.type, depth + 1)
                 root.parameterList.forEach {
@@ -35,7 +35,7 @@ object ASTPrinter {
                 write(indent + "body: ")
                 summary(root.body, depth + 1)
             }
-            is VariableDeclarationNode -> {
+            is ASTNode.Declaration.Variable -> {
                 write(indent + "type: ")
                 summary(root.type, depth + 1)
                 root.init?.let {
@@ -43,7 +43,7 @@ object ASTPrinter {
                     summary(it, depth + 1)
                 }
             }
-            is ClassDeclarationNode -> {
+            is ASTNode.Declaration.Class -> {
                 root.variables.forEach {
                     write(indent)
                     summary(it, depth + 1)
@@ -57,20 +57,21 @@ object ASTPrinter {
                     summary(it, depth + 1)
                 }
             }
-            is EmptyStatementNode -> {}
-            is BlockNode -> root.statements.forEach {
+            is ASTNode.Statement.Empty -> {
+            }
+            is ASTNode.Statement.Block -> root.statements.forEach {
                 write(indent)
                 summary(it, depth + 1)
             }
-            is ExpressionStatementNode -> {
+            is ASTNode.Statement.Expression -> {
                 write(indent)
                 summary(root.expression, depth + 1)
             }
-            is VariableDeclarationStatementNode -> root.variables.forEach {
+            is ASTNode.Statement.Variable -> root.variables.forEach {
                 write(indent)
                 summary(it, depth + 1)
             }
-            is IfNode -> {
+            is ASTNode.Statement.If -> {
                 write(indent + "cond: ")
                 summary(root.condition, depth + 1)
                 write(indent + "then: ")
@@ -80,13 +81,13 @@ object ASTPrinter {
                     summary(it, depth + 1)
                 }
             }
-            is WhileNode -> {
+            is ASTNode.Statement.While -> {
                 write(indent + "cond: ")
                 summary(root.condition, depth + 1)
                 write(indent + "loop: ")
                 summary(root.statement, depth + 1)
             }
-            is ForNode -> {
+            is ASTNode.Statement.For -> {
                 root.initVariableDeclaration.forEach {
                     write(indent + "init: ")
                     summary(it, depth + 1)
@@ -104,12 +105,13 @@ object ASTPrinter {
                 write(indent + "loop: ")
                 summary(root.statement, depth + 1)
             }
-            is ContinueNode, is BreakNode -> {}
-            is ReturnNode -> root.expression?.let {
+            is ASTNode.Statement.Continue, is ASTNode.Statement.Break -> {
+            }
+            is ASTNode.Statement.Return -> root.expression?.let {
                 write(indent)
                 summary(it, depth + 1)
             }
-            is NewObjectNode -> {
+            is ASTNode.Expression.NewObject -> {
                 write(indent + "type: ")
                 summary(root.baseType, depth + 1)
                 root.parameters.forEach {
@@ -117,7 +119,7 @@ object ASTPrinter {
                     summary(it, depth + 1)
                 }
             }
-            is NewArrayNode -> {
+            is ASTNode.Expression.NewArray -> {
                 write(indent + "type: ")
                 summary(root.baseType, depth + 1)
                 root.length.forEach {
@@ -125,43 +127,43 @@ object ASTPrinter {
                     summary(it, depth + 1)
                 }
             }
-            is MemberAccessNode -> {
+            is ASTNode.Expression.MemberAccess -> {
                 write(indent + "parent: ")
                 summary(root.parent, depth + 1)
             }
-            is MemberFunctionCallNode -> {
+            is ASTNode.Expression.MemberFunction -> {
                 write(indent + "parent: ")
-                summary(root.parent, depth + 1)
+                summary(root.base, depth + 1)
                 root.parameters.forEach {
                     write(indent + "p: ")
                     summary(it, depth + 1)
                 }
             }
-            is FunctionCallNode -> root.parameters.forEach {
+            is ASTNode.Expression.Function -> root.parameters.forEach {
                 write(indent + "p: ")
                 summary(it, depth + 1)
             }
-            is IndexAccessNode -> {
+            is ASTNode.Expression.Index -> {
                 write(indent + "parent: ")
                 summary(root.parent, depth + 1)
                 write(indent + "child : ")
                 summary(root.child, depth + 1)
             }
-            is SuffixUnaryNode -> {
+            is ASTNode.Expression.Suffix -> {
                 write(indent + "operand: ")
                 summary(root.operand, depth + 1)
             }
-            is PrefixUnaryNode -> {
+            is ASTNode.Expression.Prefix -> {
                 write(indent + "operand: ")
                 summary(root.operand, depth + 1)
             }
-            is BinaryNode -> {
+            is ASTNode.Expression.Binary -> {
                 write(indent + "lhs: ")
                 summary(root.lhs, depth + 1)
                 write(indent + "rhs: ")
                 summary(root.rhs, depth + 1)
             }
-            is TernaryNode -> {
+            is ASTNode.Expression.Ternary -> {
                 write(indent + "cond: ")
                 summary(root.condition, depth + 1)
                 write(indent + "then: ")
@@ -169,9 +171,11 @@ object ASTPrinter {
                 write(indent + "else: ")
                 summary(root.elseExpression, depth + 1)
             }
-            is IdentifierExpressionNode, is ThisExpressionNode, is ConstantNode, is TypeNode -> {}
+            is ASTNode.Expression.Identifier, is ASTNode.Expression.This, is ASTNode.Expression.Constant, is ASTNode.Type -> {
+            }
         }
     }
+
     fun summary(root: ASTNode): String {
         builder.clear()
         summary(root, 0)

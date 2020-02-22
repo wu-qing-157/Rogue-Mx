@@ -71,7 +71,6 @@ val options = Options().apply {
 fun main(args: Array<String>) {
     try {
         val commandLine = DefaultParser().parse(options, args)
-        if (commandLine.hasOption("stdout")) LogPrinter.printStream = System.err
         when {
             commandLine.hasOption("help") -> {
                 HelpFormatter().printHelp(USAGE, options)
@@ -94,15 +93,12 @@ fun main(args: Array<String>) {
                         LogPrinter.print("$Info please input file name: ")
                         readLine()!!
                     }
-                    commandLine.args.isEmpty() -> {
-                        LogPrinter.println("$FatalError no input file")
-                        throw CompilationFailedException()
+                    else -> commandLine.args.singleOrNull() ?: throw CompilationFailedException().also {
+                        LogPrinter.println(
+                            if (commandLine.args.isEmpty()) "$FatalError no input file"
+                            else "$Unsupported multiple input files"
+                        )
                     }
-                    commandLine.args.size > 1 -> {
-                        LogPrinter.println("$Unsupported multiple input files")
-                        throw CompilationFailedException()
-                    }
-                    else -> commandLine.args[0]
                 }
                 val input = when {
                     commandLine.hasOption("stdin") -> System.`in`
@@ -128,7 +124,7 @@ fun main(args: Array<String>) {
                         }
                         else ->
                             fromAST(ObjectInputStream(input).use {
-                                it.readObject() as ASTNode
+                                it.readObject() as ASTNode.Program
                             }, output, source, target)
                     }
                     else -> fromSource(input, output, source, target)
@@ -175,7 +171,7 @@ fun fromSource(input: InputStream, output: OutputStream, source: String, target:
         }
 
         val builder = ASTBuilder(source)
-        val root = builder.visit(tree)
+        val root = builder.visit(tree) as ASTNode.Program
 
         if (target == Target.AST) {
             output(root, output)
@@ -195,8 +191,10 @@ fun fromSource(input: InputStream, output: OutputStream, source: String, target:
     }
 }
 
-fun fromAST(root: ASTNode, output: OutputStream, source: String, target: Target) {
-    println("$Info TEST OK") // TODO: after AST
+fun fromAST(root: ASTNode.Program, output: OutputStream, source: String, target: Target) {
+    //initClasses(root)
+    //initFunctions(root)
+    TODO("after init definition")
 }
 
 fun output(bytes: ByteArray, output: OutputStream) {

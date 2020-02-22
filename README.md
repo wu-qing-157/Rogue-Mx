@@ -4,7 +4,13 @@ The project for Compiler Design and Implementation at SJTU
 
 ## Progress
 
-Currently only a seemingly useful lexer & parser using _ANTLR4_
+Description|Status
+---|---
+ANTLR4|Completed partly inconsistent with predefined Mx* grammar
+AST|Completed
+Type Analysis|No idea about implementation structure
+...|Not planned
+Commandline Option|Currently with _commons-cli_, to be rewritten or removed
 
 ## Test Cases
 
@@ -32,3 +38,4 @@ Test cases starting with "9" is not shared through _git_
 + 2020.01.29 Test ASTBuilder
 + 2020.01.29 Support output AST into file
 + 2020.02.05 Reconstruct part of ASTNode
++ 2020.02.22 Reconstruct structure of ASTNode

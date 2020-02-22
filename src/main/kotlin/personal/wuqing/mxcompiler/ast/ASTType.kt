@@ -1,15 +1,21 @@
 package personal.wuqing.mxcompiler.ast
 
-import personal.wuqing.mxcompiler.astErrorInfo
+/*
 import personal.wuqing.mxcompiler.frontend.ArrayType
 import personal.wuqing.mxcompiler.frontend.BoolType
+import personal.wuqing.mxcompiler.frontend.FunctionDefinition
 import personal.wuqing.mxcompiler.frontend.IntType
+import personal.wuqing.mxcompiler.frontend.StringType
+import personal.wuqing.mxcompiler.frontend.Type
 import personal.wuqing.mxcompiler.frontend.UnknownType
-import personal.wuqing.mxcompiler.utils.LogPrinter
+import personal.wuqing.mxcompiler.frontend.VoidType
+import personal.wuqing.mxcompiler.utils.Location
+
+fun ClassDeclarationNode.type(): Lazy<Type> = lazy { TODO("based on scope") }
 
 fun NewObjectNode.type() = lazy {
     if (baseType.type is UnknownType) UnknownType
-    else UnknownType // TODO: type of new object
+    else TODO("type of new object")
 }
 
 fun NewArrayNode.type() = lazy {
@@ -19,32 +25,33 @@ fun NewArrayNode.type() = lazy {
 
 fun MemberAccessNode.type() = lazy {
     if (parent.type is UnknownType) UnknownType
-    else parent.type.variables[child]?.type ?: {
+    else parent.type.variables[child]?.type ?: UnknownType.also {
         LogPrinter.println(astErrorInfo(location, "unknown member $child of $parent"))
-        UnknownType
-    }()
+    }
 }
 
+fun resolveFunction(definition: FunctionDefinition, location: Location): Type = TODO("based on scope")
+
 fun MemberFunctionCallNode.type() = lazy {
-    UnknownType // TODO: type of member function call
+    if (parameters.map { it.type }.contains(UnknownType)) UnknownType
+    else resolveFunction(FunctionDefinition(base.type, name, parameters.map { it.type }), location)
 }
 
 fun FunctionCallNode.type() = lazy {
-    UnknownType // TODO: type of function call
+    if (parameters.map { it.type }.contains(UnknownType)) UnknownType
+    else resolveFunction(FunctionDefinition(null, name, parameters.map { it.type }), location)
 }
 
 fun IndexAccessNode.type() = lazy {
     when (val p = parent.type) {
         is UnknownType -> UnknownType
-        !is ArrayType -> {
+        !is ArrayType -> UnknownType.also {
             LogPrinter.println(astErrorInfo(location, "$p cannot be index-accessed"))
-            UnknownType
         }
         else -> when (val c = child.type) {
             is UnknownType -> UnknownType
-            !is IntType -> {
+            !is IntType -> UnknownType.also {
                 LogPrinter.println(astErrorInfo(location, "type $c cannot be used as index"))
-                UnknownType
             }
             else -> p.base
         }
@@ -54,15 +61,13 @@ fun IndexAccessNode.type() = lazy {
 fun SuffixUnaryNode.type() = lazy {
     when (val o = operand.type) {
         is UnknownType -> UnknownType
-        !is IntType -> {
+        !is IntType -> UnknownType.also {
             LogPrinter.println(astErrorInfo(location, "suffix unary operator $operator cannot be performed on $o"))
-            UnknownType
         }
         else -> {
             if (operand.lvalue) IntType
-            else {
+            else UnknownType.also {
                 LogPrinter.println(astErrorInfo(location, "$operand cannot be assigned"))
-                UnknownType
             }
         }
     }
@@ -72,36 +77,32 @@ fun PrefixUnaryNode.type() = lazy {
     when (operator) {
         PrefixUnaryNode.PrefixOperator.INC, PrefixUnaryNode.PrefixOperator.DEC -> when (val o = operand.type) {
             is UnknownType -> UnknownType
-            !is IntType -> {
+            !is IntType -> UnknownType.also {
                 LogPrinter.println(
                     astErrorInfo(location, "prefix unary operator $operator cannot be performed on $o")
                 )
-                UnknownType
             }
             else -> IntType
         }
         PrefixUnaryNode.PrefixOperator.LOGIC_NEGATION -> when (val o = operand.type) {
             is UnknownType -> UnknownType
-            !is BoolType -> {
+            !is BoolType -> UnknownType.also {
                 LogPrinter.println(astErrorInfo(location, "prefix unary operator $operator cannot be performed on $o"))
-                UnknownType
             }
             else -> BoolType
         }
         PrefixUnaryNode.PrefixOperator.ARITHMETIC_NEGATION -> when (val o = operand.type) {
             is UnknownType -> UnknownType
-            !is IntType -> {
+            !is IntType -> UnknownType.also {
                 LogPrinter.println(astErrorInfo(location, "prefix unary operator $operator cannot be performed on $o"))
-                UnknownType
             }
             else -> IntType
         }
         PrefixUnaryNode.PrefixOperator.POSITIVE, PrefixUnaryNode.PrefixOperator.NEGATIVE -> when (val o =
             operand.type) {
             is UnknownType -> UnknownType
-            !is IntType -> {
+            !is IntType -> UnknownType.also {
                 LogPrinter.println(astErrorInfo(location, "prefix unary operator $operator cannot be performed on $o"))
-                UnknownType
             }
             else -> IntType
         }
@@ -118,14 +119,10 @@ fun BinaryNode.type() = lazy {
             when {
                 l is UnknownType || r is UnknownType -> UnknownType
                 l is IntType && r is IntType -> IntType
-                else -> {
+                else -> UnknownType.also {
                     LogPrinter.println(
-                        astErrorInfo(
-                            location,
-                            "binary operator $operator cannot be performed on $l and $r"
-                        )
+                        astErrorInfo(location, "binary operator $operator cannot be performed on $l and $r")
                     )
-                    UnknownType
                 }
             }
         }
@@ -134,14 +131,10 @@ fun BinaryNode.type() = lazy {
             when {
                 l is UnknownType || r is UnknownType -> UnknownType
                 l is BoolType && r is BoolType -> BoolType
-                else -> {
+                else -> UnknownType.also {
                     LogPrinter.println(
-                        astErrorInfo(
-                            location,
-                            "binary operator $operator cannot be performed on $l and $r"
-                        )
+                        astErrorInfo(location, "binary operator $operator cannot be performed on $l and $r")
                     )
-                    UnknownType
                 }
             }
         }
@@ -150,14 +143,10 @@ fun BinaryNode.type() = lazy {
             when {
                 l is UnknownType || r is UnknownType -> UnknownType
                 l is IntType && r is IntType -> BoolType
-                else -> {
+                else -> UnknownType.also {
                     LogPrinter.println(
-                        astErrorInfo(
-                            location,
-                            "binary operator $operator cannot be performed on $l and $r"
-                        )
+                        astErrorInfo(location, "binary operator $operator cannot be performed on $l and $r")
                     )
-                    UnknownType
                 }
             }
         }
@@ -167,14 +156,10 @@ fun BinaryNode.type() = lazy {
                 l is UnknownType || r is UnknownType -> UnknownType
                 l is IntType && r is IntType -> IntType
                 l is BoolType && r is BoolType -> BoolType
-                else -> {
+                else -> UnknownType.also {
                     LogPrinter.println(
-                        astErrorInfo(
-                            location,
-                            "binary operator $operator cannot be performed on $l and $r"
-                        )
+                        astErrorInfo(location, "binary operator $operator cannot be performed on $l and $r")
                     )
-                    UnknownType
                 }
             }
         }
@@ -184,18 +169,13 @@ fun BinaryNode.type() = lazy {
                 l is UnknownType || r is UnknownType -> UnknownType
                 l == r ->
                     if (lhs.lvalue) lhs.type
-                    else {
+                    else UnknownType.also {
                         LogPrinter.println(astErrorInfo(location, "$lhs cannot be assigned"))
-                        UnknownType
                     }
-                else -> {
+                else -> UnknownType.also {
                     LogPrinter.println(
-                        astErrorInfo(
-                            location,
-                            "binary operator $operator cannot be performed on $l and $r"
-                        )
+                        astErrorInfo(location, "binary operator $operator cannot be performed on $l and $r")
                     )
-                    UnknownType
                 }
             }
         }
@@ -209,18 +189,13 @@ fun BinaryNode.type() = lazy {
                 l is UnknownType || r is UnknownType -> UnknownType
                 l is IntType && r is IntType ->
                     if (lhs.lvalue) IntType
-                    else {
+                    else UnknownType.also {
                         LogPrinter.println(astErrorInfo(location, "$lhs cannot be assigned"))
-                        UnknownType
                     }
-                else -> {
+                else -> UnknownType.also {
                     LogPrinter.println(
-                        astErrorInfo(
-                            location,
-                            "binary operator $operator cannot be performed on $l and $r"
-                        )
+                        astErrorInfo(location, "binary operator $operator cannot be performed on $l and $r")
                     )
-                    UnknownType
                 }
             }
         }
@@ -234,30 +209,33 @@ fun TernaryNode.type() = lazy {
         is BoolType -> when {
             t is UnknownType || f is UnknownType -> UnknownType
             t == f -> t
-            else -> {
+            else -> UnknownType.also {
                 LogPrinter.println("types of two alternatives do not match")
-                UnknownType
             }
         }
-        else -> {
+        else -> UnknownType.also {
             LogPrinter.println("type of condition must be $BoolType")
-            UnknownType
         }
     }
 }
 
-fun IdentifierExpressionNode.type() = lazy {
-    UnknownType // TODO: type of identifier
+fun IdentifierExpressionNode.type() = lazy<Type> { TODO("type of identifier") }
+
+fun ThisExpressionNode.type() = lazy<Type> { TODO("type of this") }
+
+fun solveClass(name: String, location: Location): Type = when (name) {
+    "int" -> IntType
+    "bool" -> BoolType
+    "string" -> StringType
+    "void" -> VoidType
+    else -> TODO("based on scope")
 }
 
-fun ThisExpressionNode.type() = lazy {
-    UnknownType // TODO: type of this
-}
-
-fun SimpleTypeNode.type() = lazy {
-    UnknownType // TODO: type of simple type
-}
+fun SimpleTypeNode.type() = lazy { solveClass(name, location) }
 
 fun ArrayTypeNode.type() = lazy {
-    UnknownType // TODO: type of array type
+    var cur = solveClass(name, location)
+    if (cur !is UnknownType) repeat(dimension) { cur = ArrayType(cur) }
+    cur
 }
+*/
