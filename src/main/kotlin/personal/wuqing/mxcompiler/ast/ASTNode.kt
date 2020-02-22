@@ -1,11 +1,17 @@
 package personal.wuqing.mxcompiler.ast
 
-import personal.wuqing.mxcompiler.ASTException
 import personal.wuqing.mxcompiler.frontend.BinaryOperator
+import personal.wuqing.mxcompiler.frontend.BoolType
+import personal.wuqing.mxcompiler.frontend.ClassType
+import personal.wuqing.mxcompiler.frontend.IntType
+import personal.wuqing.mxcompiler.frontend.NullType
 import personal.wuqing.mxcompiler.frontend.PrefixOperator
+import personal.wuqing.mxcompiler.frontend.StringType
 import personal.wuqing.mxcompiler.frontend.SuffixOperator
+import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
 import java.io.Serializable
+import personal.wuqing.mxcompiler.frontend.Type as Type_
 
 sealed class ASTNode : Serializable {
     abstract val location: Location
@@ -21,14 +27,14 @@ sealed class ASTNode : Serializable {
     sealed class Declaration : ASTNode() {
         class Function(
             override val location: Location, val name: String,
-            val returnType: Type, val parameterList: List<Parameter>, val body: Statement.Block
+            val returnType: Type, val parameterList: List<Variable>, val body: Statement.Block
         ) : Declaration() {
             override val summary get() = "$name (Function)"
         }
 
         class Constructor(
             override val location: Location,
-            val type: Type, val parameterList: List<Parameter>, val body: Statement.Block
+            val type: Type, val parameterList: List<Variable>, val body: Statement.Block
         ) : Declaration() {
             override val summary get() = "$type (Constructor)"
         }
@@ -36,7 +42,7 @@ sealed class ASTNode : Serializable {
         class VariableList(
             override val location: Location, val list: List<Variable>
         ) : ASTNode() {
-            override val summary: String get() = throw ASTException() // should not be on AST
+            override val summary: String get() = throw ASTErrorRecorder.Exception() // should not be on AST
         }
 
         class Variable(
@@ -47,16 +53,11 @@ sealed class ASTNode : Serializable {
 
         class Class(
             override val location: Location, val name: String,
-            val variables: List<Variable>, val functions: List<Function>, val constructors: List<Constructor>
+            val declarations: List<Declaration>
         ) : Declaration() {
             override val summary get() = "$name (ClassDeclaration)"
+            val clazz = ClassType(name, this)
         }
-    }
-
-    class Parameter(
-        override val location: Location, val name: String, val type: Type
-    ) : ASTNode() {
-        override val summary get() = "$name (Parameter)"
     }
 
     sealed class Statement : ASTNode() {
@@ -86,7 +87,7 @@ sealed class ASTNode : Serializable {
 
         class If(
             override val location: Location,
-            val condition: ASTNode.Expression, val thenStatement: Statement, val elseStatement: Statement?
+            val condition: ASTNode.Expression, val then: Statement, val else_: Statement?
         ) : Statement() {
             override val summary get() = "(If)"
         }
@@ -99,7 +100,7 @@ sealed class ASTNode : Serializable {
 
         class For(
             override val location: Location,
-            val initVariableDeclaration: List<Declaration.Variable>, val initExpression: ASTNode.Expression?,
+            val initVariable: List<Declaration.Variable>, val initExpression: ASTNode.Expression?,
             val condition: ASTNode.Expression, val step: ASTNode.Expression?, val statement: Statement
         ) : Statement() {
             override val summary get() = "(For)"
@@ -125,129 +126,167 @@ sealed class ASTNode : Serializable {
     }
 
     sealed class Expression : ASTNode() {
+        abstract val type: Type_
+        abstract val lvalue: Boolean
+
         class NewObject(
             override val location: Location, val baseType: Type, val parameters: List<Expression>
         ) : Expression() {
             override val summary get() = "$baseType (New Object)"
+            override val type by type()
+            override val lvalue = false
         }
 
         class NewArray(
             override val location: Location, val baseType: Type, val dimension: Int, val length: List<Expression>
         ) : Expression() {
             override val summary get() = "$dimension-dimension (New Array)"
+            override val type by type()
+            override val lvalue = false
         }
 
         class MemberAccess(
             override val location: Location, val parent: Expression, val child: String
         ) : Expression() {
             override val summary get() = "$child (MemberAccess)"
+            override val type by type()
+            override val lvalue = true
         }
 
         class ExpressionList(
             override val location: Location, val list: List<Expression>
         ) : ASTNode() {
-            override val summary: String get() = throw ASTException() // should not be on AST
+            override val summary get() = throw ASTErrorRecorder.Exception() // should not be on AST
         }
 
         class MemberFunction(
             override val location: Location, val base: Expression, val name: String, val parameters: List<Expression>
         ) : Expression() {
             override val summary get() = "$name (MemberFunctionCall)"
+            override val type by type()
+            override val lvalue = false
         }
 
         class Function(
             override val location: Location, val name: String, val parameters: List<Expression>
         ) : Expression() {
             override val summary get() = "$name (FunctionCall)"
+            override val type by type()
+            override val lvalue = false
         }
 
         class Index(
             override val location: Location, val parent: Expression, val child: Expression
         ) : Expression() {
             override val summary get() = "(IndexAccess)"
+            override val type by type()
+            override val lvalue = true
         }
 
         class Suffix(
             override val location: Location, val operand: Expression, val operator: SuffixOperator
         ) : Expression() {
             override val summary get() = "'$operator' (SuffixOperator)"
+            override val type by type()
+            override val lvalue = false
         }
 
         class Prefix(
             override val location: Location, val operand: Expression, val operator: PrefixOperator
         ) : Expression() {
             override val summary get() = "'$operator' (PrefixOperator)"
+            override val type by type()
+            override val lvalue = operator.lvalue
         }
 
         class Binary(
             override val location: Location, val lhs: Expression, val rhs: Expression, val operator: BinaryOperator
         ) : Expression() {
             override val summary get() = "'$operator' (BinaryOperator)"
+            override val type by type()
+            override val lvalue = operator.lvalue
         }
 
         class Ternary(
             override val location: Location, val condition: Expression,
-            val thenExpression: Expression, val elseExpression: Expression
+            val then: Expression, val else_: Expression
         ) : Expression() {
             override val summary get() = "(TernaryOperator)"
+            override val type by type()
+            override val lvalue = then.lvalue && else_.lvalue
         }
 
         class Identifier(
             override val location: Location, val name: String
         ) : Expression() {
             override val summary get() = "$name (Identifier)"
+            override val type by type()
+            override val lvalue = true
         }
 
         class This(
             override val location: Location
         ) : Expression() {
             override val summary get() = "(This)"
+            override val type by type()
+            override val lvalue = false
         }
 
         sealed class Constant : Expression() {
+            override val lvalue = false
+
             class Int(
                 override val location: Location, val value: kotlin.Int
             ) : Constant() {
                 override val summary get() = "$value (IntConstant)"
+                override val type = IntType
             }
 
             class String(
                 override val location: Location, val value: kotlin.String
             ) : Constant() {
                 override val summary get() = "'$value' (StringConstant)"
+                override val type = StringType
             }
 
             class True(
                 override val location: Location
             ) : Constant() {
                 override val summary get() = "True (BoolConstant)"
+                override val type = BoolType
             }
 
             class False(
                 override val location: Location
             ) : Constant() {
                 override val summary get() = "False (BoolConstant)"
+                override val type = BoolType
             }
 
             class Null(
                 override val location: Location
             ) : Constant() {
                 override val summary get() = "Null (NullConstant)"
+                override val type = NullType
             }
         }
     }
 
     sealed class Type : ASTNode() {
+        abstract val type: Type_
+
         class Simple(
             override val location: Location, val name: String
         ) : Type() {
             override val summary get() = "$name (SimpleType)"
+            override val type by type()
         }
 
         class Array(
             override val location: Location, val name: String, val dimension: Int
         ) : Type() {
             override val summary get() = "$name $dimension (ArrayType)"
+            override val type by type()
         }
     }
 }

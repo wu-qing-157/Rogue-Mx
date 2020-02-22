@@ -90,7 +90,9 @@ constructorDeclaration: type '(' (parameter (',' parameter)*)? ')' block;
 
 parameter: type Identifier;
 
-classDeclaration: Class Identifier '{' (variableDeclaration|functionDeclaration|constructorDeclaration)* '}';
+classMember: variableDeclaration|functionDeclaration|constructorDeclaration;
+
+classDeclaration: Class Identifier '{' classMember* '}';
 
 variableDeclaration: type variable (',' variable)* ';';
 

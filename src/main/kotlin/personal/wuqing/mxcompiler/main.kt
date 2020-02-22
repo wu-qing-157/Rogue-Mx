@@ -11,23 +11,28 @@ import org.apache.commons.cli.Options
 import org.apache.commons.cli.ParseException
 import personal.wuqing.mxcompiler.ast.ASTBuilder
 import personal.wuqing.mxcompiler.ast.ASTNode
+import personal.wuqing.mxcompiler.frontend.Semantic
 import personal.wuqing.mxcompiler.parser.LexerErrorListener
 import personal.wuqing.mxcompiler.parser.MxLangLexer
 import personal.wuqing.mxcompiler.parser.MxLangParser
 import personal.wuqing.mxcompiler.parser.ParserErrorListener
 import personal.wuqing.mxcompiler.utils.ANSI
+import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.FatalError
+import personal.wuqing.mxcompiler.utils.FileOutput
 import personal.wuqing.mxcompiler.utils.Info
+import personal.wuqing.mxcompiler.utils.LexerErrorRecorder
 import personal.wuqing.mxcompiler.utils.LogPrinter
+import personal.wuqing.mxcompiler.utils.OutputMethod
+import personal.wuqing.mxcompiler.utils.ParserErrorRecorder
+import personal.wuqing.mxcompiler.utils.SemanticErrorRecorder
+import personal.wuqing.mxcompiler.utils.StdoutOutput
 import personal.wuqing.mxcompiler.utils.Unsupported
 import personal.wuqing.mxcompiler.utils.Warning
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
-import java.io.OutputStream
 import kotlin.system.exitProcess
 
 const val PROJECT_NAME = "Mx-Compiler"
@@ -36,9 +41,8 @@ const val VERSION = "0.9"
 
 enum class Target(private val description: String, val ext: String) {
     ALL("full compilation", ""),
-    LEXER("token", ".tokens"),
-    TREE("parse tree", ".tree"),
     AST("AST", ".ast"),
+    SEMANTIC("SEMANTIC", "?"),
     IR("IR", ".ir");
 
     override fun toString() = description
@@ -58,163 +62,130 @@ val options = Options().apply {
         addOption(Option(null, "stdout", false, "Output the result to stdout"))
     })
     addOptionGroup(OptionGroup().apply {
-        addOption(Option(null, "lexer", false, "Generate Tokenized Source Only"))
-        addOption(Option(null, "tree", false, "Generate Parser Tree Only"))
         addOption(Option(null, "ir", false, "Generate IR Result Only"))
         addOption(Option(null, "ast", false, "Generate AST Only"))
+        addOption(Option(null, "semantic", false, "Run Semantic"))
     })
     addOptionGroup(OptionGroup().apply {
         addOption(Option(null, "from-ast", false, "Compile from Generated AST"))
     })
 }
 
-fun main(args: Array<String>) {
+fun main(arguments: Array<String>) {
     try {
-        val commandLine = DefaultParser().parse(options, args)
-        when {
-            commandLine.hasOption("help") -> {
-                HelpFormatter().printHelp(USAGE, options)
-                exitProcess(1)
-            }
-            commandLine.hasOption("version") -> {
-                LogPrinter.println("$PROJECT_NAME $VERSION")
-                exitProcess(1)
-            }
-            else -> {
-                val source = when {
-                    commandLine.hasOption("stdin") -> {
-                        if (commandLine.args.isNotEmpty())
-                            LogPrinter.println("$Warning input file ignored: ${commandLine.args.joinToString()}")
-                        "stdin"
-                    }
-                    commandLine.hasOption("input-name") -> {
-                        if (commandLine.args.isNotEmpty())
-                            LogPrinter.println("$Warning input file ignored: ${commandLine.args.joinToString()}")
-                        LogPrinter.print("$Info please input file name: ")
-                        readLine()!!
-                    }
-                    else -> commandLine.args.singleOrNull() ?: throw CompilationFailedException().also {
-                        LogPrinter.println(
-                            if (commandLine.args.isEmpty()) "$FatalError no input file"
-                            else "$Unsupported multiple input files"
-                        )
-                    }
+        DefaultParser().parse(options, arguments).apply {
+            when {
+                hasOption("help") -> {
+                    HelpFormatter().printHelp(USAGE, personal.wuqing.mxcompiler.options)
+                    exitProcess(1)
                 }
-                val input = when {
-                    commandLine.hasOption("stdin") -> System.`in`
-                    else -> FileInputStream(source)
+                hasOption("version") -> {
+                    LogPrinter.println("$PROJECT_NAME $VERSION")
+                    exitProcess(1)
                 }
-                val target = when {
-                    commandLine.hasOption("lexer") -> Target.LEXER
-                    commandLine.hasOption("ir") -> Target.IR
-                    commandLine.hasOption("tree") -> Target.TREE
-                    commandLine.hasOption("ast") -> Target.AST
-                    else -> Target.ALL
-                }
-                val output = when {
-                    commandLine.hasOption("stdout") -> System.out
-                    commandLine.hasOption("output") -> FileOutputStream(commandLine.getOptionValue("output"))
-                    else -> FileOutputStream(source.replace(Regex("\\..*?$"), "") + target.ext)
-                }
-                when {
-                    commandLine.hasOption("from-ast") -> when (target) {
-                        Target.LEXER, Target.TREE, Target.AST -> {
-                            LogPrinter.println("$FatalError Cannot process $target from AST")
-                            throw CompilationFailedException()
+                else -> {
+                    val source = when {
+                        hasOption("stdin") -> {
+                            if (args.isNotEmpty())
+                                LogPrinter.println("$Warning input file ignored: ${args.joinToString()}")
+                            "stdin"
                         }
-                        else ->
-                            fromAST(ObjectInputStream(input).use {
-                                it.readObject() as ASTNode.Program
-                            }, output, source, target)
+                        hasOption("input-name") -> {
+                            if (args.isNotEmpty())
+                                LogPrinter.println("$Warning input file ignored: ${args.joinToString()}")
+                            LogPrinter.print("$Info please input file name: ")
+                            readLine()!!
+                        }
+                        else -> args.singleOrNull() ?: throw CompilationFailedException().also {
+                            LogPrinter.println(
+                                if (args.isEmpty()) "$FatalError no input file"
+                                else "$Unsupported multiple input files"
+                            )
+                        }
                     }
-                    else -> fromSource(input, output, source, target)
+                    val input = if (hasOption("stdin")) System.`in`
+                    else FileInputStream(source)
+                    val target = when {
+                        hasOption("ir") -> Target.IR
+                        hasOption("ast") -> Target.AST
+                        hasOption("semantic") -> Target.SEMANTIC
+                        else -> Target.ALL
+                    }
+                    val output = when {
+                        hasOption("stdout") || hasOption("semantic") -> StdoutOutput
+                        hasOption("output") -> FileOutput(getOptionValue("output"))
+                        else -> FileOutput(source.replace(Regex("\\..*?$"), "") + target.ext)
+                    }
+                    when {
+                        hasOption("from-ast") -> when (target) {
+                            Target.AST -> {
+                                LogPrinter.println("$FatalError Cannot process $target from AST")
+                                throw CompilationFailedException()
+                            }
+                            else ->
+                                fromAST(ObjectInputStream(input).use {
+                                    it.readObject() as ASTNode.Program
+                                }, output, source, target)
+                        }
+                        else -> fromSource(input, output, source, target)
+                    }
                 }
             }
         }
     } catch (e: ParseException) {
-        LogPrinter.println("$FatalError ${e.message}")
+        LogPrinter.println("$FatalError $e")
         HelpFormatter().printHelp(USAGE, options)
         exitProcess(1)
     } catch (e: IOException) {
-        LogPrinter.println("$FatalError ${e.message}")
+        LogPrinter.println("$FatalError $e")
         exitProcess(1)
     } catch (e: CompilationFailedException) {
         exitProcess(1)
     }
 }
 
-fun fromSource(input: InputStream, output: OutputStream, source: String, target: Target) {
+fun fromSource(input: InputStream, output: OutputMethod, source: String, target: Target) {
     try {
         val lexer = MxLangLexer(CharStreams.fromStream(input))
         lexer.removeErrorListener(ConsoleErrorListener.INSTANCE)
         val lexerListener = LexerErrorListener(source)
         lexer.addErrorListener(lexerListener)
-        if (target == Target.LEXER) {
-            val result = lexer.allTokens.joinToString(" ") { it.text }.toByteArray()
-            lexerListener.report()
-            output(result, output)
-            return
-        }
 
         val parser = MxLangParser(CommonTokenStream(lexer))
         parser.removeErrorListener(ConsoleErrorListener.INSTANCE)
         val parserListener = ParserErrorListener(source)
         parser.addErrorListener(parserListener)
 
-        val tree = parser.program()
-        lexerListener.report()
-        parserListener.report()
-        if (target == Target.TREE) {
-            val result = tree.toStringTree(parser).toByteArray()
-            output(result, output)
-            return
+        val root = ASTBuilder(source).visit(parser.program()) as ASTNode.Program
+
+        Semantic.run(root)
+
+        LexerErrorRecorder.report()
+        ParserErrorRecorder.report()
+        ASTErrorRecorder.report()
+        SemanticErrorRecorder.report()
+
+        when (target) {
+            Target.AST -> return Unit.also { output.output(root) }
+            Target.SEMANTIC -> return Unit.also { LogPrinter.println("$Info semantic passed successfully") }
+            else -> fromAST(root, output, source, target)
         }
-
-        val builder = ASTBuilder(source)
-        val root = builder.visit(tree) as ASTNode.Program
-
-        if (target == Target.AST) {
-            output(root, output)
-            return
-        }
-
-        fromAST(root, output, source, target)
     } catch (e: IOException) {
-        LogPrinter.println("$FatalError ${e.message}")
+        LogPrinter.println("$FatalError $e")
         throw CompilationFailedException()
-    } catch (e: MxLangLexerException) {
+    } catch (e: LexerErrorRecorder.Exception) {
         throw CompilationFailedException()
-    } catch (e: MxLangParserException) {
+    } catch (e: ParserErrorRecorder.Exception) {
         throw CompilationFailedException()
-    } catch (e: OutputFailedException) {
+    } catch (e: ASTErrorRecorder.Exception) {
+        throw CompilationFailedException()
+    } catch (e: SemanticErrorRecorder.Exception) {
         throw CompilationFailedException()
     }
 }
 
-fun fromAST(root: ASTNode.Program, output: OutputStream, source: String, target: Target) {
-    //initClasses(root)
-    //initFunctions(root)
-    TODO("after init definition")
-}
-
-fun output(bytes: ByteArray, output: OutputStream) {
-    try {
-        output.use { it.write(bytes) }
-    } catch (e: IOException) {
-        LogPrinter.println("$FatalError unable to output: ${e.message}")
-        throw OutputFailedException()
-    }
-}
-
-fun output(target: Any, output: OutputStream) {
-    try {
-        ObjectOutputStream(output).use { it.writeObject(target) }
-    } catch (e: IOException) {
-        LogPrinter.println("$FatalError unable to output: ${e.message}")
-        throw OutputFailedException()
-    }
+fun fromAST(root: ASTNode.Program, output: OutputMethod, source: String, target: Target) {
+    TODO("after AST $root $output $source $target")
 }
 
 class CompilationFailedException : Exception()
-
-class OutputFailedException : Exception()

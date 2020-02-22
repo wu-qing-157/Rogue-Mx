@@ -5,7 +5,7 @@ import java.io.FileOutputStream
 import java.io.ObjectInputStream
 
 const val ast = "test/104.ast"
-const val description = "test/104.test"
+const val description = "test/104.ast.test"
 
 fun main() {
     val input = FileInputStream(ast)

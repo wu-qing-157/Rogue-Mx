@@ -21,8 +21,11 @@ int det(A a, A b) {
     return a.a * b.b - a.b * b.a;
 }
 
+void println(string s) {}
+void println(int s) {}
+
 void printX() {
-    println(x);
+    println("x");
 }
 
 string x, y = "123";
@@ -37,9 +40,10 @@ class B {
 void statement() {
     for (int i = 1; i <= 10; i++) c++;
     for (int i = 1, j = 2; i <= 10; ) i += j;
-    int out; for (i = 1; i <= 10; i++) c++;
-    for (; false; );
     int i = 1, j = 2;
+    int outer; for (i = 1; i <= 10; i++) c++;
+    for (; false; ) int outer;
+    for (; false; );
     if (i == 0) c++;
     if (i == 0) c++; else d++;
     if (i == 0) c++; else if (j == 0) d++; else e++;
@@ -72,7 +76,7 @@ int[][][] expression() {
     ret[7] = c--;
     ret[8] = +c;
     ret[9] = -c;
-    ret[10] = !s ? c : d;
+    ret[10] = !false ? c : d;
     ret[11] = ~c;
     ret[12] += c + d;
     ret[13] -= c - d;
@@ -91,7 +95,8 @@ int[][][] expression() {
     ret[26] &= c & d;
     ret[27] |= c | d;
     ret[28] ^= c ^ d;
-    ret[29] = s && t ? c : d;
+    bool s = true, t = false;
+    ret[29] = s && false ? c : d;
     ret[30] = s || t ? c : d;
     ret[31] = a.itself().c.sum();
     return result;

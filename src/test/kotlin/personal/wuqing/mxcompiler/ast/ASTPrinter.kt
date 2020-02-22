@@ -11,10 +11,6 @@ object ASTPrinter {
                 write(indent)
                 summary(it, depth + 1)
             }
-            is ASTNode.Parameter -> {
-                write(indent + "type: ")
-                summary(root.type, depth + 1)
-            }
             is ASTNode.Declaration.Function -> {
                 write(indent + "return: ")
                 summary(root.returnType, depth + 1)
@@ -43,19 +39,9 @@ object ASTPrinter {
                     summary(it, depth + 1)
                 }
             }
-            is ASTNode.Declaration.Class -> {
-                root.variables.forEach {
-                    write(indent)
-                    summary(it, depth + 1)
-                }
-                root.functions.forEach {
-                    write(indent)
-                    summary(it, depth + 1)
-                }
-                root.constructors.forEach {
-                    write(indent)
-                    summary(it, depth + 1)
-                }
+            is ASTNode.Declaration.Class -> root.declarations.forEach {
+                write(indent)
+                summary(it, depth + 1)
             }
             is ASTNode.Statement.Empty -> {
             }
@@ -75,8 +61,8 @@ object ASTPrinter {
                 write(indent + "cond: ")
                 summary(root.condition, depth + 1)
                 write(indent + "then: ")
-                summary(root.thenStatement, depth + 1)
-                root.elseStatement?.let {
+                summary(root.then, depth + 1)
+                root.else_?.let {
                     write(indent + "else: ")
                     summary(it, depth + 1)
                 }
@@ -88,7 +74,7 @@ object ASTPrinter {
                 summary(root.statement, depth + 1)
             }
             is ASTNode.Statement.For -> {
-                root.initVariableDeclaration.forEach {
+                root.initVariable.forEach {
                     write(indent + "init: ")
                     summary(it, depth + 1)
                 }
@@ -167,9 +153,9 @@ object ASTPrinter {
                 write(indent + "cond: ")
                 summary(root.condition, depth + 1)
                 write(indent + "then: ")
-                summary(root.thenExpression, depth + 1)
+                summary(root.then, depth + 1)
                 write(indent + "else: ")
-                summary(root.elseExpression, depth + 1)
+                summary(root.else_, depth + 1)
             }
             is ASTNode.Expression.Identifier, is ASTNode.Expression.This, is ASTNode.Expression.Constant, is ASTNode.Type -> {
             }

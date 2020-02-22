@@ -1,14 +1,12 @@
 package personal.wuqing.mxcompiler.ast
 
-import personal.wuqing.mxcompiler.ASTException
-import personal.wuqing.mxcompiler.astErrorInfo
+import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.frontend.BinaryOperator
 import personal.wuqing.mxcompiler.frontend.PrefixOperator
 import personal.wuqing.mxcompiler.frontend.SuffixOperator
 import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
 import personal.wuqing.mxcompiler.utils.Location
-import personal.wuqing.mxcompiler.utils.LogPrinter
 
 class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
     override fun visitProgram(ctx: MxLangParser.ProgramContext?) =
@@ -29,8 +27,8 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             ctx.classDeclaration() != null -> visit(ctx.classDeclaration())!!
             ctx.variableDeclaration() != null -> visit(ctx.variableDeclaration())!!
             else -> {
-                LogPrinter.println(astErrorInfo(Location(filename, ctx), "Unknown Section"))
-                throw ASTException()
+                ASTErrorRecorder.error(Location(filename, ctx), "Unknown Section")
+                throw ASTErrorRecorder.Exception()
             }
         }
 
@@ -46,10 +44,11 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             name = ctx.Identifier().text,
             returnType = visit(ctx.type()) as ASTNode.Type,
             parameterList = ctx.parameter().map {
-                ASTNode.Parameter(
+                ASTNode.Declaration.Variable(
                     location = Location(filename, it),
                     type = visit(it.type()) as ASTNode.Type,
-                    name = it.Identifier().text
+                    name = it.Identifier().text,
+                    init = null
                 )
             },
             body = visit(ctx.block()) as ASTNode.Statement.Block
@@ -60,10 +59,11 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             location = Location(filename, ctx!!),
             type = visit(ctx.type()) as ASTNode.Type,
             parameterList = ctx.parameter().map {
-                ASTNode.Parameter(
+                ASTNode.Declaration.Variable(
                     location = Location(filename, it),
                     type = visit(it.type()) as ASTNode.Type,
-                    name = it.Identifier().text
+                    name = it.Identifier().text,
+                    init = null
                 )
             },
             body = visit(ctx.block()) as ASTNode.Statement.Block
@@ -73,9 +73,13 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ASTNode.Declaration.Class(
             location = Location(filename, ctx!!),
             name = ctx.Identifier().text,
-            variables = ctx.variableDeclaration().map { (visit(it) as ASTNode.Declaration.VariableList).list }.flatten(),
-            functions = ctx.functionDeclaration().map { visit(it) as ASTNode.Declaration.Function },
-            constructors = ctx.constructorDeclaration().map { visit(it) as ASTNode.Declaration.Constructor }
+            declarations = ctx.classMember().map {
+                when (val child = visit(it)) {
+                    is ASTNode.Declaration.Function, is ASTNode.Declaration.Constructor -> listOf(child)
+                    is ASTNode.Declaration.VariableList -> child.list
+                    else -> listOf()
+                }
+            }.flatten().map { it as ASTNode.Declaration }
         )
 
     override fun visitVariableDeclaration(ctx: MxLangParser.VariableDeclarationContext?) =
@@ -130,16 +134,16 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ASTNode.Statement.If(
             location = Location(filename, ctx!!),
             condition = visit(ctx.expression()) as ASTNode.Expression,
-            thenStatement = visit(ctx.statement()) as ASTNode.Statement,
-            elseStatement = null
+            then = visit(ctx.statement()) as ASTNode.Statement,
+            else_ = null
         )
 
     override fun visitIfElseStatement(ctx: MxLangParser.IfElseStatementContext?) =
         ASTNode.Statement.If(
             location = Location(filename, ctx!!),
             condition = visit(ctx.expression()) as ASTNode.Expression,
-            thenStatement = visit(ctx.thenStatement) as ASTNode.Statement,
-            elseStatement = visit(ctx.elseStatement) as ASTNode.Statement
+            then = visit(ctx.thenStatement) as ASTNode.Statement,
+            else_ = visit(ctx.elseStatement) as ASTNode.Statement
         )
 
     override fun visitWhileStatement(ctx: MxLangParser.WhileStatementContext?) =
@@ -152,7 +156,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
     override fun visitForStatement(ctx: MxLangParser.ForStatementContext?) =
         ASTNode.Statement.For(
             location = Location(filename, ctx!!),
-            initVariableDeclaration = ctx.initVariableDeclaration
+            initVariable = ctx.initVariableDeclaration
                 ?.let { (visit(it) as ASTNode.Declaration.VariableList).list } ?: listOf(),
             initExpression = ctx.initExpression?.let { visit(it) as ASTNode.Expression },
             condition = visit(ctx.condition) as ASTNode.Expression,
@@ -222,8 +226,8 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                 "++" -> SuffixOperator.INC
                 "--" -> SuffixOperator.DEC
                 else -> {
-                    LogPrinter.println(astErrorInfo(Location(filename, ctx), "unknown suffix unary operator"))
-                    throw ASTException()
+                    ASTErrorRecorder.error(Location(filename, ctx), "unknown suffix unary operator")
+                    throw ASTErrorRecorder.Exception()
                 }
             }
         )
@@ -235,13 +239,13 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             operator = when (ctx.op.text) {
                 "++" -> PrefixOperator.INC
                 "--" -> PrefixOperator.DEC
-                "+" -> PrefixOperator.POSITIVE
-                "-" -> PrefixOperator.NEGATIVE
-                "!" -> PrefixOperator.LOGIC_NEGATION
-                "~" -> PrefixOperator.ARITHMETIC_NEGATION
+                "+" -> PrefixOperator.POS
+                "-" -> PrefixOperator.NEG
+                "!" -> PrefixOperator.L_NEG
+                "~" -> PrefixOperator.INV
                 else -> {
-                    LogPrinter.println(astErrorInfo(Location(filename, ctx), "unknown prefix unary operator"))
-                    throw ASTException()
+                    ASTErrorRecorder.error(Location(filename, ctx), "unknown prefix unary operator")
+                    throw ASTErrorRecorder.Exception()
                 }
             }
         )
@@ -253,39 +257,39 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             rhs = visit(ctx.expression(1)) as ASTNode.Expression,
             operator = when (ctx.op.text) {
                 "*" -> BinaryOperator.TIMES
-                "/" -> BinaryOperator.DIVIDE
+                "/" -> BinaryOperator.DIV
                 "%" -> BinaryOperator.REM
                 "+" -> BinaryOperator.PLUS
                 "-" -> BinaryOperator.MINUS
-                "<<" -> BinaryOperator.SHIFT_LEFT
-                ">>" -> BinaryOperator.ARITHMETIC_SHIFT_RIGHT
-                ">>>" -> BinaryOperator.LOGIC_SHIFT_RIGHT
+                "<<" -> BinaryOperator.SHL
+                ">>" -> BinaryOperator.SHR
+                ">>>" -> BinaryOperator.U_SHR
                 "<" -> BinaryOperator.LESS
                 ">" -> BinaryOperator.GREATER
-                "<=" -> BinaryOperator.LESS_EQUAL
-                ">=" -> BinaryOperator.GREATER_EQUAL
+                "<=" -> BinaryOperator.LEQ
+                ">=" -> BinaryOperator.GEQ
                 "==" -> BinaryOperator.EQUAL
-                "!=" -> BinaryOperator.NOT_EQUAL
-                "&" -> BinaryOperator.ARITHMETIC_AND
-                "^" -> BinaryOperator.ARITHMETIC_XOR
-                "|" -> BinaryOperator.ARITHMETIC_OR
-                "&&" -> BinaryOperator.LOGIC_AND
-                "||" -> BinaryOperator.LOGIC_OR
+                "!=" -> BinaryOperator.UNEQUAL
+                "&" -> BinaryOperator.A_AND
+                "^" -> BinaryOperator.A_XOR
+                "|" -> BinaryOperator.A_OR
+                "&&" -> BinaryOperator.L_AND
+                "||" -> BinaryOperator.L_OR
                 "=" -> BinaryOperator.ASSIGN
-                "+=" -> BinaryOperator.PLUS_ASSIGN
-                "-=" -> BinaryOperator.MINUS_ASSIGN
-                "*=" -> BinaryOperator.TIMES_ASSIGN
-                "/=" -> BinaryOperator.DIVIDE_ASSIGN
-                "%=" -> BinaryOperator.REM_ASSIGN
-                "&=" -> BinaryOperator.AND_ASSIGN
-                "^=" -> BinaryOperator.XOR_ASSIGN
-                "|=" -> BinaryOperator.OR_ASSIGN
-                "<<=" -> BinaryOperator.SHIFT_LEFT_ASSIGN
-                ">>=" -> BinaryOperator.ARITHMETIC_SHIFT_RIGHT_ASSIGN
-                ">>>=" -> BinaryOperator.LOGIC_SHIFT_RIGHT_ASSIGN
+                "+=" -> BinaryOperator.PLUS_I
+                "-=" -> BinaryOperator.MINUS_I
+                "*=" -> BinaryOperator.TIMES_I
+                "/=" -> BinaryOperator.DIV_I
+                "%=" -> BinaryOperator.REM_I
+                "&=" -> BinaryOperator.AND_I
+                "^=" -> BinaryOperator.XOR_I
+                "|=" -> BinaryOperator.OR_I
+                "<<=" -> BinaryOperator.SHL_I
+                ">>=" -> BinaryOperator.SHR_I
+                ">>>=" -> BinaryOperator.U_SHR_I
                 else -> {
-                    LogPrinter.println(astErrorInfo(Location(filename, ctx), "unknown binary operator"))
-                    throw ASTException()
+                    ASTErrorRecorder.error(Location(filename, ctx), "unknown binary operator")
+                    throw ASTErrorRecorder.Exception()
                 }
             }
         )
@@ -294,8 +298,8 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ASTNode.Expression.Ternary(
             location = Location(filename, ctx!!),
             condition = visit(ctx.expression(0)) as ASTNode.Expression,
-            thenExpression = visit(ctx.expression(1)) as ASTNode.Expression,
-            elseExpression = visit(ctx.expression(2)) as ASTNode.Expression
+            then = visit(ctx.expression(1)) as ASTNode.Expression,
+            else_ = visit(ctx.expression(2)) as ASTNode.Expression
         )
 
     override fun visitThisExpression(ctx: MxLangParser.ThisExpressionContext?) =
@@ -333,8 +337,8 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             ctx.True() != null -> ASTNode.Expression.Constant.True(Location(filename, ctx))
             ctx.False() != null -> ASTNode.Expression.Constant.False(Location(filename, ctx))
             else -> {
-                LogPrinter.println(astErrorInfo(Location(filename, ctx), "unknown constant expression"))
-                throw ASTException()
+                ASTErrorRecorder.error(Location(filename, ctx), "unknown constant expression")
+                throw ASTErrorRecorder.Exception()
             }
         }
 
@@ -343,8 +347,8 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             ctx!!.simpleType() != null -> visitSimpleType(ctx.simpleType())
             ctx.arrayType() != null -> visitArrayType(ctx.arrayType())
             else -> {
-                LogPrinter.println(astErrorInfo(Location(filename, ctx), "unknown type"))
-                throw ASTException()
+                ASTErrorRecorder.error(Location(filename, ctx), "unknown type")
+                throw ASTErrorRecorder.Exception()
             }
         }
 
