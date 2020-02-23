@@ -1,11 +1,11 @@
 package personal.wuqing.mxcompiler.ast
 
-import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.frontend.BinaryOperator
 import personal.wuqing.mxcompiler.frontend.PrefixOperator
 import personal.wuqing.mxcompiler.frontend.SuffixOperator
 import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
+import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
 
 class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
@@ -35,14 +35,14 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
     override fun visitBlock(ctx: MxLangParser.BlockContext?) =
         ASTNode.Statement.Block(
             location = Location(filename, ctx!!),
-            statements = ctx.statement().map { visit(it) as ASTNode.Statement }
+            statements = ctx.statement()?.map { visit(it) as ASTNode.Statement } ?: listOf()
         )
 
     override fun visitFunctionDeclaration(ctx: MxLangParser.FunctionDeclarationContext?) =
         ASTNode.Declaration.Function(
             location = Location(filename, ctx!!),
             name = ctx.Identifier().text,
-            returnType = visit(ctx.type()) as ASTNode.Type,
+            result = visit(ctx.type()) as ASTNode.Type,
             parameterList = ctx.parameter().map {
                 ASTNode.Declaration.Variable(
                     location = Location(filename, it),
@@ -147,19 +147,21 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         )
 
     override fun visitWhileStatement(ctx: MxLangParser.WhileStatementContext?) =
-        ASTNode.Statement.While(
+        ASTNode.Statement.Loop.While(
             location = Location(filename, ctx!!),
             condition = visit(ctx.expression()) as ASTNode.Expression,
             statement = visit(ctx.statement()) as ASTNode.Statement
         )
 
     override fun visitForStatement(ctx: MxLangParser.ForStatementContext?) =
-        ASTNode.Statement.For(
+        ASTNode.Statement.Loop.For(
             location = Location(filename, ctx!!),
             initVariable = ctx.initVariableDeclaration
                 ?.let { (visit(it) as ASTNode.Declaration.VariableList).list } ?: listOf(),
             initExpression = ctx.initExpression?.let { visit(it) as ASTNode.Expression },
-            condition = visit(ctx.condition) as ASTNode.Expression,
+            condition = ctx.condition?.let { visit(it) as ASTNode.Expression } ?: ASTNode.Expression.Constant.True(
+                Location(filename, ctx)
+            ),
             step = ctx.step?.let { visit(it) as ASTNode.Expression },
             statement = visit(ctx.statement()) as ASTNode.Statement
         )
@@ -179,8 +181,12 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ASTNode.Expression.NewArray(
             location = Location(filename, ctx!!),
             baseType = visit(ctx.simpleType()) as ASTNode.Type,
-            dimension = ctx.indexBrack().size + ctx.brack().size,
-            length = ctx.indexBrack().map { visit(it.expression()) as ASTNode.Expression }
+            dimension = ctx.brack().size,
+            length = ctx.brack().also {
+                it[0].expression() ?: ASTErrorRecorder.error(
+                    Location(filename, ctx), "length of first dimension must be specified"
+                )
+            }.map { it.expression()?.run { visit(this) as ASTNode.Expression } }
         )
 
     override fun visitExpressionList(ctx: MxLangParser.ExpressionListContext?) =

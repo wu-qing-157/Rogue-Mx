@@ -6,14 +6,20 @@ The project for Compiler Design and Implementation at SJTU
 
 Description|Status
 ---|---
-ANTLR4|Completed partly inconsistent with predefined Mx* grammar
+ANTLR4|Completed
 AST|Completed
-Type Analysis|Completed, unsure with correctness
-Semantic|No further progression than type analysis
+Semantic|Completed, __Test OK__
 ...|Not planned
 Commandline Option|Currently with _commons-cli_, to be rewritten or removed
 
 ## Test Cases
+
+Test Suite|Status
+---|---
+Semantic|__Test OK__
+Codegen|Not planned yet
+
+#### Custom Test Cases
 
 File Name|Test Description|Status
 ---|---|---
@@ -42,3 +48,4 @@ Test cases starting with "9" is not shared through _git_
 + 2020.02.05 Reconstruct part of ASTNode
 + 2020.02.22 Reconstruct structure of ASTNode
 + 2020.02.23 Add type analysis
++ 2020.02.23 Pass semantic test (orz)

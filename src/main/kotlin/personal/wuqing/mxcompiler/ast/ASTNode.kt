@@ -8,6 +8,7 @@ import personal.wuqing.mxcompiler.frontend.NullType
 import personal.wuqing.mxcompiler.frontend.PrefixOperator
 import personal.wuqing.mxcompiler.frontend.StringType
 import personal.wuqing.mxcompiler.frontend.SuffixOperator
+import personal.wuqing.mxcompiler.frontend.VoidType
 import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
 import java.io.Serializable
@@ -25,18 +26,20 @@ sealed class ASTNode : Serializable {
     }
 
     sealed class Declaration : ASTNode() {
-        class Function(
+        open class Function(
             override val location: Location, val name: String,
-            val returnType: Type, val parameterList: List<Variable>, val body: Statement.Block
+            val result: Type, val parameterList: List<Variable>, val body: Statement.Block
         ) : Declaration() {
             override val summary get() = "$name (Function)"
+            open val returnType by lazy { result.type }
         }
 
         class Constructor(
-            override val location: Location,
-            val type: Type, val parameterList: List<Variable>, val body: Statement.Block
-        ) : Declaration() {
-            override val summary get() = "$type (Constructor)"
+            location: Location,
+            type: Type, parameterList: List<Variable>, body: Statement.Block
+        ) : Function(location, "<constructor>", type, parameterList, body) {
+            override val summary get() = "(Constructor)"
+            override val returnType = VoidType
         }
 
         class VariableList(
@@ -92,18 +95,20 @@ sealed class ASTNode : Serializable {
             override val summary get() = "(If)"
         }
 
-        class While(
-            override val location: Location, val condition: ASTNode.Expression, val statement: Statement
-        ) : Statement() {
-            override val summary get() = "(While)"
-        }
+        sealed class Loop : Statement() {
+            class While(
+                override val location: Location, val condition: ASTNode.Expression, val statement: Statement
+            ) : Loop() {
+                override val summary get() = "(While)"
+            }
 
-        class For(
-            override val location: Location,
-            val initVariable: List<Declaration.Variable>, val initExpression: ASTNode.Expression?,
-            val condition: ASTNode.Expression, val step: ASTNode.Expression?, val statement: Statement
-        ) : Statement() {
-            override val summary get() = "(For)"
+            class For(
+                override val location: Location,
+                val initVariable: List<Declaration.Variable>, val initExpression: ASTNode.Expression?,
+                val condition: ASTNode.Expression, val step: ASTNode.Expression?, val statement: Statement
+            ) : Loop() {
+                override val summary get() = "(For)"
+            }
         }
 
         class Continue(
@@ -138,7 +143,7 @@ sealed class ASTNode : Serializable {
         }
 
         class NewArray(
-            override val location: Location, val baseType: Type, val dimension: Int, val length: List<Expression>
+            override val location: Location, val baseType: Type, val dimension: Int, val length: List<Expression?>
         ) : Expression() {
             override val summary get() = "$dimension-dimension (New Array)"
             override val type by type()

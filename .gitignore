@@ -2,6 +2,7 @@
 
 /.gradle/
 /build/
+/temp/
 
 /test/9*
 /test/*.tokens

@@ -13,7 +13,7 @@ object ASTPrinter {
             }
             is ASTNode.Declaration.Function -> {
                 write(indent + "return: ")
-                summary(root.returnType, depth + 1)
+                summary(root.result, depth + 1)
                 root.parameterList.forEach {
                     write(indent + "p: ")
                     summary(it, depth + 1)
@@ -67,13 +67,13 @@ object ASTPrinter {
                     summary(it, depth + 1)
                 }
             }
-            is ASTNode.Statement.While -> {
+            is ASTNode.Statement.Loop.While -> {
                 write(indent + "cond: ")
                 summary(root.condition, depth + 1)
                 write(indent + "loop: ")
                 summary(root.statement, depth + 1)
             }
-            is ASTNode.Statement.For -> {
+            is ASTNode.Statement.Loop.For -> {
                 root.initVariable.forEach {
                     write(indent + "init: ")
                     summary(it, depth + 1)

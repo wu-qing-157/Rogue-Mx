@@ -27,23 +27,22 @@ New: 'new';
 // keyword: Bool|Int|String|Null|True|False|Void|If|Else|For|While|Return|Break|Continue;
 
 IntConstant: [0-9]+;
-Identifier: [a-zA-Z_\u0080-\u{10ffff}][0-9a-zA-Z_\u0080-\u{10ffff}]*;
+Identifier: [a-zA-Z\u0080-\u{10ffff}][0-9a-zA-Z_\u0080-\u{10ffff}]*;
 
 constant: IntConstant|StringConstant|Null|True|False;
 
 simpleType: Bool|Int|String|Void|Identifier;
 
-brack: '[]';
-indexBrack: '[' expression ']';
+brack: '[' expression? ']';
 
 arrayType: simpleType brack+;
 
 type: simpleType|arrayType;
 
 expression: '('expression')' #Parentheses
-    | New simpleType indexBrack+ brack* #NewArray
     | New simpleType brack+ #NewArray
     | New simpleType '(' expressionList ')' #NewObject
+    | New simpleType #NewObject
     | expression '.' Identifier '(' expressionList ')' #MemberFunctionCall
     | expression '.' Identifier #MemberAccess
     | Identifier '(' expressionList ')' #FunctionCall
@@ -79,7 +78,7 @@ statement: ';' #EmptyStatement
     | If '(' expression ')' statement #IfStatement
     | If '(' expression ')' thenStatement=statement Else elseStatement=statement #IfElseStatement
     | While '(' expression ')' statement #WhileStatement
-    | For '(' (initExpression=expression? ';'|initVariableDeclaration=variableDeclaration) condition=expression ';'
+    | For '(' (initExpression=expression? ';'|initVariableDeclaration=variableDeclaration) condition=expression? ';'
         step=expression? ')' statement #ForStatement;
 
 block: '{' statement* '}';
@@ -92,7 +91,7 @@ parameter: type Identifier;
 
 classMember: variableDeclaration|functionDeclaration|constructorDeclaration;
 
-classDeclaration: Class Identifier '{' classMember* '}';
+classDeclaration: Class Identifier '{' classMember* '}' ';';
 
 variableDeclaration: type variable (',' variable)* ';';
 
