@@ -1,21 +1,23 @@
 package personal.wuqing.mxcompiler.utils
 
-object FatalError {
-    override fun toString() = ANSI.red("fatal error:")
-}
+sealed class ErrorType {
+    object Fatal : ErrorType() {
+        override fun toString() = ANSI.red("fatal error:")
+    }
 
-object Unsupported {
-    override fun toString() = ANSI.red("unsupported:")
-}
+    object Unsupported : ErrorType() {
+        override fun toString() = ANSI.red("unsupported:")
+    }
 
-object Error {
-    override fun toString() = ANSI.red("error:")
-}
+    object Error : ErrorType() {
+        override fun toString() = ANSI.red("error:")
+    }
 
-object Warning {
-    override fun toString() = ANSI.yellow("warning:")
-}
+    object Warning : ErrorType() {
+        override fun toString() = ANSI.yellow("warning:")
+    }
 
-object Info {
-    override fun toString() = ANSI.bold("info:")
+    object Info : ErrorType() {
+        override fun toString() = ANSI.bold("info:")
+    }
 }

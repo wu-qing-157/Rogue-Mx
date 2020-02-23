@@ -1,10 +1,11 @@
-package personal.wuqing.mxcompiler.frontend
+package personal.wuqing.mxcompiler.grammar
 
 import personal.wuqing.mxcompiler.ast.ASTNode
 import personal.wuqing.mxcompiler.utils.Location
 import personal.wuqing.mxcompiler.utils.SemanticErrorRecorder
+import java.io.Serializable
 
-open class Function(val result: Type, val parameter: List<Type>, val body: ASTNode.Statement.Block?) {
+open class Function(val result: Type, val parameter: List<Type>, val body: ASTNode.Statement.Block?) : Serializable {
     fun match(location: Location, call: List<Type>) =
         if (UnknownType in call || UnknownType in parameter) UnknownType
         else if (call.size != parameter.size || (call zip parameter).any { (c, p) -> c != NullType && c != p })
@@ -33,16 +34,6 @@ sealed class BuiltinFunction(result: Type, parameter: List<Type>) : Function(res
     class DefaultConstructor(type: Type) : BuiltinFunction(type, listOf())
 
     companion object {
-        fun initBuiltinFunction() {
-            mapOf(
-                "print" to Print,
-                "println" to Println,
-                "printInt" to PrintInt,
-                "printlnInt" to PrintlnInt,
-                "getString" to GetString,
-                "getInt" to GetInt,
-                "toString" to ToString
-            ).forEach { (def, func) -> FunctionTable[def] = func }
-        }
+
     }
 }

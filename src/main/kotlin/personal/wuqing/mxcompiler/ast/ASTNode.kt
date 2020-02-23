@@ -1,18 +1,17 @@
 package personal.wuqing.mxcompiler.ast
 
-import personal.wuqing.mxcompiler.frontend.BinaryOperator
-import personal.wuqing.mxcompiler.frontend.BoolType
-import personal.wuqing.mxcompiler.frontend.ClassType
-import personal.wuqing.mxcompiler.frontend.IntType
-import personal.wuqing.mxcompiler.frontend.NullType
-import personal.wuqing.mxcompiler.frontend.PrefixOperator
-import personal.wuqing.mxcompiler.frontend.StringType
-import personal.wuqing.mxcompiler.frontend.SuffixOperator
-import personal.wuqing.mxcompiler.frontend.VoidType
-import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
+import personal.wuqing.mxcompiler.grammar.BinaryOperator
+import personal.wuqing.mxcompiler.grammar.BoolType
+import personal.wuqing.mxcompiler.grammar.ClassType
+import personal.wuqing.mxcompiler.grammar.IntType
+import personal.wuqing.mxcompiler.grammar.NullType
+import personal.wuqing.mxcompiler.grammar.PrefixOperator
+import personal.wuqing.mxcompiler.grammar.StringType
+import personal.wuqing.mxcompiler.grammar.SuffixOperator
+import personal.wuqing.mxcompiler.grammar.VoidType
 import personal.wuqing.mxcompiler.utils.Location
 import java.io.Serializable
-import personal.wuqing.mxcompiler.frontend.Type as Type_
+import personal.wuqing.mxcompiler.grammar.Type as Type_
 
 sealed class ASTNode : Serializable {
     abstract val location: Location
@@ -45,7 +44,7 @@ sealed class ASTNode : Serializable {
         class VariableList(
             override val location: Location, val list: List<Variable>
         ) : ASTNode() {
-            override val summary: String get() = throw ASTErrorRecorder.Exception() // should not be on AST
+            override val summary: String get() = throw Exception("unexpected AST node") // should not be on AST
         }
 
         class Variable(
@@ -161,7 +160,7 @@ sealed class ASTNode : Serializable {
         class ExpressionList(
             override val location: Location, val list: List<Expression>
         ) : ASTNode() {
-            override val summary get() = throw ASTErrorRecorder.Exception() // should not be on AST
+            override val summary get() = throw Exception("unexpected AST node") // should not be on AST
         }
 
         class MemberFunction(

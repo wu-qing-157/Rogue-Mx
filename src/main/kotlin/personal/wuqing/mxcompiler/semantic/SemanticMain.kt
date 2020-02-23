@@ -1,29 +1,29 @@
-package personal.wuqing.mxcompiler.frontend
+package personal.wuqing.mxcompiler.semantic
 
 import personal.wuqing.mxcompiler.ast.ASTNode
-import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
+import personal.wuqing.mxcompiler.grammar.BoolType
+import personal.wuqing.mxcompiler.grammar.BuiltinFunction
+import personal.wuqing.mxcompiler.grammar.ClassType
+import personal.wuqing.mxcompiler.grammar.Function
+import personal.wuqing.mxcompiler.grammar.IntType
+import personal.wuqing.mxcompiler.grammar.NullType
+import personal.wuqing.mxcompiler.grammar.UnknownType
+import personal.wuqing.mxcompiler.grammar.Variable
+import personal.wuqing.mxcompiler.grammar.VoidType
+import personal.wuqing.mxcompiler.utils.Location
 import personal.wuqing.mxcompiler.utils.SemanticErrorRecorder
 
-object Semantic {
-    fun run(root: ASTNode.Program) {
+object SemanticMain {
+    operator fun invoke(root: ASTNode.Program) {
         initClasses(root)
+        initBuiltinFunction()
         initFunctions(root)
-        root.declarations.forEach {
-            when (it) {
-                is ASTNode.Declaration.Class -> visit(it)
-                is ASTNode.Declaration.Function -> visit(it)
-                is ASTNode.Declaration.Variable -> visit(it)
-            }
-        }
-        try {
-            if (FunctionTable["main"].match(root.location, listOf()) !in listOf(UnknownType, IntType))
-                ASTErrorRecorder.error(root.location, "\"main()\" must return \"int\", but \"$this\" found")
-        } catch (e: SymbolTableException) {
-            ASTErrorRecorder.error(root.location, "cannot find function \"main()\"")
-        }
+        initClassMembers(root)
+        root.declarations.forEach { visit(it) }
+        checkMain(root.location)
     }
 
-    private fun initClasses(root: ASTNode.Program) {
+    private fun initClasses(root: ASTNode.Program) =
         root.declarations.filterIsInstance<ASTNode.Declaration.Class>().forEach {
             try {
                 ClassTable[it.name] = it.clazz
@@ -31,10 +31,28 @@ object Semantic {
                 SemanticErrorRecorder.error(root.location, e.toString())
             }
         }
-    }
 
-    private fun initFunctions(root: ASTNode.Program) {
-        BuiltinFunction.initBuiltinFunction()
+    private fun initBuiltinFunction() = mapOf(
+        "print" to BuiltinFunction.Print,
+        "println" to BuiltinFunction.Println,
+        "printInt" to BuiltinFunction.PrintInt,
+        "printlnInt" to BuiltinFunction.PrintlnInt,
+        "getString" to BuiltinFunction.GetString,
+        "getInt" to BuiltinFunction.GetInt,
+        "toString" to BuiltinFunction.ToString
+    ).forEach { (def, func) -> FunctionTable[def] = func }
+
+    private fun initFunctions(root: ASTNode.Program) =
+        root.declarations.filterIsInstance<ASTNode.Declaration.Function>().forEach {
+            FunctionTable[it.name] =
+                Function(
+                    it.result.type,
+                    it.parameterList.map { p -> p.type.type },
+                    it.body
+                )
+        }
+
+    private fun initClassMembers(root: ASTNode.Program) =
         root.declarations.filterIsInstance<ASTNode.Declaration.Class>().forEach { clazz ->
             clazz.declarations.forEach {
                 try {
@@ -46,10 +64,15 @@ object Semantic {
                                     "constructor of \"${it.result.type}\" found in definition of \"${clazz.clazz}\""
                                 )
                             clazz.clazz[it.name] =
-                                Function(it.result.type, it.parameterList.map { p -> p.type.type }, it.body)
+                                Function(
+                                    it.result.type,
+                                    it.parameterList.map { p -> p.type.type },
+                                    it.body
+                                )
                         }
                         is ASTNode.Declaration.Variable ->
-                            clazz.clazz[it.name] = Variable(it.type.type, it)
+                            clazz.clazz[it.name] =
+                                Variable(it.type.type, it)
                     }
                 } catch (e: ClassType.DuplicatedException) {
                     SemanticErrorRecorder.error(it.location, e.info)
@@ -57,23 +80,32 @@ object Semantic {
             }
             if (clazz.declarations.none { it is ASTNode.Declaration.Constructor })
                 try {
-                    clazz.clazz["<constructor>"] = BuiltinFunction.DefaultConstructor(clazz.clazz)
+                    clazz.clazz["<constructor>"] =
+                        BuiltinFunction.DefaultConstructor(clazz.clazz)
                 } catch (e: ClassType.DuplicatedException) {
                     SemanticErrorRecorder.error(clazz.location, e.info)
                 }
         }
-        root.declarations.filterIsInstance<ASTNode.Declaration.Function>().forEach {
-            FunctionTable[it.name] = Function(it.result.type, it.parameterList.map { p -> p.type.type }, it.body)
-        }
+
+    private fun visit(node: ASTNode.Declaration) = when (node) {
+        is ASTNode.Declaration.Function -> visit(node)
+        is ASTNode.Declaration.Variable -> visit(node)
+        is ASTNode.Declaration.Class -> visit(node)
     }
 
     private fun visit(node: ASTNode.Declaration.Class) {
         SymbolTable.new(node.clazz)
         node.declarations.forEach {
             when (it) {
-                is ASTNode.Declaration.Function -> visit(it)
-                is ASTNode.Declaration.Constructor -> visit(it)
-                is ASTNode.Declaration.Variable -> visit(it)
+                is ASTNode.Declaration.Function -> visit(
+                    it
+                )
+                is ASTNode.Declaration.Constructor -> visit(
+                    it
+                )
+                is ASTNode.Declaration.Variable -> visit(
+                    it
+                )
             }
         }
         SymbolTable.drop()
@@ -106,7 +138,8 @@ object Semantic {
         )
         else
             try {
-                VariableTable[node.name] = Variable(node.type.type, node)
+                VariableTable[node.name] =
+                    Variable(node.type.type, node)
             } catch (e: SymbolTableException) {
                 SemanticErrorRecorder.error(node.location, e.toString())
             }
@@ -120,7 +153,11 @@ object Semantic {
                 SymbolTable.drop()
             }
             is ASTNode.Statement.Expression -> node.expression.type
-            is ASTNode.Statement.Variable -> node.variables.forEach { visit(it) }
+            is ASTNode.Statement.Variable -> node.variables.forEach {
+                visit(
+                    it
+                )
+            }
             is ASTNode.Statement.If -> {
                 if (node.condition.type != BoolType && node.condition.type != UnknownType) SemanticErrorRecorder.error(
                     node.location,
@@ -182,4 +219,15 @@ object Semantic {
             }
         }
     }
+
+    private fun checkMain(location: Location) {
+        try {
+            if (FunctionTable["main"].match(location, listOf()) !in listOf(UnknownType, IntType))
+                SemanticErrorRecorder.error(location, "\"main()\" must return \"int\", but \"$this\" found")
+        } catch (e: SymbolTableException) {
+            SemanticErrorRecorder.error(location, "cannot find function \"main()\"")
+        }
+    }
+
+    fun reportSuccess() = SemanticErrorRecorder.info("semantic passed successful")
 }

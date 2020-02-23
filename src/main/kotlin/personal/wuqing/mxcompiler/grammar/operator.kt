@@ -1,4 +1,4 @@
-package personal.wuqing.mxcompiler.frontend
+package personal.wuqing.mxcompiler.grammar
 
 enum class SuffixOperator(private val displayText: String) {
     INC("++"), DEC("--");

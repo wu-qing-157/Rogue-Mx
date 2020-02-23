@@ -1,4 +1,4 @@
-package personal.wuqing.mxcompiler.frontend
+package personal.wuqing.mxcompiler.grammar
 
 import personal.wuqing.mxcompiler.ast.ASTNode
 import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
@@ -32,6 +32,7 @@ object StringType : PrimitiveType() {
         "parseInt" to BuiltinFunction.StringParseInt,
         "ord" to BuiltinFunction.StringOrd
     )
+
     override fun toString() = "string"
 }
 
@@ -57,6 +58,7 @@ data class ClassType(
     val name: String, val declaration: ASTNode.Declaration.Class
 ) : Type() {
     class DuplicatedException(val info: String) : Exception()
+
     override val variables = mutableMapOf<String, Variable>()
     override val functions = mutableMapOf<String, Function>()
     operator fun set(name: String, variable: Variable) {
@@ -65,12 +67,14 @@ data class ClassType(
         if (name == this.name) throw DuplicatedException("\"$name\" has the same name of the class")
         variables[name] = variable
     }
+
     operator fun set(name: String, function: Function) {
         if (name in functions) throw DuplicatedException("\"$name\" is already defined as a function in \"$this\"")
         if (name in variables) throw DuplicatedException("\"$name\" is already defined as a variable in \"$this\"")
         if (name == this.name) throw DuplicatedException("\"$name\" has the same name of the class")
         functions[name] = function
     }
+
     override fun toString() = name
 }
 

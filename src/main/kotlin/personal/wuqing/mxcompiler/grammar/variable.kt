@@ -1,4 +1,4 @@
-package personal.wuqing.mxcompiler.frontend
+package personal.wuqing.mxcompiler.grammar
 
 import personal.wuqing.mxcompiler.ast.ASTNode
 import java.io.Serializable

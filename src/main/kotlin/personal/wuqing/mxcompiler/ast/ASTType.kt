@@ -1,23 +1,24 @@
 package personal.wuqing.mxcompiler.ast
 
-import personal.wuqing.mxcompiler.frontend.ArrayType
-import personal.wuqing.mxcompiler.frontend.BinaryOperator
-import personal.wuqing.mxcompiler.frontend.BoolType
-import personal.wuqing.mxcompiler.frontend.ClassTable
-import personal.wuqing.mxcompiler.frontend.FunctionTable
-import personal.wuqing.mxcompiler.frontend.IntType
-import personal.wuqing.mxcompiler.frontend.NullType
-import personal.wuqing.mxcompiler.frontend.PrefixOperator
-import personal.wuqing.mxcompiler.frontend.PrimitiveType
-import personal.wuqing.mxcompiler.frontend.StringType
-import personal.wuqing.mxcompiler.frontend.SymbolTable
-import personal.wuqing.mxcompiler.frontend.SymbolTableException
-import personal.wuqing.mxcompiler.frontend.Type
-import personal.wuqing.mxcompiler.frontend.UnknownType
-import personal.wuqing.mxcompiler.frontend.VariableTable
-import personal.wuqing.mxcompiler.frontend.VoidType
+import personal.wuqing.mxcompiler.grammar.ArrayType
+import personal.wuqing.mxcompiler.grammar.BinaryOperator
+import personal.wuqing.mxcompiler.grammar.BoolType
+import personal.wuqing.mxcompiler.grammar.IntType
+import personal.wuqing.mxcompiler.grammar.NullType
+import personal.wuqing.mxcompiler.grammar.PrefixOperator
+import personal.wuqing.mxcompiler.grammar.PrimitiveType
+import personal.wuqing.mxcompiler.grammar.StringType
+import personal.wuqing.mxcompiler.grammar.Type
+import personal.wuqing.mxcompiler.grammar.UnknownType
+import personal.wuqing.mxcompiler.grammar.VoidType
+import personal.wuqing.mxcompiler.semantic.ClassTable
+import personal.wuqing.mxcompiler.semantic.FunctionTable
+import personal.wuqing.mxcompiler.semantic.SymbolTable
+import personal.wuqing.mxcompiler.semantic.SymbolTableException
+import personal.wuqing.mxcompiler.semantic.VariableTable
 import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
+import personal.wuqing.mxcompiler.utils.SemanticErrorRecorder
 
 internal fun ASTNode.Expression.NewObject.type() = lazy(LazyThreadSafetyMode.NONE) {
     when (baseType.type) {
@@ -56,7 +57,15 @@ internal fun ASTNode.Expression.Function.type() = lazy(LazyThreadSafetyMode.NONE
 }
 
 internal fun ASTNode.Expression.NewArray.type() = lazy(LazyThreadSafetyMode.NONE) {
-    ArrayType.getArrayType(baseType.type, dimension, location)
+    length.filterNotNull().map { it.type }.run {
+        when {
+            any { it == UnknownType } -> UnknownType
+            any { it != IntType } -> UnknownType.also {
+                SemanticErrorRecorder.error(location, "length or array must be \"int\"")
+            }
+            else -> ArrayType.getArrayType(baseType.type, dimension, location)
+        }
+    }
 }
 
 internal fun ASTNode.Expression.MemberAccess.type() = lazy(LazyThreadSafetyMode.NONE) {

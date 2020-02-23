@@ -49,3 +49,5 @@ Test cases starting with "9" is not shared through _git_
 + 2020.02.22 Reconstruct structure of ASTNode
 + 2020.02.23 Add type analysis
 + 2020.02.23 Pass semantic test (orz)
++ 2020.02.23 Optimize project structure
++ 2020.02.24 Fix semantic about length of new array

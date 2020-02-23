@@ -1,8 +1,8 @@
 package personal.wuqing.mxcompiler.ast
 
-import personal.wuqing.mxcompiler.frontend.BinaryOperator
-import personal.wuqing.mxcompiler.frontend.PrefixOperator
-import personal.wuqing.mxcompiler.frontend.SuffixOperator
+import personal.wuqing.mxcompiler.grammar.BinaryOperator
+import personal.wuqing.mxcompiler.grammar.PrefixOperator
+import personal.wuqing.mxcompiler.grammar.SuffixOperator
 import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
 import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
@@ -26,10 +26,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             ctx!!.functionDeclaration() != null -> visit(ctx.functionDeclaration())!!
             ctx.classDeclaration() != null -> visit(ctx.classDeclaration())!!
             ctx.variableDeclaration() != null -> visit(ctx.variableDeclaration())!!
-            else -> {
-                ASTErrorRecorder.error(Location(filename, ctx), "Unknown Section")
-                throw ASTErrorRecorder.Exception()
-            }
+            else -> throw Exception("unknown section when building AST")
         }
 
     override fun visitBlock(ctx: MxLangParser.BlockContext?) =
@@ -231,10 +228,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             operator = when (ctx.op.text) {
                 "++" -> SuffixOperator.INC
                 "--" -> SuffixOperator.DEC
-                else -> {
-                    ASTErrorRecorder.error(Location(filename, ctx), "unknown suffix unary operator")
-                    throw ASTErrorRecorder.Exception()
-                }
+                else -> throw Exception("unknown suffix unary operator when building AST")
             }
         )
 
@@ -249,10 +243,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                 "-" -> PrefixOperator.NEG
                 "!" -> PrefixOperator.L_NEG
                 "~" -> PrefixOperator.INV
-                else -> {
-                    ASTErrorRecorder.error(Location(filename, ctx), "unknown prefix unary operator")
-                    throw ASTErrorRecorder.Exception()
-                }
+                else -> throw Exception("unknown prefix unary operator when building AST")
             }
         )
 
@@ -293,10 +284,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                 "<<=" -> BinaryOperator.SHL_I
                 ">>=" -> BinaryOperator.SHR_I
                 ">>>=" -> BinaryOperator.U_SHR_I
-                else -> {
-                    ASTErrorRecorder.error(Location(filename, ctx), "unknown binary operator")
-                    throw ASTErrorRecorder.Exception()
-                }
+                else -> throw Exception("unknown binary operator when building AST")
             }
         )
 
@@ -342,20 +330,14 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             ctx.Null() != null -> ASTNode.Expression.Constant.Null(Location(filename, ctx))
             ctx.True() != null -> ASTNode.Expression.Constant.True(Location(filename, ctx))
             ctx.False() != null -> ASTNode.Expression.Constant.False(Location(filename, ctx))
-            else -> {
-                ASTErrorRecorder.error(Location(filename, ctx), "unknown constant expression")
-                throw ASTErrorRecorder.Exception()
-            }
+            else -> throw Exception("unknown constant value when building AST")
         }
 
     override fun visitType(ctx: MxLangParser.TypeContext?) =
         when {
             ctx!!.simpleType() != null -> visitSimpleType(ctx.simpleType())
             ctx.arrayType() != null -> visitArrayType(ctx.arrayType())
-            else -> {
-                ASTErrorRecorder.error(Location(filename, ctx), "unknown type")
-                throw ASTErrorRecorder.Exception()
-            }
+            else -> throw Exception("unknown type when building AST")
         }
 
     override fun visitSimpleType(ctx: MxLangParser.SimpleTypeContext?) =
