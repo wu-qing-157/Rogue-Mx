@@ -7,33 +7,30 @@ import java.io.Serializable
 
 open class Function(val result: Type, val parameter: List<Type>, val body: ASTNode.Statement.Block?) : Serializable {
     fun match(location: Location, call: List<Type>) =
-        if (UnknownType in call || UnknownType in parameter) UnknownType
-        else if (call.size != parameter.size || (call zip parameter).any { (c, p) -> c != NullType && c != p })
-            UnknownType.also {
+        if (Type.Unknown in call || Type.Unknown in parameter) Type.Unknown
+        else if (call.size != parameter.size || (call zip parameter).any { (c, p) -> c != Type.Null && c != p })
+            Type.Unknown.also {
                 SemanticErrorRecorder.error(
                     location, "cannot call function \"$this\" with \"(${call.joinToString()})\""
                 )
             }
         else result
-}
 
-sealed class BuiltinFunction(result: Type, parameter: List<Type>) : Function(result, parameter, null) {
-    object Print : BuiltinFunction(VoidType, listOf(StringType))
-    object Println : BuiltinFunction(VoidType, listOf(StringType))
-    object PrintInt : BuiltinFunction(VoidType, listOf(IntType))
-    object PrintlnInt : BuiltinFunction(VoidType, listOf(IntType))
-    object GetString : BuiltinFunction(StringType, listOf())
-    object GetInt : BuiltinFunction(IntType, listOf())
-    object ToString : BuiltinFunction(StringType, listOf(IntType))
-    object StringLength : BuiltinFunction(IntType, listOf())
-    object StringSubstring : BuiltinFunction(StringType, listOf(IntType, IntType))
-    object StringParseInt : BuiltinFunction(IntType, listOf())
-    object StringOrd : BuiltinFunction(IntType, listOf(IntType))
-    object ArraySize : BuiltinFunction(IntType, listOf())
-
-    class DefaultConstructor(type: Type) : BuiltinFunction(type, listOf())
-
-    companion object {
-
+    sealed class Builtin(result: Type, parameter: List<Type>) : Function(result, parameter, null) {
+        object Print : Builtin(Type.Void, listOf(Type.Primitive.String))
+        object Println : Builtin(Type.Void, listOf(Type.Primitive.String))
+        object PrintInt : Builtin(Type.Void, listOf(Type.Primitive.Int))
+        object PrintlnInt : Builtin(Type.Void, listOf(Type.Primitive.Int))
+        object GetString : Builtin(Type.Primitive.String, listOf())
+        object GetInt : Builtin(Type.Primitive.Int, listOf())
+        object ToString : Builtin(Type.Primitive.String, listOf(Type.Primitive.Int))
+        object StringLength : Builtin(Type.Primitive.Int, listOf())
+        object StringSubstring : Builtin(Type.Primitive.String, listOf(Type.Primitive.Int, Type.Primitive.Int))
+        object StringParseInt : Builtin(Type.Primitive.Int, listOf())
+        object StringOrd : Builtin(Type.Primitive.Int, listOf(Type.Primitive.Int))
+        object ArraySize : Builtin(Type.Primitive.Int, listOf())
+        class DefaultConstructor(type: Type) : Builtin(type, listOf())
     }
 }
+
+

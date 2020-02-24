@@ -8,9 +8,14 @@ Description|Status
 ---|---
 ANTLR4|Completed
 AST|Completed
-Semantic|Completed, __Test OK__
-...|Not planned
+Semantic|Completed, __pass__ given test suite, __with__ known issues
+IR Translation|No major progress
+...|Not planned yet
 Commandline Option|Currently with _commons-cli_, to be rewritten or removed
+
+## Known Issues
+
++ Semantic: initialize primitive type with null
 
 ## Test Cases
 
@@ -32,7 +37,7 @@ File Name|Test Description|Status
 104|Complicated Test|
 200|Semantic Test|
 
-Test cases starting with "9" is not shared through _git_
+Test cases starting with _9_ are not shared through _git_
 
 ## Timeline
 
@@ -51,3 +56,5 @@ Test cases starting with "9" is not shared through _git_
 + 2020.02.23 Pass semantic test (orz)
 + 2020.02.23 Optimize project structure
 + 2020.02.24 Fix semantic about length of new array
++ 2020.02.24 Move new array check from AST build to semantic
++ 2020.02.24 Optimize project structure

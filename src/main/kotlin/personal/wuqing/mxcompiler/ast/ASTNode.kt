@@ -1,14 +1,8 @@
 package personal.wuqing.mxcompiler.ast
 
 import personal.wuqing.mxcompiler.grammar.BinaryOperator
-import personal.wuqing.mxcompiler.grammar.BoolType
-import personal.wuqing.mxcompiler.grammar.ClassType
-import personal.wuqing.mxcompiler.grammar.IntType
-import personal.wuqing.mxcompiler.grammar.NullType
 import personal.wuqing.mxcompiler.grammar.PrefixOperator
-import personal.wuqing.mxcompiler.grammar.StringType
 import personal.wuqing.mxcompiler.grammar.SuffixOperator
-import personal.wuqing.mxcompiler.grammar.VoidType
 import personal.wuqing.mxcompiler.utils.Location
 import java.io.Serializable
 import personal.wuqing.mxcompiler.grammar.Type as Type_
@@ -38,7 +32,7 @@ sealed class ASTNode : Serializable {
             type: Type, parameterList: List<Variable>, body: Statement.Block
         ) : Function(location, "<constructor>", type, parameterList, body) {
             override val summary get() = "(Constructor)"
-            override val returnType = VoidType
+            override val returnType = Type_.Void
         }
 
         class VariableList(
@@ -58,7 +52,7 @@ sealed class ASTNode : Serializable {
             val declarations: List<Declaration>
         ) : Declaration() {
             override val summary get() = "$name (ClassDeclaration)"
-            val clazz = ClassType(name, this)
+            val clazz = Type_.Class(name, this)
         }
     }
 
@@ -243,35 +237,35 @@ sealed class ASTNode : Serializable {
                 override val location: Location, val value: kotlin.Int
             ) : Constant() {
                 override val summary get() = "$value (IntConstant)"
-                override val type = IntType
+                override val type = Type_.Primitive.Int
             }
 
             class String(
                 override val location: Location, val value: kotlin.String
             ) : Constant() {
                 override val summary get() = "'$value' (StringConstant)"
-                override val type = StringType
+                override val type = Type_.Primitive.String
             }
 
             class True(
                 override val location: Location
             ) : Constant() {
                 override val summary get() = "True (BoolConstant)"
-                override val type = BoolType
+                override val type = Type_.Primitive.Bool
             }
 
             class False(
                 override val location: Location
             ) : Constant() {
                 override val summary get() = "False (BoolConstant)"
-                override val type = BoolType
+                override val type = Type_.Primitive.Bool
             }
 
             class Null(
                 override val location: Location
             ) : Constant() {
                 override val summary get() = "Null (NullConstant)"
-                override val type = NullType
+                override val type = Type_.Null
             }
         }
     }

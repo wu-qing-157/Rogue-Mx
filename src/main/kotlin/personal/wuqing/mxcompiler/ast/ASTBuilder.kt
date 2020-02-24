@@ -5,7 +5,6 @@ import personal.wuqing.mxcompiler.grammar.PrefixOperator
 import personal.wuqing.mxcompiler.grammar.SuffixOperator
 import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
-import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
 
 class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
@@ -179,11 +178,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             location = Location(filename, ctx!!),
             baseType = visit(ctx.simpleType()) as ASTNode.Type,
             dimension = ctx.brack().size,
-            length = ctx.brack().also {
-                it[0].expression() ?: ASTErrorRecorder.error(
-                    Location(filename, ctx), "length of first dimension must be specified"
-                )
-            }.map { it.expression()?.run { visit(this) as ASTNode.Expression } }
+            length = ctx.brack().map { it.expression()?.run { visit(this) as ASTNode.Expression } }
         )
 
     override fun visitExpressionList(ctx: MxLangParser.ExpressionListContext?) =

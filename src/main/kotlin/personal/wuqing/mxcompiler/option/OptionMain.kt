@@ -10,9 +10,7 @@ import personal.wuqing.mxcompiler.PROJECT_NAME
 import personal.wuqing.mxcompiler.USAGE
 import personal.wuqing.mxcompiler.VERSION
 import personal.wuqing.mxcompiler.ast.ASTNode
-import personal.wuqing.mxcompiler.io.FileOutput
 import personal.wuqing.mxcompiler.io.OutputMethod
-import personal.wuqing.mxcompiler.io.StdoutOutput
 import personal.wuqing.mxcompiler.utils.OptionErrorRecorder
 import java.io.FileInputStream
 import java.io.IOException
@@ -74,16 +72,9 @@ object OptionMain {
                         else -> Target.ALL
                     }
                     val output = when {
-                        hasOption("stdout") || hasOption("semantic") -> StdoutOutput
-                        hasOption("output") -> FileOutput(
-                            getOptionValue("output")
-                        )
-                        else -> FileOutput(
-                            source.replace(
-                                Regex("\\..*?$"),
-                                ""
-                            ) + target.ext
-                        )
+                        hasOption("stdout") || hasOption("semantic") -> OutputMethod.Stdout
+                        hasOption("output") -> OutputMethod.File(getOptionValue("output"))
+                        else -> OutputMethod.File(source.replace(Regex("\\..*?$"), "") + target.ext)
                     }
                     when {
                         hasOption("from-ast") ->
