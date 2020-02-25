@@ -43,7 +43,7 @@ internal fun ASTNode.Expression.Function.type() = lazy(LazyThreadSafetyMode.NONE
         try {
             FunctionTable[name].match(location, parameters.map { it.type })
         } catch (e: SymbolTableException) {
-            ASTErrorRecorder.error(location, e.toString())
+            ASTErrorRecorder.error(location, e.message!!)
             Type.Unknown
         }
 }
@@ -254,7 +254,7 @@ internal fun ASTNode.Expression.Identifier.type() = lazy(LazyThreadSafetyMode.NO
         VariableTable[name].type
     } catch (e: SymbolTableException) {
         SymbolTable.thisType?.variables?.get(name)?.type ?: Type.Unknown.also {
-            ASTErrorRecorder.error(location, e.toString())
+            ASTErrorRecorder.error(location, e.message!!)
         }
     }
 }
@@ -271,7 +271,7 @@ internal fun solveClass(name: String, location: Location): Type = when (name) {
     else -> try {
         ClassTable[name]
     } catch (e: SymbolTableException) {
-        ASTErrorRecorder.error(location, e.toString())
+        ASTErrorRecorder.error(location, e.message!!)
         Type.Unknown
     }
 }

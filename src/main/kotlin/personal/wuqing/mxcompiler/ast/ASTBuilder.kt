@@ -5,9 +5,12 @@ import personal.wuqing.mxcompiler.grammar.PrefixOperator
 import personal.wuqing.mxcompiler.grammar.SuffixOperator
 import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
+import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
 
 class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
+    class Exception(message: String) : kotlin.Exception()
+
     override fun visitProgram(ctx: MxLangParser.ProgramContext?) =
         ASTNode.Program(
             location = Location(filename, ctx!!),
@@ -37,13 +40,13 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
     override fun visitFunctionDeclaration(ctx: MxLangParser.FunctionDeclarationContext?) =
         ASTNode.Declaration.Function(
             location = Location(filename, ctx!!),
-            name = ctx.Identifier().text,
+            name = ctx.Identifier()?.text ?: "<unknown>",
             result = visit(ctx.type()) as ASTNode.Type,
             parameterList = ctx.parameter().map {
                 ASTNode.Declaration.Variable(
                     location = Location(filename, it),
                     type = visit(it.type()) as ASTNode.Type,
-                    name = it.Identifier().text,
+                    name = it.Identifier()?.text ?: "<unknown>",
                     init = null
                 )
             },
@@ -58,7 +61,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                 ASTNode.Declaration.Variable(
                     location = Location(filename, it),
                     type = visit(it.type()) as ASTNode.Type,
-                    name = it.Identifier().text,
+                    name = it.Identifier()?.text ?: "<unknown>",
                     init = null
                 )
             },
@@ -68,7 +71,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
     override fun visitClassDeclaration(ctx: MxLangParser.ClassDeclarationContext?) =
         ASTNode.Declaration.Class(
             location = Location(filename, ctx!!),
-            name = ctx.Identifier().text,
+            name = ctx.Identifier()?.text ?: "<unknown>",
             declarations = ctx.classMember().map {
                 when (val child = visit(it)) {
                     is ASTNode.Declaration.Function, is ASTNode.Declaration.Constructor -> listOf(child)
@@ -85,7 +88,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                 ASTNode.Declaration.Variable(
                     location = Location(filename, it),
                     type = visit(ctx.type()) as ASTNode.Type,
-                    name = it.Identifier().text,
+                    name = it.Identifier()?.text ?: "<unknown>",
                     init = it.expression()?.let { expression -> visit(expression) as ASTNode.Expression }
                 )
             }
@@ -191,21 +194,21 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ASTNode.Expression.MemberAccess(
             location = Location(filename, ctx!!),
             parent = visit(ctx.expression()) as ASTNode.Expression,
-            child = ctx.Identifier().text
+            child = ctx.Identifier()?.text ?: "<unknown>"
         )
 
     override fun visitMemberFunctionCall(ctx: MxLangParser.MemberFunctionCallContext?) =
         ASTNode.Expression.MemberFunction(
             location = Location(filename, ctx!!),
             base = visit(ctx.expression()) as ASTNode.Expression,
-            name = ctx.Identifier().text,
+            name = ctx.Identifier()?.text ?: "<unknown>",
             parameters = (visit(ctx.expressionList()) as ASTNode.Expression.ExpressionList).list
         )
 
     override fun visitFunctionCall(ctx: MxLangParser.FunctionCallContext?) =
         ASTNode.Expression.Function(
             location = Location(filename, ctx!!),
-            name = ctx.Identifier().text,
+            name = ctx.Identifier()?.text ?: "<unknown>",
             parameters = (visit(ctx.expressionList()) as ASTNode.Expression.ExpressionList).list
         )
 
@@ -299,7 +302,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
     override fun visitIdentifiers(ctx: MxLangParser.IdentifiersContext?) =
         ASTNode.Expression.Identifier(
             location = Location(filename, ctx!!),
-            name = ctx.Identifier().text
+            name = ctx.Identifier()?.text ?: "<unknown>"
         )
 
     override fun visitConstants(ctx: MxLangParser.ConstantsContext?) =
@@ -309,7 +312,14 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         when {
             ctx!!.IntConstant() != null -> ASTNode.Expression.Constant.Int(
                 location = Location(filename, ctx),
-                value = ctx.IntConstant().text.toInt()
+                value = ctx.IntConstant().text.run {
+                    try {
+                        toInt()
+                    } catch (e: NumberFormatException) {
+                        ASTErrorRecorder.error(Location(filename, ctx), "invalid integer constant \"$this\"")
+                        0
+                    }
+                }
             )
             ctx.StringConstant() != null -> ASTNode.Expression.Constant.String(
                 location = Location(filename, ctx),

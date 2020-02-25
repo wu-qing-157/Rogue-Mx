@@ -61,14 +61,12 @@ object VariableTable {
     }
 }
 
-sealed class SymbolTableException : Exception() {
-    class NotFoundException(private val definition: String, private val item: String) : SymbolTableException() {
-        override fun toString() = "\"$definition\" cannot be resolved as a \"$item\""
-    }
+sealed class SymbolTableException(message: String) : Exception(message) {
+    class NotFoundException(definition: String, item: String) :
+        SymbolTableException("\"$definition\" cannot be resolved as a \"$item\"")
 
-    class DuplicatedException(private val definition: String, private val item: String) : SymbolTableException() {
-        override fun toString() = "\"$definition\" has already been defined as a \"$item\""
-    }
+    class DuplicatedException(definition: String, item: String) :
+        SymbolTableException("\"$definition\" has already been defined as a \"$item\"")
 }
 
 object SymbolTable {

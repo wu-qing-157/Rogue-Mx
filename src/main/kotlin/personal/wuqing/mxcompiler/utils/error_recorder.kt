@@ -1,6 +1,6 @@
 package personal.wuqing.mxcompiler.utils
 
-open class ErrorRecorderException : Exception()
+open class ErrorRecorderException(val exit: Int) : Exception()
 
 object OptionErrorRecorder {
     fun fatalError(msg: String) = LogPrinter.println("${ErrorType.Fatal} $msg")
@@ -10,7 +10,7 @@ object OptionErrorRecorder {
 }
 
 object ParserErrorRecorder {
-    object Exception : ErrorRecorderException()
+    object Exception : ErrorRecorderException(2)
 
     private var error = false
     fun report() = if (error) throw Exception else Unit
@@ -25,7 +25,7 @@ object ParserErrorRecorder {
 }
 
 object ASTErrorRecorder {
-    object Exception : ErrorRecorderException()
+    object Exception : ErrorRecorderException(3)
 
     private var error = false
     fun report() = if (error) throw Exception else Unit
@@ -36,7 +36,7 @@ object ASTErrorRecorder {
 }
 
 object SemanticErrorRecorder {
-    object Exception : ErrorRecorderException()
+    object Exception : ErrorRecorderException(4)
 
     private var error = false
     fun report() = if (error) throw Exception else Unit

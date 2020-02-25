@@ -56,7 +56,7 @@ sealed class Type : Serializable {
     data class Class(
         val name: String, val declaration: ASTNode.Declaration.Class
     ) : Type() {
-        class DuplicatedException(val info: String) : Exception()
+        class DuplicatedException(message: String) : Exception(message)
 
         override val variables = mutableMapOf<String, Variable>()
         override val functions = mutableMapOf<String, Function>()

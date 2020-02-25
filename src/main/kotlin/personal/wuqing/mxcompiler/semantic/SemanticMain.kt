@@ -22,7 +22,7 @@ object SemanticMain {
             try {
                 ClassTable[it.name] = it.clazz
             } catch (e: SymbolTableException) {
-                SemanticErrorRecorder.error(root.location, e.toString())
+                SemanticErrorRecorder.error(root.location, e.message!!)
             }
         }
 
@@ -38,8 +38,12 @@ object SemanticMain {
 
     private fun initFunctions(root: ASTNode.Program) =
         root.declarations.filterIsInstance<ASTNode.Declaration.Function>().forEach {
-            FunctionTable[it.name] =
-                Function(it.result.type, it.parameterList.map { p -> p.type.type }, it.body)
+            try {
+                FunctionTable[it.name] =
+                    Function(it.result.type, it.parameterList.map { p -> p.type.type }, it.body)
+            } catch (e: SymbolTableException) {
+                SemanticErrorRecorder.error(it.location, e.message!!)
+            }
         }
 
     private fun initClassMembers(root: ASTNode.Program) =
@@ -63,7 +67,7 @@ object SemanticMain {
                             clazz.clazz[it.name] = Variable(it.type.type, it)
                     }
                 } catch (e: Type.Class.DuplicatedException) {
-                    SemanticErrorRecorder.error(it.location, e.info)
+                    SemanticErrorRecorder.error(it.location, e.message!!)
                 }
             }
             if (clazz.declarations.none { it is ASTNode.Declaration.Constructor })
@@ -71,7 +75,7 @@ object SemanticMain {
                     clazz.clazz["<constructor>"] =
                         Function.Builtin.DefaultConstructor(clazz.clazz)
                 } catch (e: Type.Class.DuplicatedException) {
-                    SemanticErrorRecorder.error(clazz.location, e.info)
+                    SemanticErrorRecorder.error(clazz.location, e.message!!)
                 }
         }
 
@@ -121,7 +125,7 @@ object SemanticMain {
             try {
                 VariableTable[node.name] = Variable(node.type.type, node)
             } catch (e: SymbolTableException) {
-                SemanticErrorRecorder.error(node.location, e.toString())
+                SemanticErrorRecorder.error(node.location, e.message!!)
             }
     }
 

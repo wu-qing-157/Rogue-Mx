@@ -1,5 +1,6 @@
 package personal.wuqing.mxcompiler
 
+import personal.wuqing.mxcompiler.ast.ASTBuilder
 import personal.wuqing.mxcompiler.ast.ASTMain
 import personal.wuqing.mxcompiler.ast.ASTNode
 import personal.wuqing.mxcompiler.io.OutputMethod
@@ -21,7 +22,7 @@ const val VERSION = "0.9"
 
 fun main(arguments: Array<String>) {
     when (val result = OptionMain(arguments)) {
-        is OptionMain.Result.Exit -> exitProcess(1)
+        is OptionMain.Result.Exit -> exitProcess(99)
         is OptionMain.Result.FromSource -> {
             val (input, output, source, target) = result
             fromSource(input, output, source, target)
@@ -37,9 +38,8 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
     try {
         val parser = ParserMain(input, source)
         val root = ASTMain(parser, source)
-        SemanticMain(root)
-
         ParserErrorRecorder.report()
+        SemanticMain(root)
         ASTErrorRecorder.report()
         SemanticErrorRecorder.report()
 
@@ -52,8 +52,16 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             Target.SEMANTIC -> return Unit.also { SemanticMain.reportSuccess() }
             else -> fromAST(root, output, source, target)
         }
+    } catch (ast: ASTBuilder.Exception) {
+        try {
+            ParserErrorRecorder.report()
+            ast.printStackTrace()
+            exitProcess(1)
+        } catch (parse: ErrorRecorderException) {
+            exitProcess(parse.exit)
+        }
     } catch (e: ErrorRecorderException) {
-        exitProcess(1)
+        exitProcess(e.exit)
     }
 }
 
