@@ -26,15 +26,19 @@ dependencies {
 }
 
 generateGrammarSource {
-    arguments += ['-listener', '-visitor', '-package', 'personal.wuqing.mxcompiler.parser']
+    arguments += ['-no-listener', '-visitor', '-package', 'personal.wuqing.mxcompiler.parser']
 }
 
 compileKotlin {
+    //noinspection GrUnresolvedAccess
     kotlinOptions.jvmTarget = "1.8"
+    //noinspection GrUnresolvedAccess
     dependsOn generateGrammarSource
 }
 compileTestKotlin {
+    //noinspection GrUnresolvedAccess
     kotlinOptions.jvmTarget = "1.8"
+    //noinspection GrUnresolvedAccess
     dependsOn generateTestGrammarSource
 }
 

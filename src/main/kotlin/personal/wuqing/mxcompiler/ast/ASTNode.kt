@@ -28,8 +28,7 @@ sealed class ASTNode : Serializable {
         }
 
         class Constructor(
-            location: Location,
-            type: Type, parameterList: List<Variable>, body: Statement.Block
+            location: Location, type: Type, parameterList: List<Variable>, body: Statement.Block
         ) : Function(location, "<constructor>", type, parameterList, body) {
             override val summary get() = "(Constructor)"
             override val returnType = Type_.Void

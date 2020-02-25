@@ -5,7 +5,7 @@ import personal.wuqing.mxcompiler.utils.Location
 import personal.wuqing.mxcompiler.utils.SemanticErrorRecorder
 import java.io.Serializable
 
-open class Function(val result: Type, val parameter: List<Type>, val body: ASTNode.Statement.Block?) : Serializable {
+open class Function(val result: Type, private val parameter: List<Type>, val body: ASTNode.Statement.Block?) : Serializable {
     fun match(location: Location, call: List<Type>) =
         if (Type.Unknown in call || Type.Unknown in parameter) Type.Unknown
         else if (call.size != parameter.size || (call zip parameter).any { (c, p) -> c != Type.Null && c != p })

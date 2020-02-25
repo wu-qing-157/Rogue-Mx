@@ -36,20 +36,20 @@ sealed class Type : Serializable {
     }
 
     object Null : Type() {
-        override val variables = mapOf<kotlin.String, Variable>()
-        override val functions = mapOf<kotlin.String, Function>()
+        override val variables = mapOf<String, Variable>()
+        override val functions = mapOf<String, Function>()
         override fun toString() = "null"
     }
 
     object Void : Type() {
-        override val variables = mapOf<kotlin.String, Variable>()
-        override val functions = mapOf<kotlin.String, Function>()
+        override val variables = mapOf<String, Variable>()
+        override val functions = mapOf<String, Function>()
         override fun toString() = "void"
     }
 
     object Unknown : Type() {
-        override val variables = mapOf<kotlin.String, Variable>()
-        override val functions = mapOf<kotlin.String, Function>()
+        override val variables = mapOf<String, Variable>()
+        override val functions = mapOf<String, Function>()
         override fun toString() = "<unknown type>"
     }
 
@@ -80,7 +80,7 @@ sealed class Type : Serializable {
     data class Array(
         val base: Type
     ) : Type() {
-        override val variables = mapOf<kotlin.String, Variable>()
+        override val variables = mapOf<String, Variable>()
         override val functions = mapOf("size" to Function.Builtin.ArraySize)
         override fun toString() = "$base[]"
         override fun equals(other: Any?) = other is Array && base == other.base

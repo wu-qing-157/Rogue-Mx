@@ -9,7 +9,7 @@ import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
 
 class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
-    class Exception(message: String) : kotlin.Exception()
+    class Exception(message: String) : kotlin.Exception(message)
 
     override fun visitProgram(ctx: MxLangParser.ProgramContext?) =
         ASTNode.Program(
@@ -180,8 +180,8 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ASTNode.Expression.NewArray(
             location = Location(filename, ctx!!),
             baseType = visit(ctx.simpleType()) as ASTNode.Type,
-            dimension = ctx.brack().size,
-            length = ctx.brack().map { it.expression()?.run { visit(this) as ASTNode.Expression } }
+            dimension = ctx.bracket().size,
+            length = ctx.bracket().map { it.expression()?.run { visit(this) as ASTNode.Expression } }
         )
 
     override fun visitExpressionList(ctx: MxLangParser.ExpressionListContext?) =
@@ -355,6 +355,6 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ASTNode.Type.Array(
             location = Location(filename, ctx!!),
             name = ctx.simpleType().text,
-            dimension = ctx.brack().size
+            dimension = ctx.bracket().size
         )
 }

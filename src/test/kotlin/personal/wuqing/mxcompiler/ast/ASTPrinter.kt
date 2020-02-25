@@ -23,7 +23,7 @@ object ASTPrinter {
             }
             is ASTNode.Declaration.Constructor -> {
                 write(indent + "type: ")
-                summary(root.type, depth + 1)
+                summary(root.result, depth + 1)
                 root.parameterList.forEach {
                     write(indent + "p: ")
                     summary(it, depth + 1)
@@ -109,8 +109,10 @@ object ASTPrinter {
                 write(indent + "type: ")
                 summary(root.baseType, depth + 1)
                 root.length.forEach {
-                    write(indent + "length: ")
-                    summary(it, depth + 1)
+                    it?.let {
+                        write(indent + "length: ")
+                        summary(it, depth + 1)
+                    } ?: write(indent + "length: <unspecified>")
                 }
             }
             is ASTNode.Expression.MemberAccess -> {

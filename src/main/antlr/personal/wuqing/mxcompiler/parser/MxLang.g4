@@ -33,14 +33,14 @@ constant: IntConstant|StringConstant|Null|True|False;
 
 simpleType: Bool|Int|String|Void|Identifier;
 
-brack: '[' expression? ']';
+bracket: '[' expression? ']';
 
-arrayType: simpleType brack+;
+arrayType: simpleType bracket+;
 
 type: simpleType|arrayType;
 
 expression: '('expression')' #Parentheses
-    | New simpleType brack+ #NewArray
+    | New simpleType bracket+ #NewArray
     | New simpleType '(' expressionList ')' #NewObject
     | New simpleType #NewObject
     | expression '.' Identifier '(' expressionList ')' #MemberFunctionCall

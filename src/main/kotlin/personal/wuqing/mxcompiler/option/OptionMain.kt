@@ -90,7 +90,7 @@ object OptionMain {
             }
         }
     } catch (e: ParseException) {
-        HelpFormatter().printHelp(USAGE, OptionMain.options)
+        HelpFormatter().printHelp(USAGE, options)
         Result.Exit
     } catch (e: IOException) {
         OptionErrorRecorder.fatalError(e.toString())

@@ -105,7 +105,7 @@ int[][][] expression() {
 bool s = false, t = true;
 
 int main() {
-    x = "\"hello\tworld!\"";
+    x = "\"hello\t world!\"";
     a.a = 3; a.b = 7; b.a = 5; b.b = 9;
     e = det(a, b);
     printX();
