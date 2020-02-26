@@ -49,20 +49,15 @@ internal fun ASTNode.Expression.Function.type() = lazy(LazyThreadSafetyMode.NONE
 }
 
 internal fun ASTNode.Expression.NewArray.type() = lazy(LazyThreadSafetyMode.NONE) {
-    if (length[0] == null)
-        Type.Unknown.also {
-            SemanticErrorRecorder.error(location, "the first dimension length of new array must be specified")
-        }
-    else
-        length.filterNotNull().map { it.type }.run {
-            when {
-                any { it == Type.Unknown } -> Type.Unknown
-                any { it != Type.Primitive.Int } -> Type.Unknown.also {
-                    SemanticErrorRecorder.error(location, "length or array must be \"int\"")
-                }
-                else -> Type.Array.get(baseType.type, dimension, location)
+    length.map { it.type }.run {
+        when {
+            any { it == Type.Unknown } -> Type.Unknown
+            any { it != Type.Primitive.Int } -> Type.Unknown.also {
+                SemanticErrorRecorder.error(location, "length or array must be \"int\"")
             }
+            else -> Type.Array.get(baseType.type, dimension, location)
         }
+    }
 }
 
 internal fun ASTNode.Expression.MemberAccess.type() = lazy(LazyThreadSafetyMode.NONE) {

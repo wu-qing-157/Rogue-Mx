@@ -80,25 +80,31 @@ sealed class ASTNode : Serializable {
             override val summary get() = "(VariableDeclaration)"
         }
 
+        interface WithCondition {
+            val condition: ASTNode.Expression
+            val simpleCondition get() =
+                (condition as? ASTNode.Expression.Binary)?.simpleCompare ?: false
+        }
+
         class If(
             override val location: Location,
-            val condition: ASTNode.Expression, val then: Statement, val else_: Statement?
-        ) : Statement() {
+            override val condition: ASTNode.Expression, val then: Statement, val else_: Statement?
+        ) : Statement(), WithCondition {
             override val summary get() = "(If)"
         }
 
         sealed class Loop : Statement() {
             class While(
-                override val location: Location, val condition: ASTNode.Expression, val statement: Statement
-            ) : Loop() {
+                override val location: Location, override val condition: ASTNode.Expression, val statement: Statement
+            ) : Loop(), WithCondition {
                 override val summary get() = "(While)"
             }
 
             class For(
                 override val location: Location,
-                val initVariable: List<Declaration.Variable>, val initExpression: ASTNode.Expression?,
-                val condition: ASTNode.Expression, val step: ASTNode.Expression?, val statement: Statement
-            ) : Loop() {
+                val init: Statement?,
+                override val condition: ASTNode.Expression, val step: ASTNode.Expression?, val statement: Statement
+            ) : Loop(), WithCondition {
                 override val summary get() = "(For)"
             }
         }
@@ -135,7 +141,7 @@ sealed class ASTNode : Serializable {
         }
 
         class NewArray(
-            override val location: Location, val baseType: Type, val dimension: Int, val length: List<Expression?>
+            override val location: Location, val baseType: Type, val dimension: Int, val length: List<Expression>
         ) : Expression() {
             override val summary get() = "$dimension-dimension (New Array)"
             override val type by type()
@@ -202,6 +208,15 @@ sealed class ASTNode : Serializable {
             override val summary get() = "'$operator' (BinaryOperator)"
             override val type by type()
             override val lvalue = operator.lvalue
+            val simpleCompare
+                get() = operator in listOf(
+                    BinaryOperator.EQUAL,
+                    BinaryOperator.UNEQUAL,
+                    BinaryOperator.LESS,
+                    BinaryOperator.LEQ,
+                    BinaryOperator.GREATER,
+                    BinaryOperator.GEQ
+                ) && lhs.type != Type_.Primitive.String && rhs.type != Type_.Primitive.String
         }
 
         class Ternary(

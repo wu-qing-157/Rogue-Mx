@@ -7,6 +7,7 @@ import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
 import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
+import kotlin.system.exitProcess
 
 class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
     class Exception(message: String) : kotlin.Exception(message)
@@ -155,9 +156,19 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
     override fun visitForStatement(ctx: MxLangParser.ForStatementContext?) =
         ASTNode.Statement.Loop.For(
             location = Location(filename, ctx!!),
-            initVariable = ctx.initVariableDeclaration
-                ?.let { (visit(it) as ASTNode.Declaration.VariableList).list } ?: listOf(),
-            initExpression = ctx.initExpression?.let { visit(it) as ASTNode.Expression },
+            init = when {
+                ctx.initExpression != null ->
+                    ASTNode.Statement.Expression(
+                        location = Location(filename, ctx),
+                        expression = visit(ctx.initExpression) as ASTNode.Expression
+                    )
+                ctx.initVariableDeclaration != null ->
+                    ASTNode.Statement.Variable(
+                        location = Location(filename, ctx),
+                        variables = (visit(ctx.variableDeclaration()) as ASTNode.Declaration.VariableList).list
+                    ).also { exitProcess(12) }
+                else -> null
+            },
             condition = ctx.condition?.let { visit(it) as ASTNode.Expression } ?: ASTNode.Expression.Constant.True(
                 Location(filename, ctx)
             ),
@@ -180,8 +191,22 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
         ASTNode.Expression.NewArray(
             location = Location(filename, ctx!!),
             baseType = visit(ctx.simpleType()) as ASTNode.Type,
-            dimension = ctx.bracket().size,
-            length = ctx.bracket().map { it.expression()?.run { visit(this) as ASTNode.Expression } }
+            dimension = ctx.numberedBracket().size,
+            length = ctx.numberedBracket().map { it.expression() }.run {
+                when {
+                    get(0) == null -> listOf<ASTNode.Expression>().also {
+                        ASTErrorRecorder.error(Location(filename, ctx), "length of array not specified")
+                    }
+                    indexOfFirst { it == null }.let { s ->
+                        s != -1 && subList(s, size).any { it != null }
+                    } -> listOf<ASTNode.Expression>().also {
+                        ASTErrorRecorder.error(
+                            Location(filename, ctx), "length of dimensions should be specified from left to right"
+                        )
+                    }
+                    else -> filterNotNull().map { visit(it) as ASTNode.Expression }
+                }
+            }
         )
 
     override fun visitExpressionList(ctx: MxLangParser.ExpressionListContext?) =

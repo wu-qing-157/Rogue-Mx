@@ -60,3 +60,4 @@ Test cases starting with _9_ are not shared through _git_
 + 2020.02.24 Optimize project structure
 + 2020.02.25 Use different exit codes for different stages
 + 2020.02.25 Trivial fix
++ 2020.02.26 Fix with latest test cases

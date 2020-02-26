@@ -163,8 +163,7 @@ object SemanticMain {
             }
             is ASTNode.Statement.Loop.For -> {
                 SymbolTable.new()
-                node.initVariable.forEach { visit(it) }
-                node.initExpression?.type
+                node.init?.let { visit(it) }
                 if (node.condition.type != Type.Primitive.Bool && node.condition.type != Type.Unknown) SemanticErrorRecorder.error(
                     node.location, "condition must have type \"bool\", but \"${node.condition.type}\" found"
                 )

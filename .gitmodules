@@ -1,0 +1,3 @@
+[submodule "assignment-repository"]
+	path = assignment
+	url = git@github.com:peterzheng98/Compiler-2020

@@ -4,7 +4,7 @@ StringConstant: '"' (~["\t\b\n\r\\] | '\\' [tbnr\\"])* '"';
 NotationSingleLine: '//' .*? ('\n'|EOF) -> skip;
 NotationMultiline: '/*' .*? '*/' -> skip;
 
-BlankCharacter : [ \r\t\n]+ -> skip;
+BlankCharacter : [ \r\t\n] -> skip;
 
 Class: 'class';
 Bool: 'bool';
@@ -33,14 +33,15 @@ constant: IntConstant|StringConstant|Null|True|False;
 
 simpleType: Bool|Int|String|Void|Identifier;
 
-bracket: '[' expression? ']';
+bracket: '[' ']';
+numberedBracket: '[' expression? ']';
 
 arrayType: simpleType bracket+;
 
 type: simpleType|arrayType;
 
 expression: '('expression')' #Parentheses
-    | New simpleType bracket+ #NewArray
+    | New simpleType numberedBracket+ #NewArray
     | New simpleType '(' expressionList ')' #NewObject
     | New simpleType #NewObject
     | expression '.' Identifier '(' expressionList ')' #MemberFunctionCall
