@@ -1,11 +1,20 @@
 <component name="ProjectDictionaryState">
   <dictionary name="wuqin">
     <words>
+      <w>alloca</w>
       <w>antlr</w>
+      <w>getchar</w>
+      <w>getelementptr</w>
       <w>gradlew</w>
       <w>mxcompiler</w>
+      <w>printf</w>
+      <w>putchar</w>
+      <w>scanf</w>
       <w>sjtu</w>
       <w>sourcefiles</w>
+      <w>sprintf</w>
+      <w>sscanf</w>
+      <w>strlen</w>
       <w>wuqing</w>
     </words>
   </dictionary>

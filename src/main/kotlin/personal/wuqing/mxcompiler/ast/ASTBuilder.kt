@@ -289,7 +289,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                 "<=" -> BinaryOperator.LEQ
                 ">=" -> BinaryOperator.GEQ
                 "==" -> BinaryOperator.EQUAL
-                "!=" -> BinaryOperator.UNEQUAL
+                "!=" -> BinaryOperator.NEQ
                 "&" -> BinaryOperator.A_AND
                 "^" -> BinaryOperator.A_XOR
                 "|" -> BinaryOperator.A_OR

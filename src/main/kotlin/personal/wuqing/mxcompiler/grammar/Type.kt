@@ -5,25 +5,21 @@ import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
 import java.io.Serializable
 
-sealed class Type : Serializable {
-    abstract val variables: Map<String, Variable>
+sealed class Type(val size: Int) : Serializable {
     abstract val functions: Map<String, Function>
 
-    sealed class Primitive : Type() {
-        object Int : Primitive() {
-            override val variables = mapOf<kotlin.String, Variable>()
+    sealed class Primitive(size: kotlin.Int) : Type(size) {
+        object Int : Primitive(4) {
             override val functions = mapOf<kotlin.String, Function>()
             override fun toString() = "int"
         }
 
-        object Bool : Primitive() {
-            override val variables = mapOf<kotlin.String, Variable>()
+        object Bool : Primitive(1) {
             override val functions = mapOf<kotlin.String, Function>()
             override fun toString() = "bool"
         }
 
-        object String : Primitive() {
-            override val variables = mapOf<kotlin.String, Variable>()
+        object String : Primitive(8) {
             override val functions = mapOf(
                 "length" to Function.Builtin.StringLength,
                 "substring" to Function.Builtin.StringSubstring,
@@ -35,30 +31,27 @@ sealed class Type : Serializable {
         }
     }
 
-    object Null : Type() {
-        override val variables = mapOf<String, Variable>()
+    object Null : Type(8) {
         override val functions = mapOf<String, Function>()
         override fun toString() = "null"
     }
 
-    object Void : Type() {
-        override val variables = mapOf<String, Variable>()
+    object Void : Type(0) {
         override val functions = mapOf<String, Function>()
         override fun toString() = "void"
     }
 
-    object Unknown : Type() {
-        override val variables = mapOf<String, Variable>()
+    object Unknown : Type(0) {
         override val functions = mapOf<String, Function>()
         override fun toString() = "<unknown type>"
     }
 
     data class Class(
-        val name: String, val declaration: ASTNode.Declaration.Class
-    ) : Type() {
+        val name: String, val def: ASTNode.Declaration.Class
+    ) : Type(8) {
         class DuplicatedException(message: String) : Exception(message)
 
-        override val variables = mutableMapOf<String, Variable>()
+        val variables = mutableMapOf<String, Variable>()
         override val functions = mutableMapOf<String, Function>()
         operator fun set(name: String, variable: Variable) {
             if (name in functions) throw DuplicatedException("\"$name\" is already defined as a function in \"$this\"")
@@ -79,9 +72,8 @@ sealed class Type : Serializable {
 
     data class Array(
         val base: Type
-    ) : Type() {
-        override val variables = mapOf<String, Variable>()
-        override val functions = mapOf("size" to Function.Builtin.ArraySize)
+    ) : Type(8) {
+        override val functions = mapOf("size" to Function.Builtin.ArraySize(this))
         override fun toString() = "$base[]"
         override fun equals(other: Any?) = other is Array && base == other.base
         override fun hashCode() = base.hashCode() - 0x1b6e3217 // random generated number
@@ -95,9 +87,9 @@ sealed class Type : Serializable {
                         ASTErrorRecorder.error(location!!, "void type doesn't have array type")
                     }
                     else ->
-                        if (Pair(base, dimension) in pool) pool[Pair(base, dimension)]!!
+                        if (Pair(base, dimension) in pool) pool[base to dimension]!!
                         else (if (dimension > 1) Array(get(base, dimension - 1)) else Array(base)).also {
-                            pool[Pair(base, dimension)] = it
+                            pool[base to dimension] = it
                         }
                 }
         }

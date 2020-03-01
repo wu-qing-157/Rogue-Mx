@@ -1,6 +1,7 @@
 package personal.wuqing.mxcompiler.semantic
 
 import personal.wuqing.mxcompiler.ast.ASTNode
+import personal.wuqing.mxcompiler.grammar.BinaryOperator
 import personal.wuqing.mxcompiler.grammar.Function
 import personal.wuqing.mxcompiler.grammar.Type
 import personal.wuqing.mxcompiler.grammar.Variable
@@ -20,7 +21,7 @@ object SemanticMain {
     private fun initClasses(root: ASTNode.Program) =
         root.declarations.filterIsInstance<ASTNode.Declaration.Class>().forEach {
             try {
-                ClassTable[it.name] = it.clazz
+                ClassTable[it.name] = it.actual
             } catch (e: SymbolTableException) {
                 SemanticErrorRecorder.error(root.location, e.message!!)
             }
@@ -39,8 +40,9 @@ object SemanticMain {
     private fun initFunctions(root: ASTNode.Program) =
         root.declarations.filterIsInstance<ASTNode.Declaration.Function>().forEach {
             try {
-                FunctionTable[it.name] =
-                    Function(it.result.type, it.parameterList.map { p -> p.type.type }, it.body)
+                FunctionTable[it.name] = Function.Top(
+                    it.result.type, it.name, it.parameterList.map { p -> p.type.type }, it
+                )
             } catch (e: SymbolTableException) {
                 SemanticErrorRecorder.error(it.location, e.message!!)
             }
@@ -52,19 +54,18 @@ object SemanticMain {
                 try {
                     when (it) {
                         is ASTNode.Declaration.Function -> {
-                            if (it is ASTNode.Declaration.Constructor && it.result.type != clazz.clazz)
+                            if (it is ASTNode.Declaration.Constructor && it.result.type != clazz.actual)
                                 SemanticErrorRecorder.error(
                                     it.location,
-                                    "constructor of \"${it.result.type}\" found in definition of \"${clazz.clazz}\""
+                                    "constructor of \"${it.result.type}\" found in definition of \"${clazz.actual}\""
                                 )
-                            clazz.clazz[it.name] =
-                                Function(
-                                    it.result.type, it.parameterList.map { p -> p.type.type },
-                                    it.body
-                                )
+                            clazz.actual[it.name] = Function.Member(
+                                it.result.type, clazz.actual, it.name,
+                                it.parameterList.map { p -> p.type.type }, it
+                            )
                         }
                         is ASTNode.Declaration.Variable ->
-                            clazz.clazz[it.name] = Variable(it.type.type, it)
+                            clazz.actual[it.name] = Variable(it.type.type, it.name, it)
                     }
                 } catch (e: Type.Class.DuplicatedException) {
                     SemanticErrorRecorder.error(it.location, e.message!!)
@@ -72,8 +73,8 @@ object SemanticMain {
             }
             if (clazz.declarations.none { it is ASTNode.Declaration.Constructor })
                 try {
-                    clazz.clazz["<constructor>"] =
-                        Function.Builtin.DefaultConstructor(clazz.clazz)
+                    clazz.actual["__constructor__"] =
+                        Function.Builtin.DefaultConstructor(clazz.actual)
                 } catch (e: Type.Class.DuplicatedException) {
                     SemanticErrorRecorder.error(clazz.location, e.message!!)
                 }
@@ -86,7 +87,7 @@ object SemanticMain {
     }
 
     private fun visit(node: ASTNode.Declaration.Class) {
-        SymbolTable.new(node.clazz)
+        SymbolTable.new(node.actual)
         node.declarations.forEach {
             when (it) {
                 is ASTNode.Declaration.Function -> visit(it)
@@ -116,14 +117,16 @@ object SemanticMain {
     private fun visit(node: ASTNode.Declaration.Variable) {
         if (node.type.type == Type.Void)
             SemanticErrorRecorder.error(node.location, "cannot declare variable of void type")
-        if (node.init != null && node.init.type != Type.Unknown && node.type.type != Type.Unknown
-            && node.init.type != node.type.type && node.init.type != Type.Null
-        ) SemanticErrorRecorder.error(
-            node.location, "cannot initialize \"${node.name}\" of type \"${node.type.type}\" with \"${node.init.type}\""
+        if (node.init != null &&
+            BinaryOperator.ASSIGN.accept(node.type.type to true, node.init.type to false) == null
         )
+            SemanticErrorRecorder.error(
+                node.location,
+                "cannot initialize \"${node.name}\" of type \"${node.type.type}\" with \"${node.init.type}\""
+            )
         else
             try {
-                VariableTable[node.name] = Variable(node.type.type, node)
+                VariableTable[node.name] = Variable(node.type.type, node.name, node)
             } catch (e: SymbolTableException) {
                 SemanticErrorRecorder.error(node.location, e.message!!)
             }
@@ -173,9 +176,9 @@ object SemanticMain {
                 SymbolTable.dropLoop()
                 SymbolTable.drop()
             }
-            is ASTNode.Statement.Continue -> SymbolTable.loop
+            is ASTNode.Statement.Continue -> SymbolTable.loop?.let { node.init(it) }
                 ?: SemanticErrorRecorder.error(node.location, "\"continue\" found without loop")
-            is ASTNode.Statement.Break -> SymbolTable.loop
+            is ASTNode.Statement.Break -> SymbolTable.loop?.let { node.init(it) }
                 ?: SemanticErrorRecorder.error(node.location, "\"break\" found without loop")
             is ASTNode.Statement.Return -> {
                 if (SymbolTable.returnType == null)

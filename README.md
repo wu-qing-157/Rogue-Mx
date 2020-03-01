@@ -8,16 +8,17 @@ Description|Status
 ---|---
 ANTLR4|Completed
 AST|Completed
-Semantic|Completed, __pass__ given test suite, __with__ known issues
-IR Translation|No major progress
+Semantic|Completed, __pass__ given test suite
+IR Translation|On the way
 ...|Not planned yet
-Commandline Option|Currently with _commons-cli_, to be rewritten or removed
 
 ## Known Issues
 
-+ Semantic: initialize primitive type with null
+Nothing here yet
 
 ## Test Cases
+
+#### Given Test Suite
 
 Test Suite|Status
 ---|---
@@ -26,18 +27,7 @@ Codegen|Not planned yet
 
 #### Custom Test Cases
 
-File Name|Test Description|Status
----|---|---
-000|CE Lexer|
-001|CE Parser|
-100|Hello World!|
-101|Notation Test|
-102|Associativity Test|
-103|Non-ASCII Character Test|
-104|Complicated Test|
-200|Semantic Test|
-
-Test cases starting with _9_ are not shared through _git_
+Nothing here yet
 
 ## Timeline
 
@@ -61,3 +51,5 @@ Test cases starting with _9_ are not shared through _git_
 + 2020.02.25 Use different exit codes for different stages
 + 2020.02.25 Trivial fix
 + 2020.02.26 Fix with latest test cases
++ 2020.03.01 Fix known issue
++ 2020.03.01 Optimize semantic part for IR translation

@@ -5,7 +5,10 @@ import personal.wuqing.mxcompiler.grammar.PrefixOperator
 import personal.wuqing.mxcompiler.grammar.SuffixOperator
 import personal.wuqing.mxcompiler.utils.Location
 import java.io.Serializable
+import personal.wuqing.mxcompiler.grammar.Function as Function_
 import personal.wuqing.mxcompiler.grammar.Type as Type_
+import personal.wuqing.mxcompiler.grammar.Type.Class as Class_
+import personal.wuqing.mxcompiler.grammar.Variable as Variable_
 
 sealed class ASTNode : Serializable {
     abstract val location: Location
@@ -25,11 +28,15 @@ sealed class ASTNode : Serializable {
         ) : Declaration() {
             override val summary get() = "$name (Function)"
             open val returnType by lazy { result.type }
+            lateinit var actual: Function_ private set
+            fun init(function: Function_) {
+                actual = function
+            }
         }
 
         class Constructor(
             location: Location, type: Type, parameterList: List<Variable>, body: Statement.Block
-        ) : Function(location, "<constructor>", type, parameterList, body) {
+        ) : Function(location, "__constructor__", type, parameterList, body) {
             override val summary get() = "(Constructor)"
             override val returnType = Type_.Void
         }
@@ -44,6 +51,10 @@ sealed class ASTNode : Serializable {
             override val location: Location, val name: String, val type: Type, val init: Expression?
         ) : Declaration() {
             override val summary get() = "$name (VariableDeclaration)"
+            lateinit var actual: Variable_ private set
+            fun init(variable: Variable_) {
+                actual = variable
+            }
         }
 
         class Class(
@@ -51,7 +62,7 @@ sealed class ASTNode : Serializable {
             val declarations: List<Declaration>
         ) : Declaration() {
             override val summary get() = "$name (ClassDeclaration)"
-            val clazz = Type_.Class(name, this)
+            val actual = Class_(name, this)
         }
     }
 
@@ -82,8 +93,8 @@ sealed class ASTNode : Serializable {
 
         interface WithCondition {
             val condition: ASTNode.Expression
-            val simpleCondition get() =
-                (condition as? ASTNode.Expression.Binary)?.simpleCompare ?: false
+            val simpleCondition
+                get() = (condition as? ASTNode.Expression.Binary)?.simpleCompare ?: false
         }
 
         class If(
@@ -113,12 +124,20 @@ sealed class ASTNode : Serializable {
             override val location: Location
         ) : Statement() {
             override val summary get() = "(Continue)"
+            lateinit var loop: Loop private set
+            fun init(loop: Loop) {
+                this.loop = loop
+            }
         }
 
         class Break(
             override val location: Location
         ) : Statement() {
             override val summary get() = "(Break)"
+            lateinit var loop: Loop private set
+            fun init(loop: Loop) {
+                this.loop = loop
+            }
         }
 
         class Return(
@@ -152,6 +171,8 @@ sealed class ASTNode : Serializable {
             override val location: Location, val parent: Expression, val child: String
         ) : Expression() {
             override val summary get() = "$child (MemberAccess)"
+            val resolved by resolve()
+            val reference get() = resolved!!
             override val type by type()
             override val lvalue = true
         }
@@ -211,7 +232,7 @@ sealed class ASTNode : Serializable {
             val simpleCompare
                 get() = operator in listOf(
                     BinaryOperator.EQUAL,
-                    BinaryOperator.UNEQUAL,
+                    BinaryOperator.NEQ,
                     BinaryOperator.LESS,
                     BinaryOperator.LEQ,
                     BinaryOperator.GREATER,
@@ -232,6 +253,8 @@ sealed class ASTNode : Serializable {
             override val location: Location, val name: String
         ) : Expression() {
             override val summary get() = "$name (Identifier)"
+            val resolved by resolve()
+            val reference get() = resolved!!
             override val type by type()
             override val lvalue = true
         }

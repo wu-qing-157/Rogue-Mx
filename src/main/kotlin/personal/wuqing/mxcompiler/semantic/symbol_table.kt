@@ -63,15 +63,15 @@ object VariableTable {
 
 sealed class SymbolTableException(message: String) : Exception(message) {
     class NotFoundException(definition: String, item: String) :
-        SymbolTableException("\"$definition\" cannot be resolved as a \"$item\"")
+        SymbolTableException("\"$definition\" cannot be resolved as a $item")
 
     class DuplicatedException(definition: String, item: String) :
-        SymbolTableException("\"$definition\" has already been defined as a \"$item\"")
+        SymbolTableException("\"$definition\" has already been defined as a $item")
 }
 
 object SymbolTable {
-    private val thisFullList = mutableListOf<Type?>(null)
-    private val thisList = mutableListOf<Type>()
+    private val thisFullList = mutableListOf<Type.Class?>(null)
+    private val thisList = mutableListOf<Type.Class>()
     private val loopList = mutableListOf<ASTNode.Statement.Loop>()
     private val functionList = mutableListOf<ASTNode.Declaration.Function>()
     val thisType get() = thisList.lastOrNull()
@@ -79,7 +79,7 @@ object SymbolTable {
     private val function get() = functionList.lastOrNull()
     val returnType get() = function?.returnType
 
-    fun new(thisType: Type? = null) {
+    fun new(thisType: Type.Class? = null) {
         VariableTable.new()
         thisFullList += thisType?.also { thisList += it }
     }

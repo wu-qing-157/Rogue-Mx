@@ -9,3 +9,5 @@
 /test/*.tree
 /test/*.ast
 /test/*.test
+
+/src/*/resources/*.ll
