@@ -5,7 +5,9 @@ import personal.wuqing.mxcompiler.utils.Location
 import personal.wuqing.mxcompiler.utils.SemanticErrorRecorder
 import java.io.Serializable
 
-sealed class Function(val result: Type, val parameters: List<Type>) : Serializable {
+sealed class Function(
+    val result: Type, open val base: Type?, val name: String, val parameters: List<Type>
+) : Serializable {
     fun match(location: Location, call: List<Type>) =
         if (Type.Unknown in call || Type.Unknown in parameters) Type.Unknown
         else if (call.size != parameters.size || (call zip parameters).any { (c, p) -> c != Type.Null && c != p })
@@ -17,24 +19,25 @@ sealed class Function(val result: Type, val parameters: List<Type>) : Serializab
         else result
 
     class Top(
-        result: Type, val name: String, parameters: List<Type>, val def: ASTNode.Declaration.Function
-    ) : Function(result, parameters) {
+        result: Type, name: String, parameters: List<Type>, val def: ASTNode.Declaration.Function
+    ) : Function(result, null, name, parameters) {
         init {
             def.init(this)
         }
     }
 
     class Member(
-        result: Type, val base: Type, val name: String, parameters: List<Type>, val def: ASTNode.Declaration.Function
-    ) : Function(result, parameters) {
+        result: Type, override val base: Type, name: String, parameters: List<Type>,
+        val def: ASTNode.Declaration.Function
+    ) : Function(result, base, name, parameters) {
         init {
             def.init(this)
         }
     }
 
     sealed class Builtin(
-        result: Type, val base: Type?, val name: String, parameter: List<Type>
-    ) : Function(result, parameter) {
+        result: Type, base: Type?, name: String, parameter: List<Type>
+    ) : Function(result, base, name, parameter) {
         object Print : Builtin(Type.Void, null, "<builtin>print", listOf(Type.Primitive.String))
         object Println : Builtin(Type.Void, null, "<builtin>println", listOf(Type.Primitive.String))
         object PrintInt : Builtin(Type.Void, null, "<builtin>printInt", listOf(Type.Primitive.Int))

@@ -31,19 +31,22 @@ fun ASTNode.Expression.MemberFunction.type() = lazy(LazyThreadSafetyMode.NONE) {
         }
 }
 
-fun ASTNode.Expression.Function.type() = lazy(LazyThreadSafetyMode.NONE) {
+fun ASTNode.Expression.Function.resolve() = lazy(LazyThreadSafetyMode.NONE) {
     if (SymbolTable.thisType != null
         && SymbolTable.thisType!!.functions[name]?.match(location, parameters.map { it.type })
             .takeIf { it != Type.Unknown } != null
-    )
-        SymbolTable.thisType!!.functions[name]?.match(location, parameters.map { it.type })!!
-    else
-        try {
-            FunctionTable[name].match(location, parameters.map { it.type })
-        } catch (e: SymbolTableException) {
-            ASTErrorRecorder.error(location, e.message!!)
-            Type.Unknown
-        }
+    ) SymbolTable.thisType!!.functions[name]
+    else try {
+        FunctionTable[name]
+    } catch (e: SymbolTableException) {
+        null
+    }
+}
+
+fun ASTNode.Expression.Function.type() = lazy(LazyThreadSafetyMode.NONE) {
+    resolved?.match(location, parameters.map { it.type }) ?: Type.Unknown.also {
+        ASTErrorRecorder.error(location, "cannot resolve $name as a function")
+    }
 }
 
 fun ASTNode.Expression.NewArray.type() = lazy(LazyThreadSafetyMode.NONE) {

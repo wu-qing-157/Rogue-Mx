@@ -195,6 +195,8 @@ sealed class ASTNode : Serializable {
             override val location: Location, val name: String, val parameters: List<Expression>
         ) : Expression() {
             override val summary get() = "$name (FunctionCall)"
+            val resolved by resolve()
+            val reference get() = resolved!!
             override val type by type()
             override val lvalue = false
         }
