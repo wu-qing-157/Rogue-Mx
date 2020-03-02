@@ -2,12 +2,15 @@
 
 /.gradle/
 /build/
-/temp/
 
-/test/9*
+/test/*
+!/test/*.*
+/test/test.*
 /test/*.tokens
 /test/*.tree
 /test/*.ast
 /test/*.test
+/test/*.ll
+/test/*.s
 
 /src/*/resources/*.ll

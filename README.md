@@ -9,12 +9,12 @@ Description|Status
 ANTLR4|Completed
 AST|Completed
 Semantic|Completed, __pass__ given test suite
-IR Translation|On the way
+LLVM IR|Preliminarily completed, __much todo__, __almost everything untested__
 ...|Not planned yet
 
 ## Known Issues
 
-Nothing here yet
++ compilation error unfixed in source set _test_
 
 ## Test Cases
 
@@ -27,7 +27,11 @@ Codegen|Not planned yet
 
 #### Custom Test Cases
 
-Nothing here yet
+Test Case|Description|Status
+---|---|---
+return|Simple Main|__Passed__
+hello|Hello World!|much todo (orz)
+...|...|Not planned yet
 
 ## Timeline
 
@@ -53,3 +57,4 @@ Nothing here yet
 + 2020.02.26 Fix with latest test cases
 + 2020.03.01 Fix known issue
 + 2020.03.01 Optimize semantic part for IR translation
++ 2020.03.02 Complete preliminary part of LLVM IR

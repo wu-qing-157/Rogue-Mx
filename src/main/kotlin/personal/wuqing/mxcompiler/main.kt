@@ -4,6 +4,9 @@ import personal.wuqing.mxcompiler.ast.ASTBuilder
 import personal.wuqing.mxcompiler.ast.ASTMain
 import personal.wuqing.mxcompiler.ast.ASTNode
 import personal.wuqing.mxcompiler.io.OutputMethod
+import personal.wuqing.mxcompiler.llvm.LLVMPrinter
+import personal.wuqing.mxcompiler.llvm.LLVMProgram
+import personal.wuqing.mxcompiler.llvm.Translator
 import personal.wuqing.mxcompiler.option.OptionMain
 import personal.wuqing.mxcompiler.option.Target
 import personal.wuqing.mxcompiler.parser.ParserMain
@@ -66,5 +69,14 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
 }
 
 fun fromAST(root: ASTNode.Program, output: OutputMethod, source: String, target: Target) {
-    TODO("after AST $root $output $source $target")
+    val llvm = Translator(root)
+    if (target == Target.LLVM) {
+        output(LLVMPrinter(llvm))
+        return
+    }
+    fromLLVM(llvm, output, source, target)
+}
+
+fun fromLLVM(root: LLVMProgram, output: OutputMethod, source: String, target: Target) {
+    TODO("after llvm $root $output $source $target")
 }

@@ -66,7 +66,7 @@ object OptionMain {
                         if (hasOption("stdin")) System.`in`
                         else FileInputStream(source)
                     val target = when {
-                        hasOption("ir") -> Target.IR
+                        hasOption("llvm") -> Target.LLVM
                         hasOption("ast") -> Target.AST
                         hasOption("semantic") -> Target.SEMANTIC
                         else -> Target.ALL
@@ -111,7 +111,7 @@ object OptionMain {
             addOption(Option(null, "stdout", false, "Output the result to stdout"))
         })
         addOptionGroup(OptionGroup().apply {
-            addOption(Option(null, "ir", false, "Generate IR Result Only"))
+            addOption(Option(null, "llvm", false, "Generate LLVMi Result Only"))
             addOption(Option(null, "ast", false, "Generate AST Only"))
             addOption(Option(null, "semantic", false, "Run Semantic"))
         })
