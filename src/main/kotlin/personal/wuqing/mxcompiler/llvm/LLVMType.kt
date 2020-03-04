@@ -25,7 +25,7 @@ sealed class LLVMType {
         fun definition() = "$name = type { ${members.members.joinToString { Translator[it.type].toString() }} }"
     }
 
-    data class Pointer(val type: LLVMType) : LLVMType() {
+    class Pointer(val type: LLVMType) : LLVMType() {
         override fun toString() = "$type*"
     }
 

@@ -4,13 +4,12 @@ import personal.wuqing.mxcompiler.grammar.BinaryOperator
 import personal.wuqing.mxcompiler.grammar.PrefixOperator
 import personal.wuqing.mxcompiler.grammar.SuffixOperator
 import personal.wuqing.mxcompiler.utils.Location
-import java.io.Serializable
 import personal.wuqing.mxcompiler.grammar.Function as Function_
 import personal.wuqing.mxcompiler.grammar.Type as Type_
 import personal.wuqing.mxcompiler.grammar.Type.Class as Class_
 import personal.wuqing.mxcompiler.grammar.Variable as Variable_
 
-sealed class ASTNode : Serializable {
+sealed class ASTNode {
     abstract val location: Location
     abstract val summary: String
 

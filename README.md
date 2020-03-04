@@ -18,6 +18,7 @@ LLVM IR|Preliminarily completed, __much todo__, __almost everything untested__
 + llvm: assign null to non-null variable
 + llvm: ternary expression having one null branch
 + llvm: global variable does not support init
++ llvm: unicode characters in string literal
 
 ## Test Cases
 
@@ -97,3 +98,4 @@ Status|Notes
 + 2020.03.04 Test LLVM IR (stage 1)
 + 2020.03.04 Discard outputting AST (sad)
 + 2020.03.04 __LLVM IR now produce only used top-level things__
++ 2020.03.04 Remove unnecessary modifier data of some classes

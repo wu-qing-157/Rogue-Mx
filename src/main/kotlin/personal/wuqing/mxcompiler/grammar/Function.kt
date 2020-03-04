@@ -3,16 +3,13 @@ package personal.wuqing.mxcompiler.grammar
 import personal.wuqing.mxcompiler.ast.ASTNode
 import personal.wuqing.mxcompiler.utils.Location
 import personal.wuqing.mxcompiler.utils.SemanticErrorRecorder
-import java.io.Serializable
 
 private typealias Void_ = Type.Void
 private typealias Int_ = Type.Primitive.Int
 private typealias String_ = Type.Primitive.String
 private typealias Bool_ = Type.Primitive.Bool
 
-sealed class Function(
-    val result: Type, open val base: Type?, val name: String, val parameters: List<Type>
-) : Serializable {
+sealed class Function(val result: Type, open val base: Type?, val name: String, val parameters: List<Type>) {
     fun match(location: Location, call: List<Type>) =
         if (Type.Unknown in call || Type.Unknown in parameters) Type.Unknown
         else if (call.size != parameters.size || (call zip parameters).any { (c, p) -> c != Type.Null && c != p })

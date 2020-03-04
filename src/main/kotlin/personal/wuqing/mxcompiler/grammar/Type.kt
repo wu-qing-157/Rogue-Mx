@@ -3,9 +3,8 @@ package personal.wuqing.mxcompiler.grammar
 import personal.wuqing.mxcompiler.ast.ASTNode
 import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
-import java.io.Serializable
 
-sealed class Type(val size: Int) : Serializable {
+sealed class Type(val size: Int) {
     abstract val functions: Map<String, Function>
 
     sealed class Primitive(size: kotlin.Int) : Type(size) {
@@ -46,9 +45,7 @@ sealed class Type(val size: Int) : Serializable {
         override fun toString() = "<unknown type>"
     }
 
-    data class Class(
-        val name: String, val def: ASTNode.Declaration.Class
-    ) : Type(8) {
+    class Class(val name: String, val def: ASTNode.Declaration.Class) : Type(8) {
         class DuplicatedException(message: String) : Exception(message)
 
         val variables = mutableMapOf<String, Variable>()
@@ -70,28 +67,24 @@ sealed class Type(val size: Int) : Serializable {
         override fun toString() = name
     }
 
-    data class Array(
+    class Array(
         val base: Type
     ) : Type(8) {
         override val functions = mapOf("size" to Function.Builtin.ArraySize(this))
         override fun toString() = "$base[]"
-        override fun equals(other: Any?) = other is Array && base == other.base
-        override fun hashCode() = base.hashCode() - 0x1b6e3217 // random generated number
 
         companion object {
             private val pool = mutableMapOf<Pair<Type, Int>, Array>()
-            fun get(base: Type, dimension: Int, location: Location? = null): Type =
-                when (base) {
-                    Unknown -> Unknown
-                    Void -> Unknown.also {
-                        ASTErrorRecorder.error(location!!, "void type doesn't have array type")
-                    }
-                    else ->
-                        if (Pair(base, dimension) in pool) pool[base to dimension]!!
-                        else (if (dimension > 1) Array(get(base, dimension - 1)) else Array(base)).also {
-                            pool[base to dimension] = it
-                        }
+            fun get(base: Type, dimension: Int, location: Location? = null): Type = when (base) {
+                Unknown -> Unknown
+                Void -> Unknown.also {
+                    ASTErrorRecorder.error(location!!, "void type doesn't have array type")
                 }
+                else -> if (Pair(base, dimension) in pool) pool[base to dimension]!!
+                else (if (dimension > 1) Array(get(base, dimension - 1)) else Array(base)).also {
+                    pool[base to dimension] = it
+                }
+            }
         }
     }
 }

@@ -46,7 +46,7 @@ elif [ "$1" = "llvm" ]; then
         echo "\e[34mbuild compiler\e[0m"
         zsh gradlew installDist
         echo "\e[34mmxc --llvm\e[0m"
-        mxc --llvm test/llvm/"$2".mx
+        time mxc --llvm test/llvm/"$2".mx
         echo "\e[34mllc\e[0m"
         llc test/llvm/"$2".ll
         echo "\e[34mgcc -no-pie\e[0m"
