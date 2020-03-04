@@ -59,9 +59,10 @@ object Translator {
             Function.Builtin.StringLength -> LLVMFunction.External.StringLength
             Function.Builtin.StringParseInt -> LLVMFunction.External.StringParseInt
             is Function.Builtin.ArraySize -> LLVMFunction.External.ArraySize
-            is Function.Builtin.DefaultConstructor -> LLVMFunction.External.Empty
+            is Function.Builtin.DefaultConstructor -> throw Exception("analyzing default constructor")
             Function.Builtin.StringOrd -> LLVMFunction.External.StringOrd
             Function.Builtin.StringSubstring -> LLVMFunction.External.StringSubstring
+            Function.Builtin.Malloc -> LLVMFunction.External.Malloc
             Function.Builtin.StringConcatenate -> LLVMFunction.External.StringConcatenate
             Function.Builtin.StringEqual -> LLVMFunction.External.StringEqual
             Function.Builtin.StringNeq -> LLVMFunction.External.StringNeq
@@ -93,10 +94,11 @@ object Translator {
         LLVMName.Literal(s.length, "$s\u0000")
     ).also { literal[s] = it }
 
-    operator fun invoke(ast: ASTNode.Program, main: Function): LLVMProgram {
+    operator fun invoke(main: Function): LLVMProgram {
         this[main]
         return LLVMProgram(
-            struct = type.values.filterIsInstance<LLVMType.Class>(),
+            struct = type.values.filterIsInstance<LLVMType.Pointer>().map { it.type }
+                .filterIsInstance<LLVMType.Class>(),
             global = global.values + literal.values,
             function = function.values.filterIsInstance<LLVMFunction.Declared>(),
             external = function.values.filterIsInstance<LLVMFunction.External>()
@@ -149,41 +151,37 @@ object Translator {
 
     private operator fun invoke(ast: ASTNode.Expression.NewObject): Value {
         val type = ast.baseType.type as? Type.Class ?: throw Exception("new non-class type found after semantic")
-        val llvmType = this[type] as? LLVMType.Class ?: throw Exception("class type mapped to non-class LLVM type")
-        val size = llvmType.members.size
+        val llvmType = this[type] as? LLVMType.Pointer ?: throw Exception("invalid class type status")
+        val classType = llvmType.type as? LLVMType.Class ?: throw Exception("unexpected non-class type")
+        val size = classType.members.size
         val name = nextName()
         this += LLVMStatement.Call(
-            result = name,
-            type = LLVMType.string,
-            name = LLVMFunction.External.Malloc.name,
-            args = listOf(LLVMType.I32 to LLVMName.Const(size))
+            name, LLVMType.string, this[Function.Builtin.Malloc].name,
+            listOf(LLVMType.I32 to LLVMName.Const(size))
         )
-        // TODO : convert void ptr to class ptr
+        val cast = nextName()
+        this += LLVMStatement.Cast(cast, LLVMType.string, name, llvmType)
         val constructor =
             ast.baseType.type.functions["__constructor__"] ?: throw Exception("constructor not found after semantic")
-        if (constructor !is Function.Builtin.DefaultConstructor) {
-            this += LLVMStatement.Call(
-                result = null,
-                type = LLVMType.Void,
-                name = this[constructor].name,
-                args = listOf(LLVMType.Pointer(llvmType) to name)
-            )
-        }
-        return Value(llvmType, true, name)
+        if (constructor !is Function.Builtin.DefaultConstructor) this += LLVMStatement.Call(
+            null, LLVMType.Void, this[constructor].name, listOf(LLVMType.Pointer(llvmType) to cast)
+        )
+        return Value(llvmType, false, cast)
     }
 
-    private operator fun invoke(ast: ASTNode.Expression.NewArray): Value = TODO("ast")
+    private operator fun invoke(ast: ASTNode.Expression.NewArray): Value = TODO("$ast")
 
     private operator fun invoke(ast: ASTNode.Expression.MemberAccess): Value {
         val parent = this(ast.parent).rvalue()
-        val parentType = this[ast.parent.type] as? LLVMType.Class
-            ?: throw Exception("access member of non-class type found after semantic")
+        val parentType = this[ast.parent.type] as? LLVMType.Pointer
+            ?: throw Exception("invalid class type status")
         val variable = ast.reference
         val resultType = this[variable.type]
-        val index = parentType.members.delta[variable] ?: throw Exception("member not arranged")
+        val classType = parentType.type as? LLVMType.Class ?: throw Exception("unexpected non-class type")
+        val index = classType.members.delta[variable] ?: throw Exception("member not arranged")
         val name = nextName()
         this += LLVMStatement.Element(
-            name, resultType, parentType, parent, listOf(
+            name, parentType.type, parentType, parent, listOf(
                 LLVMType.I32 to LLVMName.Const(0),
                 LLVMType.I32 to LLVMName.Const(index)
             )
@@ -285,13 +283,27 @@ object Translator {
         val lhs = this(ast.lhs)
         val ll = lhs.name
         val lr = lhs.rvalue()
-        when (operation) {
-            Operation.BAnd -> TODO()
-            Operation.BOr -> TODO()
+        val name = nextName()
+        if (operation == Operation.BAnd || operation == Operation.BOr) {
+            val current = currentBlock.name
+            val id = localCount++
+            val second = LLVMBlock("__second__.$id")
+            val result = LLVMBlock("__result__.$id")
+            this += if (operation == Operation.BAnd) LLVMStatement.Branch(LLVMType.I1, lr, second.name, result.name)
+            else LLVMStatement.Branch(LLVMType.I1, lr, result.name, second.name)
+            this += second
+            val rr = this(ast.rhs).rvalue()
+            this += LLVMStatement.Jump(result.name)
+            this += result
+            this += LLVMStatement.Phi(
+                name, LLVMType.I1, listOf(
+                    LLVMName.Const(if (operation == Operation.BAnd) 0 else 1) to current, rr to second.name
+                )
+            )
+            return Value(LLVMType.I1, false, name)
         }
         val rhs = this(ast.rhs)
         val rr = rhs.rvalue()
-        val name = nextName()
         return when (operation) {
             Operation.Plus -> {
                 this += LLVMStatement.ICalc(name, ICalcOperator.ADD, LLVMType.I32, lr, rr)
@@ -515,16 +527,20 @@ object Translator {
                 Value(LLVMType.Void, false, LLVMName.Void)
             }
             is Operation.PEqual -> {
-                val llvmType = LLVMType.Pointer(this[ast.lhs.type])
+                val llvmType = this[ast.lhs.type]
                 this += LLVMStatement.ICmp(name, IComOperator.EQ, llvmType, lr, rr)
                 Value(LLVMType.I1, false, name)
             }
             is Operation.PNeq -> {
-                val llvmType = LLVMType.Pointer(this[ast.lhs.type])
-                this += LLVMStatement.ICmp(name, IComOperator.NE, llvmType, ll, rr)
+                val llvmType = this[ast.lhs.type]
+                this += LLVMStatement.ICmp(name, IComOperator.NE, llvmType, lr, rr)
                 Value(LLVMType.I1, false, name)
             }
-            is Operation.PAssign -> TODO()
+            is Operation.PAssign -> {
+                val llvmType = this[ast.lhs.type]
+                this += LLVMStatement.Store(rr, llvmType, ll, LLVMType.Pointer(llvmType))
+                Value(LLVMType.Void, false, LLVMName.Void)
+            }
         }
     }
 

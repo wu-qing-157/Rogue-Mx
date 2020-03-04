@@ -9,7 +9,7 @@ Description|Status
 ANTLR4|Completed
 AST|Completed
 Semantic|Completed, __pass__ given test suite
-LLVM IR|Preliminarily completed, __much todo__, __almost everything untested__
+LLVM IR|Preliminarily completed, __a lot todo__, __partly untested__
 ...|Not planned yet
 
 ## Known Issues
@@ -36,7 +36,7 @@ Status|Notes
 
 ##### Custom Test
 
-run with `sh test.sh llvm <case>` or `sh test.sh llvm custom-all`
+run with `sh test.sh llvm custom-all` or `sh test.sh llvm <case>`
 
 Test Case|Description|Status
 ---|---|---
@@ -51,8 +51,11 @@ hello|Hello World!|__Passed__
 function|Simple function and call|__Passed__
 ternary|Simple ternary expression|__Passed__
 string|Simple string operation|__Passed__
+bool|Simple bool operation|__Passed__
+class-1|Simple class definition|__Passed__
+class-2|Simple constructor|untested
+class-3|Simple recursive class definition|untested
 ...|...|much todo (orz)
-class|Simple class definition|Not planned yet
 array|Simple array operations|Not planned yet
 member|Simple member function and call|Not planned yet
 if|Simple if|Not planned yet
@@ -99,3 +102,4 @@ Status|Notes
 + 2020.03.04 Discard outputting AST (sad)
 + 2020.03.04 __LLVM IR now produce only used top-level things__
 + 2020.03.04 Remove unnecessary modifier data of some classes
++ 2020.03.04 Adjust class-type in LLVM IR

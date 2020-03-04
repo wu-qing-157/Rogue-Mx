@@ -14,7 +14,7 @@ sealed class LLVMType {
     }
 
     class Class(val name: String) : LLVMType() {
-        override fun toString() = "class.$name"
+        override fun toString() = "%__class__.$name"
         override fun equals(other: Any?) = other is Class && name == other.name
         override fun hashCode() = name.hashCode()
         lateinit var members: MemberArrangement private set
@@ -22,7 +22,7 @@ sealed class LLVMType {
             this.members = members
         }
 
-        fun definition() = "$name = type { ${members.members.joinToString { Translator[it.type].toString() }} }"
+        fun definition() = "${toString()} = type { ${members.members.joinToString { Translator[it.type].toString() }} }"
     }
 
     class Pointer(val type: LLVMType) : LLVMType() {

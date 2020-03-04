@@ -1,11 +1,7 @@
-return
-plus
-global
-suffix
-prefix
-assign
-printInt
-hello
+return plus global
+suffix prefix assign
+printInt hello
 function
-ternary
+ternary bool
 string
+class-1

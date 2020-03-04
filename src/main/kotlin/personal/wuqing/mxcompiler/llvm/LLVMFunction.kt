@@ -20,7 +20,7 @@ sealed class LLVMFunction(
         override fun toString() = "declare $ret $name(${args.joinToString()})"
 
         object Empty : External(LLVMType.Void, "__empty__", listOf())
-        object Malloc : External(LLVMType.Pointer(LLVMType.Void), "malloc", listOf(LLVMType.I32))
+        object Malloc : External(LLVMType.string, "malloc", listOf(LLVMType.I32))
         object GetInt : External(LLVMType.I32, "__getInt__", listOf())
         object GetString : External(LLVMType.string, "__getString__", listOf())
         object Print : External(LLVMType.Void, "__print__", listOf(LLVMType.string))

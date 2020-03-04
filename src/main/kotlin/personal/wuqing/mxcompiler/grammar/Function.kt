@@ -53,6 +53,7 @@ sealed class Function(val result: Type, open val base: Type?, val name: String, 
         class DefaultConstructor(type: Type.Class) : Builtin(type, type, "__constructor__", listOf())
         object StringOrd : Builtin(Int_, String_, "ord", listOf(Int_))
         object StringSubstring : Builtin(String_, String_, "substring", listOf(Int_, Int_))
+        object Malloc : Builtin(String_, null, "__malloc__", listOf(Int_))
         object StringConcatenate : Builtin(String_, null, "__string__concatenate__", listOf(String_, String_))
         object StringEqual : Builtin(Bool_, null, "__string__equal__", listOf(String_, String_))
         object StringNeq : Builtin(Bool_, null, "__string__neq__", listOf(String_, String_))

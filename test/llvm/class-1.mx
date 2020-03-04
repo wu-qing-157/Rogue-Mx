@@ -1,0 +1,11 @@
+class A {
+    int a, b;
+};
+
+int main() {
+    A a = new A;
+    a.a = 10;
+    a.b = 10;
+    printlnInt(a.a + a.b);
+    return 0;
+}

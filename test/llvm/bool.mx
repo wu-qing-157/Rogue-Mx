@@ -1,0 +1,23 @@
+bool True() {
+    print("t");
+    return true;
+}
+bool False() {
+    print("f");
+    return false;
+}
+void result(bool b) {
+    println(b ? " true" : " false");
+}
+
+int main() {
+    result(True() && True());
+    result(True() && False());
+    result(False() && True());
+    result(False() && False());
+    result(True() || True());
+    result(True() || False());
+    result(False() || True());
+    result(False() || False());
+    return 0;
+}

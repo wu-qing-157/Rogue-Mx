@@ -43,8 +43,8 @@ sealed class LLVMStatement {
         override fun toString() = "br label $dest"
     }
 
-    class Phi(val name: LLVMName, val type: LLVMType, val list: List<Pair<LLVMName, LLVMName>>) : LLVMStatement() {
-        override fun toString() = "$name = phi $type ${list.joinToString { (n, l) -> "[ $n, $l ]" }}"
+    class Phi(val result: LLVMName, val type: LLVMType, val list: List<Pair<LLVMName, LLVMName>>) : LLVMStatement() {
+        override fun toString() = "$result = phi $type ${list.joinToString { (n, l) -> "[ $n, $l ]" }}"
     }
 
     class Call(
@@ -52,6 +52,12 @@ sealed class LLVMStatement {
     ) : LLVMStatement() {
         override fun toString() =
             "${result?.let { "$result = " } ?: ""}call $type $name(${args.joinToString { (t, n) -> "$t $n" }})"
+    }
+
+    class Cast(
+        val result: LLVMName, val fromType: LLVMType, val from: LLVMName, val toType: LLVMType
+    ) : LLVMStatement() {
+        override fun toString() = "$result = bitcast $fromType $from to $toType"
     }
 
     class Element(
