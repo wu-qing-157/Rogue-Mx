@@ -17,6 +17,8 @@ sealed class LLVMFunction(
     sealed class External(
         ret: LLVMType, name: String, args: List<LLVMType>
     ) : LLVMFunction(ret, LLVMName.Global(name), args) {
+        override fun toString() = "declare $ret $name(${args.joinToString()})"
+
         object Empty : External(LLVMType.Void, "__empty__", listOf())
         object Malloc : External(LLVMType.Pointer(LLVMType.Void), "malloc", listOf(LLVMType.I32))
         object GetInt : External(LLVMType.I32, "__getInt__", listOf())
@@ -37,22 +39,22 @@ sealed class LLVMFunction(
             External(LLVMType.string, "__string__concatenate__", listOf(LLVMType.string, LLVMType.string))
 
         object StringEqual :
-            External(LLVMType.I1, "__string__equal__", listOf(LLVMType.string, LLVMType.string))
+            External(LLVMType.I8, "__string__equal__", listOf(LLVMType.string, LLVMType.string))
 
         object StringNeq :
-            External(LLVMType.I1, "__string__neq__", listOf(LLVMType.string, LLVMType.string))
+            External(LLVMType.I8, "__string__neq__", listOf(LLVMType.string, LLVMType.string))
 
         object StringLess :
-            External(LLVMType.I1, "__string__less__", listOf(LLVMType.string, LLVMType.string))
+            External(LLVMType.I8, "__string__less__", listOf(LLVMType.string, LLVMType.string))
 
         object StringLeq :
-            External(LLVMType.I1, "__string__leq__", listOf(LLVMType.string, LLVMType.string))
+            External(LLVMType.I8, "__string__leq__", listOf(LLVMType.string, LLVMType.string))
 
         object StringGreater :
-            External(LLVMType.I1, "__string__greater__", listOf(LLVMType.string, LLVMType.string))
+            External(LLVMType.I8, "__string__greater__", listOf(LLVMType.string, LLVMType.string))
 
         object StringGeq :
-            External(LLVMType.I1, "__string__geq__", listOf(LLVMType.string, LLVMType.string))
+            External(LLVMType.I8, "__string__geq__", listOf(LLVMType.string, LLVMType.string))
 
         object ArraySize : External(LLVMType.I32, "__array__size__", listOf(LLVMType.Pointer(LLVMType.Void)))
     }

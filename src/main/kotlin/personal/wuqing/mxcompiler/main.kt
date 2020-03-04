@@ -2,10 +2,8 @@ package personal.wuqing.mxcompiler
 
 import personal.wuqing.mxcompiler.ast.ASTBuilder
 import personal.wuqing.mxcompiler.ast.ASTMain
-import personal.wuqing.mxcompiler.ast.ASTNode
 import personal.wuqing.mxcompiler.io.OutputMethod
 import personal.wuqing.mxcompiler.llvm.LLVMPrinter
-import personal.wuqing.mxcompiler.llvm.LLVMProgram
 import personal.wuqing.mxcompiler.llvm.Translator
 import personal.wuqing.mxcompiler.option.OptionMain
 import personal.wuqing.mxcompiler.option.Target
@@ -30,10 +28,6 @@ fun main(arguments: Array<String>) {
             val (input, output, source, target) = result
             fromSource(input, output, source, target)
         }
-        is OptionMain.Result.FromAST -> {
-            val (root, output, source, target) = result
-            fromAST(root, output, source, target)
-        }
     }
 }
 
@@ -46,15 +40,16 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
         ASTErrorRecorder.report()
         SemanticErrorRecorder.report()
 
-        when (target) {
-            Target.AST -> return Unit.also {
-                output(root)
-                ASTErrorRecorder.report()
-                SemanticErrorRecorder.report()
-            }
-            Target.SEMANTIC -> return Unit.also { SemanticMain.reportSuccess() }
-            else -> fromAST(root, output, source, target)
+        if (target == Target.SEMANTIC) return Unit.also { SemanticMain.reportSuccess() }
+
+        val llvm = Translator(root, SemanticMain.getMain())
+
+        if (target == Target.LLVM) {
+            output(LLVMPrinter(llvm))
+            return
         }
+
+        TODO("after generating LLVM")
     } catch (ast: ASTBuilder.Exception) {
         try {
             ParserErrorRecorder.report()
@@ -66,17 +61,4 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
     } catch (e: ErrorRecorderException) {
         exitProcess(e.exit)
     }
-}
-
-fun fromAST(root: ASTNode.Program, output: OutputMethod, source: String, target: Target) {
-    val llvm = Translator(root)
-    if (target == Target.LLVM) {
-        output(LLVMPrinter(llvm))
-        return
-    }
-    fromLLVM(llvm, output, source, target)
-}
-
-fun fromLLVM(root: LLVMProgram, output: OutputMethod, source: String, target: Target) {
-    TODO("after llvm $root $output $source $target")
 }

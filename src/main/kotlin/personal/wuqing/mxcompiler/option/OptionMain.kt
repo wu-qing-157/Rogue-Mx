@@ -23,10 +23,6 @@ object OptionMain {
         data class FromSource(
             val input: InputStream, val output: OutputMethod, val source: String, val target: Target
         ) : Result()
-
-        data class FromAST(
-            val root: ASTNode.Program, val output: OutputMethod, val source: String, val target: Target
-        ) : Result()
     }
 
     operator fun invoke(arguments: Array<String>) = try {
@@ -67,7 +63,6 @@ object OptionMain {
                         else FileInputStream(source)
                     val target = when {
                         hasOption("llvm") -> Target.LLVM
-                        hasOption("ast") -> Target.AST
                         hasOption("semantic") -> Target.SEMANTIC
                         else -> Target.ALL
                     }
@@ -76,16 +71,7 @@ object OptionMain {
                         hasOption("output") -> OutputMethod.File(getOptionValue("output"))
                         else -> OutputMethod.File(source.replace(Regex("\\..*?$"), "") + target.ext)
                     }
-                    when {
-                        hasOption("from-ast") ->
-                            if (target == Target.AST)
-                                Result.Exit.also { OptionErrorRecorder.fatalError("Cannot process $target from AST") }
-                            else
-                                Result.FromAST(ObjectInputStream(input).use {
-                                    it.readObject() as ASTNode.Program
-                                }, output, source, target)
-                        else -> Result.FromSource(input, output, source, target)
-                    }
+                    Result.FromSource(input, output, source, target)
                 }
             }
         }
@@ -112,11 +98,7 @@ object OptionMain {
         })
         addOptionGroup(OptionGroup().apply {
             addOption(Option(null, "llvm", false, "Generate LLVMi Result Only"))
-            addOption(Option(null, "ast", false, "Generate AST Only"))
             addOption(Option(null, "semantic", false, "Run Semantic"))
-        })
-        addOptionGroup(OptionGroup().apply {
-            addOption(Option(null, "from-ast", false, "Compile from Generated AST"))
         })
     }
 }

@@ -13,7 +13,7 @@ sealed class LLVMType {
         override fun toString() = "i1"
     }
 
-    class Class(val name: kotlin.String) : LLVMType() {
+    class Class(val name: String) : LLVMType() {
         override fun toString() = "class.$name"
         override fun equals(other: Any?) = other is Class && name == other.name
         override fun hashCode() = name.hashCode()
