@@ -148,7 +148,7 @@ object SemanticMain {
                 SymbolTable.new()
                 visit(node.then)
                 SymbolTable.drop()
-                node.else_?.let {
+                node.els?.let {
                     SymbolTable.new()
                     visit(it)
                     SymbolTable.drop()

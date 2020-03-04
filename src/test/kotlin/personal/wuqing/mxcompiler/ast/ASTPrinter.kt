@@ -62,7 +62,7 @@ object ASTPrinter {
                 summary(root.condition, depth + 1)
                 write(indent + "then: ")
                 summary(root.then, depth + 1)
-                root.else_?.let {
+                root.els?.let {
                     write(indent + "else: ")
                     summary(it, depth + 1)
                 }
@@ -157,7 +157,7 @@ object ASTPrinter {
                 write(indent + "then: ")
                 summary(root.then, depth + 1)
                 write(indent + "else: ")
-                summary(root.else_, depth + 1)
+                summary(root.els, depth + 1)
             }
             is ASTNode.Expression.Identifier, is ASTNode.Expression.This, is ASTNode.Expression.Constant, is ASTNode.Type -> {
             }

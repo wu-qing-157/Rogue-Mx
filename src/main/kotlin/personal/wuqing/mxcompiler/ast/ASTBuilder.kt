@@ -135,7 +135,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             location = Location(filename, ctx!!),
             condition = visit(ctx.expression()) as ASTNode.Expression,
             then = visit(ctx.statement()) as ASTNode.Statement,
-            else_ = null
+            els = null
         )
 
     override fun visitIfElseStatement(ctx: MxLangParser.IfElseStatementContext?) =
@@ -143,7 +143,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             location = Location(filename, ctx!!),
             condition = visit(ctx.expression()) as ASTNode.Expression,
             then = visit(ctx.thenStatement) as ASTNode.Statement,
-            else_ = visit(ctx.elseStatement) as ASTNode.Statement
+            els = visit(ctx.elseStatement) as ASTNode.Statement
         )
 
     override fun visitWhileStatement(ctx: MxLangParser.WhileStatementContext?) =
@@ -316,7 +316,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             location = Location(filename, ctx!!),
             condition = visit(ctx.expression(0)) as ASTNode.Expression,
             then = visit(ctx.expression(1)) as ASTNode.Expression,
-            else_ = visit(ctx.expression(2)) as ASTNode.Expression
+            els = visit(ctx.expression(2)) as ASTNode.Expression
         )
 
     override fun visitThisExpression(ctx: MxLangParser.ThisExpressionContext?) =
@@ -354,8 +354,11 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                     .replace("\\b", "\b")
                     .replace("\\n", "\n")
                     .replace("\\r", "\r")
-                    .replace("\\\\", "\\")
                     .replace("\\\"", "\"")
+                    .replace(Regex("\\\\[uU]([0-9a-fA-F]{4})")) {
+                        it.groups[1]!!.value.toInt(16).toChar().toString()
+                    }
+                    .replace("\\\\", "\\")
             )
             ctx.Null() != null -> ASTNode.Expression.Constant.Null(Location(filename, ctx))
             ctx.True() != null -> ASTNode.Expression.Constant.True(Location(filename, ctx))

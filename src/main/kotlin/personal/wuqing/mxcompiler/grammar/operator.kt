@@ -14,13 +14,13 @@ enum class SuffixOperator(
     override fun toString() = displayText
     fun accept(operand: Type, lvalue: Boolean) =
         if (!lvalue && requireLvalue) null else when (operand) {
-        is Type.Primitive -> ret[operand]
-        Type.Null -> null
-        Type.Void -> null
-        Type.Unknown -> Type.Unknown
-        is Type.Class -> null
-        is Type.Array -> null
-    }
+            is Type.Primitive -> ret[operand]
+            Type.Null -> null
+            Type.Void -> null
+            Type.Unknown -> Type.Unknown
+            is Type.Class -> null
+            is Type.Array -> null
+        }
 }
 
 enum class PrefixOperator(
@@ -48,7 +48,7 @@ enum class PrefixOperator(
 
 enum class BinaryOperator(
     private val displayText: kotlin.String, private val requireLvalue: Pair<Boolean, Boolean>,
-    val lvalue: Boolean, private val ret: Map<Pair<Type.Primitive, Type.Primitive>, Pair<Type.Primitive, Operation>>
+    val lvalue: Boolean, private val ret: Map<Pair<Type.Primitive, Type.Primitive>, Pair<Type, Operation>>
 ) {
     PLUS(
         "+", false to false, false, mapOf(
@@ -103,9 +103,9 @@ enum class BinaryOperator(
     ),
     ASSIGN(
         "=", true to false, true, mapOf(
-            (Bool to Bool) to (Bool to Operation.BAssign),
-            (Int to Int) to (Bool to Operation.IAssign),
-            (String to String) to (Bool to Operation.SAssign)
+            (Bool to Bool) to (Type.Void to Operation.BAssign),
+            (Int to Int) to (Type.Void to Operation.IAssign),
+            (String to String) to (Type.Void to Operation.SAssign)
         )
     ),
     PLUS_I(

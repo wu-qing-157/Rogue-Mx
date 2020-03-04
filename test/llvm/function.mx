@@ -1,0 +1,9 @@
+int main() {
+    int a = 120;
+    printlnInt(f(a));
+    return 0;
+}
+
+int f(int x) {
+    return x + x / 2;
+}

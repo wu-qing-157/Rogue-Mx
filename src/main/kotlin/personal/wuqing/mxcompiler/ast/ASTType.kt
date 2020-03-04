@@ -23,9 +23,13 @@ fun ASTNode.Expression.NewObject.type() = lazy(LazyThreadSafetyMode.NONE) {
     }
 }
 
+fun ASTNode.Expression.MemberFunction.resolve() = lazy(LazyThreadSafetyMode.NONE) {
+    base.type.functions[name]
+}
+
 fun ASTNode.Expression.MemberFunction.type() = lazy(LazyThreadSafetyMode.NONE) {
     if (base.type == Type.Unknown) Type.Unknown
-    else base.type.functions[name]?.match(location, parameters.map { it.type })
+    else resolved?.match(location, parameters.map { it.type })
         ?: Type.Unknown.also {
             ASTErrorRecorder.error(location, "cannot find function \"${base.type}.$name\"")
         }
@@ -125,7 +129,7 @@ fun ASTNode.Expression.Binary.type() = lazy(LazyThreadSafetyMode.NONE) {
 }
 
 fun ASTNode.Expression.Ternary.type() = lazy(LazyThreadSafetyMode.NONE) {
-    val (t, f) = listOf(then.type, else_.type)
+    val (t, f) = listOf(then.type, els.type)
     when (condition.type) {
         is Type.Unknown -> Type.Unknown
         is Type.Primitive.Bool -> when {

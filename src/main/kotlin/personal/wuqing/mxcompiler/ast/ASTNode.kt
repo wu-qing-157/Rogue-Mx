@@ -99,7 +99,7 @@ sealed class ASTNode : Serializable {
 
         class If(
             override val location: Location,
-            override val condition: ASTNode.Expression, val then: Statement, val else_: Statement?
+            override val condition: ASTNode.Expression, val then: Statement, val els: Statement?
         ) : Statement(), WithCondition {
             override val summary get() = "(If)"
         }
@@ -187,6 +187,8 @@ sealed class ASTNode : Serializable {
             override val location: Location, val base: Expression, val name: String, val parameters: List<Expression>
         ) : Expression() {
             override val summary get() = "$name (MemberFunctionCall)"
+            val resolved by resolve()
+            val reference get() = resolved!!
             override val type by type()
             override val lvalue = false
         }
@@ -244,11 +246,11 @@ sealed class ASTNode : Serializable {
 
         class Ternary(
             override val location: Location, val condition: Expression,
-            val then: Expression, val else_: Expression
+            val then: Expression, val els: Expression
         ) : Expression() {
             override val summary get() = "(TernaryOperator)"
             override val type by type()
-            override val lvalue = then.lvalue && else_.lvalue
+            override val lvalue = then.lvalue && els.lvalue
         }
 
         class Identifier(

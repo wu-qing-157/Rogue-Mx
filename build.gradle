@@ -50,3 +50,14 @@ jar {
 startScripts {
     applicationName = "mxc"
 }
+
+task generateBuiltin(type: Exec) {
+    dependsOn processResources
+    workingDir 'build/resources/main'
+    commandLine 'riscv32-unknown-linux-gnu-gcc', '-S', '-std=c99', '-fno-section-anchors', 'builtin_functions.c',
+            '-o', 'builtin_functions.s'
+}
+
+installDist {
+    dependsOn generateBuiltin
+}

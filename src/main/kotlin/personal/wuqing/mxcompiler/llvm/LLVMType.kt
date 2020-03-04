@@ -1,8 +1,16 @@
 package personal.wuqing.mxcompiler.llvm
 
 sealed class LLVMType {
-    data class I(val length: Int) : LLVMType() {
-        override fun toString() = "i$length"
+    object I32 : LLVMType() {
+        override fun toString() = "i32"
+    }
+
+    object I8 : LLVMType() {
+        override fun toString() = "i8"
+    }
+
+    object I1 : LLVMType() {
+        override fun toString() = "i1"
     }
 
     class Class(val name: kotlin.String) : LLVMType() {
@@ -13,6 +21,7 @@ sealed class LLVMType {
         fun init(members: MemberArrangement) {
             this.members = members
         }
+
         fun definition() = "$name = type { ${members.members.joinToString { Translator[it.type].toString() }} }"
     }
 
@@ -20,11 +29,15 @@ sealed class LLVMType {
         override fun toString() = "$type*"
     }
 
-    object String : LLVMType() {
-        override fun toString() = "%string"
+    companion object {
+        val string = Pointer(I8)
     }
 
     object Void : LLVMType() {
         override fun toString() = "void"
+    }
+
+    class Vector(val length: Int, val base: LLVMType) : LLVMType() {
+        override fun toString() = "[ $length x $base ]"
     }
 }

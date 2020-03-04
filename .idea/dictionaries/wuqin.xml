@@ -3,16 +3,23 @@
     <words>
       <w>alloca</w>
       <w>antlr</w>
+      <w>ashr</w>
+      <w>fgets</w>
       <w>getchar</w>
       <w>getelementptr</w>
       <w>gradlew</w>
+      <w>icmp</w>
+      <w>lshr</w>
       <w>mxcompiler</w>
       <w>printf</w>
       <w>putchar</w>
+      <w>riscv</w>
       <w>scanf</w>
+      <w>sdiv</w>
       <w>sjtu</w>
       <w>sourcefiles</w>
       <w>sprintf</w>
+      <w>srem</w>
       <w>sscanf</w>
       <w>strlen</w>
       <w>wuqing</w>

@@ -50,7 +50,7 @@ object OptionMain {
                         hasOption("input-name") -> {
                             if (args.isNotEmpty())
                                 OptionErrorRecorder.warning("input file ignored: ${args.joinToString()}")
-                            OptionErrorRecorder.info("please input file name: ")
+                            OptionErrorRecorder.info("please input file name: ", false)
                             readLine().apply {
                                 if (isNullOrEmpty()) return Result.Exit.also {
                                     OptionErrorRecorder.fatalError("empty input")

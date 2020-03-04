@@ -38,23 +38,23 @@ sealed class Function(
     sealed class Builtin(
         result: Type, base: Type?, name: String, parameter: List<Type>
     ) : Function(result, base, name, parameter) {
-        object Print : Builtin(Type.Void, null, "<builtin>print", listOf(Type.Primitive.String))
-        object Println : Builtin(Type.Void, null, "<builtin>println", listOf(Type.Primitive.String))
-        object PrintInt : Builtin(Type.Void, null, "<builtin>printInt", listOf(Type.Primitive.Int))
-        object PrintlnInt : Builtin(Type.Void, null, "<builtin>printlnInt", listOf(Type.Primitive.Int))
-        object GetString : Builtin(Type.Primitive.String, null, "<builtin>getString", listOf())
-        object GetInt : Builtin(Type.Primitive.Int, null, "<builtin>.getInt", listOf())
-        object ToString : Builtin(Type.Primitive.String, null, "<builtin>toString", listOf(Type.Primitive.Int))
-        object StringLength : Builtin(Type.Primitive.Int, Type.Primitive.String, "<builtin>length", listOf())
-        object StringParseInt : Builtin(Type.Primitive.Int, Type.Primitive.String, "<builtin>parseInt", listOf())
-        class ArraySize(type: Type.Array) : Builtin(Type.Primitive.Int, type, "<builtin>size", listOf())
-        class DefaultConstructor(type: Type.Class) : Builtin(type, type, "<default_constructor>", listOf())
+        object Print : Builtin(Type.Void, null, "print", listOf(Type.Primitive.String))
+        object Println : Builtin(Type.Void, null, "println", listOf(Type.Primitive.String))
+        object PrintInt : Builtin(Type.Void, null, "printInt", listOf(Type.Primitive.Int))
+        object PrintlnInt : Builtin(Type.Void, null, "printlnInt", listOf(Type.Primitive.Int))
+        object GetString : Builtin(Type.Primitive.String, null, "getString", listOf())
+        object GetInt : Builtin(Type.Primitive.Int, null, ".getInt", listOf())
+        object ToString : Builtin(Type.Primitive.String, null, "toString", listOf(Type.Primitive.Int))
+        object StringLength : Builtin(Type.Primitive.Int, Type.Primitive.String, "length", listOf())
+        object StringParseInt : Builtin(Type.Primitive.Int, Type.Primitive.String, "parseInt", listOf())
+        class ArraySize(type: Type.Array) : Builtin(Type.Primitive.Int, type, "size", listOf())
+        class DefaultConstructor(type: Type.Class) : Builtin(type, type, "__constructor__", listOf())
         object StringOrd : Builtin(
-            Type.Primitive.Int, Type.Primitive.String, "<builtin>ord", listOf(Type.Primitive.Int)
+            Type.Primitive.Int, Type.Primitive.String, "ord", listOf(Type.Primitive.Int)
         )
 
         object StringSubstring : Builtin(
-            Type.Primitive.String, Type.Primitive.String, "<builtin>substring",
+            Type.Primitive.String, Type.Primitive.String, "substring",
             listOf(Type.Primitive.Int, Type.Primitive.Int)
         )
     }

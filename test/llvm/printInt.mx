@@ -1,0 +1,4 @@
+int main() {
+    printlnInt(123);
+    return 0;
+}

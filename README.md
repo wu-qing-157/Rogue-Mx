@@ -15,23 +15,58 @@ LLVM IR|Preliminarily completed, __much todo__, __almost everything untested__
 ## Known Issues
 
 + compilation error unfixed in source set _test_
++ llvm: assign null to non-null variable
++ llvm: ternary expression having one null branch
++ llvm: global variable does not support init
 
 ## Test Cases
 
+### Semantic Test
+
 #### Given Test Suite
 
-Test Suite|Status
----|---
-Semantic|__Test OK__
-Codegen|Not planned yet
+run with `sh test.sh semantic all` or `sh test.sh <package> <number>`
 
-#### Custom Test Cases
+Status|Notes
+---|---
+187 / 187|__All Passed__
+
+### LLVM Test
+
+##### Custom Test
+
+run with `sh test.sh llvm <case>` or `sh test.sh llvm custom-all`
 
 Test Case|Description|Status
 ---|---|---
-return|Simple Main|__Passed__
-hello|Hello World!|much todo (orz)
+return|Simple main|__Passed__
+plus|Simple operator|__Passed__
+global|Simple global variable|__Passed__
+suffix|Simple suffix operator|__Passed__
+prefix|Simple prefix operator|__Passed__
+assign|Simple assignment|__Passed__
+printInt|Call built-in function|__Passed__
+hello|Hello World!|__Passed__
+function|Simple function and call|__Passed__
+ternary|Simple ternary expression|__Passed__
+string|Simple string operation|__Passed__
+...|...|much todo (orz)
+class|Simple class definition|Not planned yet
+array|Simple array operations|Not planned yet
+member|Simple member function and call|Not planned yet
+if|Simple if|Not planned yet
+while|Simple while|Not planned yet
+for|Simple for|Not planned yet
+control|Simple mixture of control statements|Not planned yet
 ...|...|Not planned yet
+
+#### Given Test Suite
+
+run with `sh test.sh llvm all`
+
+Status|Notes
+---|---
+???|Not planned yet
 
 ## Timeline
 
@@ -58,3 +93,5 @@ hello|Hello World!|much todo (orz)
 + 2020.03.01 Fix known issue
 + 2020.03.01 Optimize semantic part for IR translation
 + 2020.03.02 Complete preliminary part of LLVM IR
++ 2020.03.03 String literal now allows unicode escape
++ 2020.03.04 Test LLVM IR (stage 1)

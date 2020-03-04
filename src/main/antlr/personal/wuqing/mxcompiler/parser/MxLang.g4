@@ -1,6 +1,6 @@
 grammar MxLang;
 
-StringConstant: '"' (~["\t\b\n\r\\] | '\\' [tbnr\\"])* '"';
+StringConstant: '"' (~["\t\b\n\r\\] | '\\' [tbnr\\"] | '\\' [uU] [0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])* '"';
 NotationSingleLine: '//' .*? ('\n'|EOF) -> skip;
 NotationMultiline: '/*' .*? '*/' -> skip;
 

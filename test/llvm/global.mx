@@ -1,0 +1,6 @@
+int a;
+
+int main() {
+    a = 102;
+    return a;
+}

@@ -14,7 +14,7 @@ int __getInt__() {
 
 char *__getString__() {
     char *s = malloc(261) + 4;
-    scanf("%s", s);
+    fgets(s, 257, stdin);
     *((int *) (s - 4)) = strlen(s);
     return s;
 }
@@ -60,9 +60,62 @@ char *__string__substring__(int l, int r, char *s) {
     int length = r - l + 1;
     char *ret = malloc(5 + length) + 4;
     *((int *) (ret - 4)) = length;
-    for (int i = 0, j = l; j <= r; i++, j++) ret[i] = s[j];
+    s += l;
+    for (int i = 0; i < length; i++) ret[i] = s[i];
     ret[length] = 0;
     return ret;
+}
+
+char *__string__concatenate__(char *s, char *t) {
+    int ls = *((int *) (s - 4)), tot = *((int *) (t - 4)) + ls;
+    t -= ls;
+    char *ret = malloc(5 + tot) + 4;
+    *((int *) (ret - 4)) = tot;
+    int i = 0;
+    for (; i < ls; i++) ret[i] = s[i];
+    for (; i < tot; i++) ret[i] = t[i];
+    ret[tot] = 0;
+    return ret;
+}
+
+char __string__equal__(char *s, char *t) {
+    for (; ; s++, t++)
+        if (*s != *t) return 0;
+        else if (*s == '\0') return 1;
+}
+
+char __string__neq__(char *s, char *t) {
+    for (; ; s++, t++)
+        if (*s != *t) return 1;
+        else if (*s == '\0') return 0;
+}
+
+char __string__less__(char *s, char *t) {
+    for (; ; s++, t++)
+        if (*s < *t) return 1;
+        else if (*s > *t) return 0;
+        else if (*s == '\0') return 0;
+}
+
+char __string__leq__(char *s, char *t) {
+    for (; ; s++, t++)
+        if (*s < *t) return 1;
+        else if (*s > *t) return 0;
+        else if (*s == '\0') return 1;
+}
+
+char __string__greater__(char *s, char *t) {
+    for (; ; s++, t++)
+        if (*s < *t) return 0;
+        else if (*s > *t) return 1;
+        else if (*s == '\0') return 0;
+}
+
+char __string__geq__(char *s, char *t) {
+    for (; ; s++, t++)
+        if (*s < *t) return 0;
+        else if (*s > *t) return 1;
+        else if (*s == '\0') return 1;
 }
 
 int __array__size__(void *a) {

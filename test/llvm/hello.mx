@@ -1,0 +1,4 @@
+int main() {
+    println("\u001b[37mH\u001b[31me\u001b[32ml\u001b[33ml\u001b[34mo\u001b[35m, \u001b[36mWorld\u001b[30m!\u001b[0m");
+    return 0;
+}

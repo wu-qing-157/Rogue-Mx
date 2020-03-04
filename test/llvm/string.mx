@@ -1,0 +1,15 @@
+int main() {
+    string a = "a", b = "b", c = "c", ab = "ab", temp = "";
+    temp += a + c;
+    temp += temp;
+    temp += ab;
+    println(temp);
+    println(a < b ? "OK" : "err");
+    println(a < ab ? "OK" : "err");
+    println(a <= a ? "OK" : "err");
+    println(a + b == ab ? "OK" : "err");
+    println(a != b ? "OK" : "err");
+    println(a > b ? "err" : "OK");
+    println(a >= b ? "err" : "OK");
+    return 0;
+}

@@ -1,0 +1,6 @@
+int main() {
+    bool s = true, t = false;
+    int a = 10, b = 21, c = 36;
+    printlnInt((s ? a : b) + (t ? b : c));
+    return 0;
+}

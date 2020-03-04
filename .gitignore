@@ -3,14 +3,16 @@
 /.gradle/
 /build/
 
-/test/*
-!/test/*.*
-/test/test.*
-/test/*.tokens
-/test/*.tree
-/test/*.ast
-/test/*.test
-/test/*.ll
-/test/*.s
+/test/*/*
+!/test/*/*.*
+/test/*/test.*
+/test/*/*.tokens
+/test/*/*.tree
+/test/*/*.ast
+/test/*/*.test
+/test/*/*.ll
+/test/*/*.s
+/test/*/*.out
 
 /src/*/resources/*.ll
+/src/*/resources/*.s

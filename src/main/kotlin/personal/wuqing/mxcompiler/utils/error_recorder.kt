@@ -6,7 +6,9 @@ object OptionErrorRecorder {
     fun fatalError(msg: String) = LogPrinter.println("${ErrorType.Fatal} $msg")
     fun unsupported(msg: String) = LogPrinter.println("${ErrorType.Unsupported} $msg")
     fun warning(msg: String) = LogPrinter.println("${ErrorType.Warning} $msg")
-    fun info(msg: String) = LogPrinter.println("${ErrorType.Info} $msg")
+    fun info(msg: String, newline: Boolean = true) =
+        if (newline) LogPrinter.println("${ErrorType.Info} $msg")
+        else LogPrinter.print("${ErrorType.Info} $msg")
 }
 
 object ParserErrorRecorder {

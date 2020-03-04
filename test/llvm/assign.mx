@@ -1,0 +1,6 @@
+int main() {
+    int a = 10, b, c = 5;
+    b = a + a;
+    c += b;
+    return a / 2 + b + c;
+}

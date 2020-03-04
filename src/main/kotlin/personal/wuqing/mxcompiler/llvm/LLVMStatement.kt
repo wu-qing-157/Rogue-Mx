@@ -30,7 +30,7 @@ sealed class LLVMStatement {
     class ICmp(
         val result: LLVMName, val operator: IComOperator, val type: LLVMType, val op1: LLVMName, val op2: LLVMName
     ) : LLVMStatement() {
-        override fun toString() = "$result = $operator $type $op1, $op2"
+        override fun toString() = "$result = icmp $operator $type $op1, $op2"
     }
 
     class Branch(
@@ -43,10 +43,15 @@ sealed class LLVMStatement {
         override fun toString() = "br label $dest"
     }
 
+    class Phi(val name: LLVMName, val type: LLVMType, val list: List<Pair<LLVMName, LLVMName>>) : LLVMStatement() {
+        override fun toString() = "$name = phi $type ${list.joinToString { (n, l) -> "[ $n, $l ]" }}"
+    }
+
     class Call(
         val result: LLVMName?, val type: LLVMType, val name: LLVMName, val args: List<Pair<LLVMType, LLVMName>>
     ) : LLVMStatement() {
-        override fun toString() = "${result?.let { "$result = " } ?: ""}call $type $name(${args.joinToString()})"
+        override fun toString() =
+            "${result?.let { "$result = " } ?: ""}call $type $name(${args.joinToString { (t, n) -> "$t $n" }})"
     }
 
     class Element(
