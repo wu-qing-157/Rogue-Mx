@@ -54,14 +54,14 @@ bool|Simple bool operation|__Passed__
 class-1|Simple class definition|__Passed__
 class-2|Simple constructor|__Passed__
 class-3|Simple member function|__Passed__
+class-4|Simple member init|On the way
 null|Simple null test|__Passed__
-...|...|much todo (orz)
-array|Simple array operations|Not planned yet
-if|Simple if|Not planned yet
-while|Simple while|Not planned yet
-for|Simple for|Not planned yet
-control|Simple mixture of control statements|Not planned yet
-...|...|Not planned yet
+if|Simple if|__Passed__
+while|Simple while|__Passed__
+for|Simple for|__Passed__
+control|Simple mixture of control statements|__Passed__
+array|Simple array operations|A lot todo (orz)
+...|...|(maybe no more)
 
 #### Given Test Suite
 
@@ -105,3 +105,4 @@ Status|Notes
 + 2020.03.05 Test class constructor
 + 2020.03.05 Support null value
 + 2020.03.05 Test member function, fix identifier resolve
++ 2020.03.05 Pass control test

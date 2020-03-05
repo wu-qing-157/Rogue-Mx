@@ -1,0 +1,13 @@
+void m(bool a, bool b) {
+    if (a) if (b) print("1"); else print("2");
+    if (a) print("3"); else if (b) print("4");
+    println(" yynb");
+}
+
+int main() {
+    m(true, true);
+    m(true, false);
+    m(false, true);
+    m(false, false);
+    return 0;
+}

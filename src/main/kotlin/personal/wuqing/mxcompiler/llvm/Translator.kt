@@ -240,7 +240,7 @@ object Translator {
             after, when (ast.operator) {
                 SuffixOperator.INC -> ICalcOperator.ADD
                 SuffixOperator.DEC -> ICalcOperator.SUB
-            }, LLVMType.I32, operand.rvalue(), LLVMName.Const(1)
+            }, LLVMType.I32, name, LLVMName.Const(1)
         )
         this += LLVMStatement.Store(after, LLVMType.I32, operand.name, LLVMType.Pointer(LLVMType.I32))
         return Value(LLVMType.I32, false, name)
@@ -663,6 +663,7 @@ object Translator {
         val cond = LLVMBlock("__condition__.$id")
         val body = LLVMBlock("__body__.$id")
         val end = LLVMBlock("__end__.$id")
+        loopTarget[ast] = cond to end
         this += LLVMStatement.Jump(cond.name)
         this += cond
         val condition = this(ast.condition).rvalue()
@@ -671,7 +672,6 @@ object Translator {
         this(ast.statement)
         this += LLVMStatement.Jump(cond.name)
         this += end
-        loopTarget[ast] = cond to end
     }
 
     private operator fun invoke(ast: ASTNode.Statement.Loop.For) {
@@ -681,17 +681,18 @@ object Translator {
         val body = LLVMBlock("__body__.$id")
         val end = LLVMBlock("__end__.$id")
         val step = LLVMBlock("__step__.$id")
+        loopTarget[ast] = step to end
         this += LLVMStatement.Jump(cond.name)
         this += cond
         val condition = this(ast.condition).rvalue()
         this += LLVMStatement.Branch(LLVMType.I1, condition, body.name, end.name)
         this += body
         this(ast.statement)
-        this += LLVMStatement.Jump(cond.name)
+        this += LLVMStatement.Jump(step.name)
         this += step
         ast.step?.let { this(it) }
+        this += LLVMStatement.Jump(cond.name)
         this += end
-        loopTarget[ast] = step to end
     }
 
     fun processBody(function: LLVMFunction.Declared): List<LLVMBlock> {
