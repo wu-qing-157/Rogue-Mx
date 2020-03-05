@@ -1,0 +1,24 @@
+class clazz {
+    int a;
+    clazz z;
+    clazz(int a, clazz z) {
+        this.a = a;
+        this.z = z;
+    }
+    void display(string s) {
+        printlnInt(a);
+        if (z != null) z.display(s + " yy");
+        println(s);
+    }
+    int sum() {
+        if (z == null) return a;
+        else return a + z.sum();
+    }
+};
+
+int main() {
+    clazz list = new clazz(1, new clazz(2, new clazz(3, null)));
+    list.display("sb");
+    printlnInt(list.sum());
+    return 0;
+}

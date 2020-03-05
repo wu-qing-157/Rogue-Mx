@@ -88,13 +88,8 @@ object SemanticMain {
 
     private fun visit(node: ASTNode.Declaration.Class) {
         SymbolTable.new(node.actual)
-        node.declarations.forEach {
-            when (it) {
-                is ASTNode.Declaration.Function -> visit(it)
-                is ASTNode.Declaration.Constructor -> visit(it)
-                is ASTNode.Declaration.Variable -> visit(it)
-            }
-        }
+        node.declarations.filterIsInstance<ASTNode.Declaration.Variable>().forEach { visit(it, node.actual) }
+        node.declarations.filterIsInstance<ASTNode.Declaration.Function>().forEach { visit(it) }
         SymbolTable.drop()
     }
 
@@ -107,14 +102,7 @@ object SemanticMain {
         SymbolTable.drop()
     }
 
-    private fun visit(node: ASTNode.Declaration.Constructor) {
-        SymbolTable.new()
-        SymbolTable.newFunction(node)
-        node.parameterList.forEach { visit(it) }
-        visit(node.body)
-    }
-
-    private fun visit(node: ASTNode.Declaration.Variable) {
+    private fun visit(node: ASTNode.Declaration.Variable, member: Type.Class? = null) {
         if (node.type.type == Type.Void)
             SemanticErrorRecorder.error(node.location, "cannot declare variable of void type")
         if (node.init != null &&
@@ -126,7 +114,8 @@ object SemanticMain {
             )
         else
             try {
-                VariableTable[node.name] = Variable(node.type.type, node.name, node)
+                VariableTable[node.name] =
+                    member?.variables?.get(node.name) ?: Variable(node.type.type, node.name, node)
             } catch (e: SymbolTableException) {
                 SemanticErrorRecorder.error(node.location, e.message!!)
             }

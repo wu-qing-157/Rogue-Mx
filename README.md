@@ -15,7 +15,6 @@ LLVM IR|Preliminarily completed, __a lot todo__, __partly untested__
 ## Known Issues
 
 + compilation error unfixed in source set _test_
-+ llvm: ternary expression having one null branch
 + llvm: global variable does not support init
 + llvm: class member does not support init
 + llvm: unicode characters in string literal
@@ -42,7 +41,7 @@ Test Case|Description|Status
 ---|---|---
 return|Simple main|__Passed__
 plus|Simple operator|__Passed__
-global|Simple global variable|__Passed__
+global|Simple global variable|Pending re-test
 suffix|Simple suffix operator|__Passed__
 prefix|Simple prefix operator|__Passed__
 assign|Simple assignment|__Passed__
@@ -54,10 +53,10 @@ string|Simple string operation|__Passed__
 bool|Simple bool operation|__Passed__
 class-1|Simple class definition|__Passed__
 class-2|Simple constructor|__Passed__
+class-3|Simple member function|__Passed__
 null|Simple null test|__Passed__
 ...|...|much todo (orz)
 array|Simple array operations|Not planned yet
-member|Simple member function and call|Not planned yet
 if|Simple if|Not planned yet
 while|Simple while|Not planned yet
 for|Simple for|Not planned yet
@@ -105,3 +104,4 @@ Status|Notes
 + 2020.03.04 Adjust class-type in LLVM IR
 + 2020.03.05 Test class constructor
 + 2020.03.05 Support null value
++ 2020.03.05 Test member function, fix identifier resolve

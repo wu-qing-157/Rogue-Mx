@@ -83,7 +83,7 @@ object Translator {
             this[f.def.returnType], f.llvmName(), (f.parameters + f.base).map { this[it] },
             f.def.parameterList.map { LLVMName.Local("__p__.${it.name}") } + LLVMName.Local("__this__"),
             true, f.def
-        ).also { function[f] = it }
+        ).also { function[f] = it }.also { toProcess.add(it) }
         is Function.Builtin -> throw Exception("declared function resolved as builtin")
     }
 
@@ -179,7 +179,7 @@ object Translator {
         return Value(llvmType, false, cast)
     }
 
-    private operator fun invoke(ast: ASTNode.Expression.NewArray): Value = TODO("$ast")
+    private operator fun invoke(ast: ASTNode.Expression.NewArray): Value = TODO("ast")
 
     private operator fun invoke(ast: ASTNode.Expression.MemberAccess): Value {
         val parent = this(ast.parent).rvalue()
@@ -583,7 +583,7 @@ object Translator {
                 val resultType = this[variable.type]
                 val name = nextName()
                 this += LLVMStatement.Element(
-                    name, resultType, thisType, thisName, listOf(
+                    name, thisType.type, thisType, thisName, listOf(
                         LLVMType.I32 to LLVMName.Const(0),
                         LLVMType.I32 to LLVMName.Const(index)
                     )
@@ -652,7 +652,7 @@ object Translator {
         this += LLVMStatement.Jump(end.name)
         if (ast.els != null) {
             this += els
-            this(ast.then)
+            this(ast.els)
             this += LLVMStatement.Jump(end.name)
         }
         this += end
@@ -709,7 +709,16 @@ object Translator {
             local[variable.actual] = t to name
         }
         for (statement in function.ast.body.statements) this(statement)
-        this += LLVMStatement.Ret(LLVMType.Void, null)
+        this += when (function.ret) {
+            LLVMType.I32 -> LLVMStatement.Ret(LLVMType.I32, LLVMName.Const(0))
+            LLVMType.I8 -> LLVMStatement.Ret(LLVMType.I8, LLVMName.Const(0))
+            LLVMType.I1 -> LLVMStatement.Ret(LLVMType.I1, LLVMName.Const(0))
+            is LLVMType.Class -> throw Exception("returning class")
+            is LLVMType.Pointer -> LLVMStatement.Ret(function.ret, LLVMName.Null)
+            LLVMType.Void -> LLVMStatement.Ret(LLVMType.Void, null)
+            is LLVMType.Vector -> throw Exception("returning vector")
+            LLVMType.Null -> throw Exception("returning null")
+        }
         return localBlocks.toList().apply {
             forEach {
                 if (it.statements.last() !is LLVMStatement.Terminating)

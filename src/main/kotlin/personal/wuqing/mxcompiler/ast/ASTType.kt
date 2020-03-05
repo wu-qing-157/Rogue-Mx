@@ -149,11 +149,12 @@ enum class ReferenceType { Variable, Member }
 
 fun ASTNode.Expression.Identifier.resolve() = lazy(LazyThreadSafetyMode.NONE) {
     try {
-        Pair(ReferenceType.Variable, VariableTable[name])
+        val table = VariableTable[name]
+        val member = SymbolTable.thisType?.variables?.get(name)
+        if (table == member) ReferenceType.Member to member
+        else ReferenceType.Variable to table
     } catch (e: SymbolTableException) {
-        SymbolTable.thisType?.variables?.get(name)?.let {
-            Pair(ReferenceType.Member, it)
-        }
+        null
     }
 }
 
