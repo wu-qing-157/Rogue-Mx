@@ -40,4 +40,8 @@ sealed class LLVMType {
     class Vector(val length: Int, val base: LLVMType) : LLVMType() {
         override fun toString() = "[ $length x $base ]"
     }
+
+    object Null : LLVMType() {
+        override fun toString() = "i8*"
+    }
 }

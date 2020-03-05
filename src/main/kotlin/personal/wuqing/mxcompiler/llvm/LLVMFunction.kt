@@ -6,12 +6,11 @@ sealed class LLVMFunction(
     val ret: LLVMType, val name: LLVMName, val args: List<LLVMType>
 ) {
     class Declared(
-        ret: LLVMType, name: String, args: List<LLVMType>, private val ast: ASTNode.Declaration.Function
+        ret: LLVMType, name: String, args: List<LLVMType>, val argName: List<LLVMName>, val member: Boolean,
+        val ast: ASTNode.Declaration.Function
     ) : LLVMFunction(ret, LLVMName.Global(name), args) {
-        val body by lazy(LazyThreadSafetyMode.NONE) { Translator(ast) }
-        fun definition() = "define $ret $name(${args.indices.joinToString {
-            "${args[it]} ${LLVMName.Local("__p__.${ast.parameterList[it].name}")}"
-        }}) {"
+        val body by lazy(LazyThreadSafetyMode.NONE) { Translator.processBody(this) }
+        fun definition() = "define $ret $name(${(args zip argName).joinToString { (t, n) -> "$t $n" }}) {"
     }
 
     sealed class External(

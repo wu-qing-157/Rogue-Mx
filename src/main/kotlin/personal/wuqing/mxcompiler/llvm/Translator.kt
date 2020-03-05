@@ -8,10 +8,12 @@ import personal.wuqing.mxcompiler.grammar.PrefixOperator
 import personal.wuqing.mxcompiler.grammar.SuffixOperator
 import personal.wuqing.mxcompiler.grammar.Type
 import personal.wuqing.mxcompiler.grammar.Variable
+import java.util.*
 
 object Translator {
     private val type = mutableMapOf<Type, LLVMType>()
     private val function = mutableMapOf<Function, LLVMFunction>()
+    private val toProcess = LinkedList<LLVMFunction.Declared>()
     private val global = mutableMapOf<Variable, LLVMGlobal>()
     private val literal = mutableMapOf<String, LLVMGlobal>()
 
@@ -19,12 +21,13 @@ object Translator {
         Type.Primitive.Int -> LLVMType.I32.also { type[t] = it }
         Type.Primitive.Bool -> LLVMType.I1.also { type[t] = it }
         Type.Primitive.String -> LLVMType.string.also { type[t] = it }
-        Type.Null -> LLVMType.I32.also { type[t] = it }
+        Type.Null -> LLVMType.Null.also { type[t] = it }
         Type.Void -> LLVMType.Void.also { type[t] = it }
         Type.Unknown -> throw Exception("type <unknown> found after semantic")
         is Type.Class -> LLVMType.Class(t.name)
             .also { type[t] = LLVMType.Pointer(it) }
             .apply { init(MemberArrangement(t)) }
+            .let { LLVMType.Pointer(it) }
         is Type.Array -> LLVMType.Pointer(this[t.base]).also { type[t] = it }
     }
 
@@ -71,17 +74,18 @@ object Translator {
             Function.Builtin.StringGreater -> LLVMFunction.External.StringGreater
             Function.Builtin.StringGeq -> LLVMFunction.External.StringGeq
         }).also { function[f] = it }
-    else
-        when (f) {
-            is Function.Top -> LLVMFunction.Declared(
-                this[f.result], f.llvmName(), f.parameters.map { this[it] }, f.def
-            ).also { function[f] = it }.also { this(f.def) }
-            is Function.Member -> LLVMFunction.Declared(
-                this[f.result], f.llvmName(),
-                (f.parameters + f.base).map { this[it] }, f.def
-            ).also { function[f] = it }.also { this(f.def) }
-            is Function.Builtin -> throw Exception("declared function resolved as builtin")
-        }
+    else when (f) {
+        is Function.Top -> LLVMFunction.Declared(
+            this[f.result], f.llvmName(), f.parameters.map { this[it] },
+            f.def.parameterList.map { LLVMName.Local("__p__.${it.name}") }, false, f.def
+        ).also { function[f] = it }.also { toProcess.add(it) }
+        is Function.Member -> LLVMFunction.Declared(
+            this[f.def.returnType], f.llvmName(), (f.parameters + f.base).map { this[it] },
+            f.def.parameterList.map { LLVMName.Local("__p__.${it.name}") } + LLVMName.Local("__this__"),
+            true, f.def
+        ).also { function[f] = it }
+        is Function.Builtin -> throw Exception("declared function resolved as builtin")
+    }
 
     operator fun get(g: Variable) = global[g] ?: LLVMGlobal(g.name, this[g.type], LLVMName.Const(0)).also {
         global[g] = it
@@ -96,6 +100,7 @@ object Translator {
 
     operator fun invoke(main: Function): LLVMProgram {
         this[main]
+        while (toProcess.isNotEmpty()) toProcess.poll().body
         return LLVMProgram(
             struct = type.values.filterIsInstance<LLVMType.Pointer>().map { it.type }
                 .filterIsInstance<LLVMType.Class>(),
@@ -111,7 +116,7 @@ object Translator {
     private val localBlocks = mutableListOf<LLVMBlock>()
     private val currentBlock get() = localBlocks.last()
     private val loopTarget = mutableMapOf<ASTNode.Statement.Loop, Pair<LLVMBlock, LLVMBlock>>()
-    private var thisReference: Pair<LLVMType.Class, LLVMName>? = null
+    private var thisReference: Pair<LLVMType.Pointer, LLVMName>? = null
 
     private operator fun plusAssign(statement: LLVMStatement) {
         if (currentBlock.statements.lastOrNull()?.let { it is LLVMStatement.Terminating } != true)
@@ -127,6 +132,8 @@ object Translator {
             Translator += LLVMStatement.Load(it, type, LLVMType.Pointer(type), name)
         } else name
     }
+
+    private fun Value.processNull() = if (type == LLVMType.Null) LLVMName.Null else rvalue()
 
     private operator fun invoke(ast: ASTNode.Expression): Value = when (ast) {
         is ASTNode.Expression.NewObject -> this(ast)
@@ -146,7 +153,7 @@ object Translator {
         is ASTNode.Expression.Constant.String -> this(ast)
         is ASTNode.Expression.Constant.True -> Value(LLVMType.I1, false, LLVMName.Const(1))
         is ASTNode.Expression.Constant.False -> Value(LLVMType.I1, false, LLVMName.Const(0))
-        is ASTNode.Expression.Constant.Null -> Value(LLVMType.I32, false, LLVMName.Const(0))
+        is ASTNode.Expression.Constant.Null -> Value(LLVMType.Null, false, LLVMName.Null)
     }
 
     private operator fun invoke(ast: ASTNode.Expression.NewObject): Value {
@@ -163,9 +170,12 @@ object Translator {
         this += LLVMStatement.Cast(cast, LLVMType.string, name, llvmType)
         val constructor =
             ast.baseType.type.functions["__constructor__"] ?: throw Exception("constructor not found after semantic")
-        if (constructor !is Function.Builtin.DefaultConstructor) this += LLVMStatement.Call(
-            null, LLVMType.Void, this[constructor].name, listOf(LLVMType.Pointer(llvmType) to cast)
-        )
+        if (constructor !is Function.Builtin.DefaultConstructor) {
+            val args = (this[constructor].args zip ast.parameters).map { (t, p) ->
+                t to this(p).processNull()
+            } + (llvmType to cast)
+            this += LLVMStatement.Call(null, LLVMType.Void, this[constructor].name, args)
+        }
         return Value(llvmType, false, cast)
     }
 
@@ -191,15 +201,14 @@ object Translator {
 
     private operator fun invoke(ast: ASTNode.Expression.MemberFunction): Value {
         val parent = this(ast.base).rvalue()
-        val args = ast.parameters.map { this(it) }.map { it.type to it.rvalue() }
+        val baseType = this[ast.base.type]
+        val args = (this[ast.reference].args zip ast.parameters).map { (t, p) ->
+            t to this(p).processNull()
+        } + (baseType to parent)
         val name = nextName()
-        val baseType = ast.base.type
-        val resultType = this[ast.type]
-        this += LLVMStatement.Call(
-            if (resultType != LLVMType.Void) name else null, resultType, this[ast.reference].name,
-            args + (this[baseType] to parent)
-        )
-        return Value(resultType, false, name)
+        val llvmType = this[ast.type]
+        this += LLVMStatement.Call(name.takeIf { llvmType != LLVMType.Void }, llvmType, this[ast.reference].name, args)
+        return Value(llvmType, false, name)
     }
 
     private operator fun invoke(ast: ASTNode.Expression.Index): Value {
@@ -214,17 +223,12 @@ object Translator {
     }
 
     private operator fun invoke(ast: ASTNode.Expression.Function): Value {
-        val args = ast.parameters.map { this(it) }.map { it.type to it.rvalue() }.let {
-            if (ast.reference.base != null)
-                it + (thisReference ?: throw Exception("unresolved this after semantic"))
-            else
-                it
-        }
+        val args = (this[ast.reference].args zip ast.parameters).map { (t, p) ->
+            t to this(p).processNull()
+        }.let { if (ast.reference.base != null) it + thisReference!! else it }
         val name = nextName()
         val llvmType = this[ast.type]
-        this += LLVMStatement.Call(
-            if (llvmType != LLVMType.Void) name else null, llvmType, this[ast.reference].name, args
-        )
+        this += LLVMStatement.Call(name.takeIf { llvmType != LLVMType.Void }, llvmType, this[ast.reference].name, args)
         return Value(llvmType, false, name)
     }
 
@@ -451,7 +455,7 @@ object Translator {
                 Value(LLVMType.I1, false, name)
             }
             Operation.BAssign -> {
-                this += LLVMStatement.Store(rr, LLVMType.I1, ll, LLVMType.string)
+                this += LLVMStatement.Store(rr, LLVMType.I1, ll, LLVMType.Pointer(LLVMType.I1))
                 Value(LLVMType.Void, false, LLVMName.Void)
             }
             Operation.IAssign -> {
@@ -538,7 +542,7 @@ object Translator {
             }
             is Operation.PAssign -> {
                 val llvmType = this[ast.lhs.type]
-                this += LLVMStatement.Store(rr, llvmType, ll, LLVMType.Pointer(llvmType))
+                this += LLVMStatement.Store(rhs.processNull(), llvmType, ll, LLVMType.Pointer(llvmType))
                 Value(LLVMType.Void, false, LLVMName.Void)
             }
         }
@@ -574,7 +578,8 @@ object Translator {
                 }
             ReferenceType.Member -> {
                 val (thisType, thisName) = thisReference ?: throw Exception("unresolved identifier after semantic")
-                val index = thisType.members.delta[variable] ?: throw Exception("member not arranged")
+                val classType = thisType.type as? LLVMType.Class ?: throw Exception("unexpected non-class type")
+                val index = classType.members.delta[variable] ?: throw Exception("member not arranged")
                 val resultType = this[variable.type]
                 val name = nextName()
                 this += LLVMStatement.Element(
@@ -623,13 +628,13 @@ object Translator {
     }
 
     private operator fun invoke(ast: ASTNode.Statement.Variable) {
-        ast.variables.forEach {
-            val name = LLVMName.Local(it.name)
-            val type = this[it.type.type]
-            local[it.actual] = type to name
+        ast.variables.forEach { variable ->
+            val name = LLVMName.Local(variable.name)
+            val type = this[variable.type.type]
+            local[variable.actual] = type to name
             this += LLVMStatement.Alloca(name, type)
-            if (it.init != null) {
-                val initName = this(it.init).rvalue()
+            if (variable.init != null) {
+                val initName = this(variable.init).processNull()
                 this += LLVMStatement.Store(initName, type, name, LLVMType.Pointer(type))
             }
         }
@@ -641,7 +646,7 @@ object Translator {
         val els = LLVMBlock("__else__.$id")
         val end = LLVMBlock("__end__.$id")
         val condition = this(ast.condition).rvalue()
-        this += LLVMStatement.Branch(LLVMType.I1, condition, then.name, if (ast.els == null) els.name else end.name)
+        this += LLVMStatement.Branch(LLVMType.I1, condition, then.name, if (ast.els == null) end.name else els.name)
         this += then
         this(ast.then)
         this += LLVMStatement.Jump(end.name)
@@ -689,20 +694,21 @@ object Translator {
         loopTarget[ast] = step to end
     }
 
-    operator fun invoke(ast: ASTNode.Declaration.Function): List<LLVMBlock> {
-        localCount = ast.parameterList.size
+    fun processBody(function: LLVMFunction.Declared): List<LLVMBlock> {
+        localCount = 0
+        if (function.member) thisReference = (function.args.last() as? LLVMType.Pointer
+            ?: throw Exception("unexpected non-class type")) to function.argName.last()
         localBlocks.clear()
         this += LLVMBlock("__entry__")
-        ast.parameterList.forEach {
-            val variable = it.actual
-            val type = this[variable.type]
-            val parameter = LLVMName.Local("__p__.${variable.name}")
+        function.ast.parameterList.withIndex().forEach { (i, variable) ->
+            val t = function.args[i]
+            val n = function.argName[i]
             val name = nextName()
-            this += LLVMStatement.Alloca(name, type)
-            this += LLVMStatement.Store(parameter, type, name, LLVMType.Pointer(type))
-            local[variable] = type to name
+            this += LLVMStatement.Alloca(name, t)
+            this += LLVMStatement.Store(n, t, name, LLVMType.Pointer(t))
+            local[variable.actual] = t to name
         }
-        for (statement in ast.body.statements) this(statement)
+        for (statement in function.ast.body.statements) this(statement)
         this += LLVMStatement.Ret(LLVMType.Void, null)
         return localBlocks.toList().apply {
             forEach {

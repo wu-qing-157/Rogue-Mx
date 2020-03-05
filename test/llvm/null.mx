@@ -1,0 +1,28 @@
+class clazz {
+    int a;
+    clazz z;
+    clazz(int a, clazz z) {
+        this.a = a;
+        this.z = z;
+    }
+};
+
+void checknull(clazz a) {
+    if ((a == null) == (a != null)) println("fatal error");
+    println(a == null ? "null" : "non-null");
+}
+
+int main() {
+    checknull(null);
+    clazz a = null;
+    checknull(a);
+    a = new clazz(0, null);
+    checknull(a);
+    checknull(a.z);
+    a.z = new clazz(1, null);
+    checknull(a.z);
+    checknull(a.z.z);
+    a.z = null;
+    checknull(a.z);
+    return 0;
+}

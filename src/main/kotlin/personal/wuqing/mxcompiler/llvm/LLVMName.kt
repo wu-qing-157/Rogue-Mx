@@ -1,19 +1,19 @@
 package personal.wuqing.mxcompiler.llvm
 
 sealed class LLVMName {
-    class Local(val name: String) : LLVMName() {
+    data class Local(val name: String) : LLVMName() {
         override fun toString() = "%$name"
     }
 
-    class Global(private val name: String) : LLVMName() {
+    data class Global(private val name: String) : LLVMName() {
         override fun toString() = "@$name"
     }
 
-    class Const(private val value: Int) : LLVMName() {
+    data class Const(private val value: Int) : LLVMName() {
         override fun toString() = "$value"
     }
 
-    class Literal(l: Int, s: String) : LLVMName() {
+    data class Literal(val l: Int, val s: String) : LLVMName() {
         private val display = l.let {
             ("\\${(it and 255).toString(16).padStart(2, '0')}" +
                     "\\${(it shr 8 and 255).toString(16).padStart(2, '0')}" +
@@ -28,5 +28,9 @@ sealed class LLVMName {
 
     object Void : LLVMName() {
         override fun toString() = "@this.name.should.not.appear.in.llvm"
+    }
+
+    object Null : LLVMName() {
+        override fun toString() = "null"
     }
 }

@@ -1,0 +1,14 @@
+class A {
+    int a;
+    bool b;
+    A(int a, bool b) {
+        this.a = a;
+        this.b = b;
+    }
+};
+
+int main() {
+    A a = new A(10, true);
+    printlnInt(a.b ? a.a * a.a : a.a + a.a);
+    return 0;
+}

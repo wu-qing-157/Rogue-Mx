@@ -4,4 +4,5 @@ printInt hello
 function
 ternary bool
 string
-class-1
+null
+class-1 class-2

@@ -32,7 +32,7 @@ elif [ "$1" = "llvm" ]; then
         zsh gradlew installDist
         for name in $(cat test/llvm/list.txt); do
             echo "\e[34mtestcase $name:\e[0m"
-            mxc --llvm test/llvm/"$name".mx
+            \time -f "    compile time: %E" mxc --llvm test/llvm/"$name".mx
             llc test/llvm/"$name".ll
             gcc -o test/llvm/"$name" test/llvm/"$name".s test/llvm/builtin_functions.s -no-pie
             echo "    \e[32mbuild successful\e[0m"

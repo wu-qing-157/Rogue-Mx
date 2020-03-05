@@ -15,9 +15,9 @@ LLVM IR|Preliminarily completed, __a lot todo__, __partly untested__
 ## Known Issues
 
 + compilation error unfixed in source set _test_
-+ llvm: assign null to non-null variable
 + llvm: ternary expression having one null branch
 + llvm: global variable does not support init
++ llvm: class member does not support init
 + llvm: unicode characters in string literal
 
 ## Test Cases
@@ -53,8 +53,8 @@ ternary|Simple ternary expression|__Passed__
 string|Simple string operation|__Passed__
 bool|Simple bool operation|__Passed__
 class-1|Simple class definition|__Passed__
-class-2|Simple constructor|untested
-class-3|Simple recursive class definition|untested
+class-2|Simple constructor|__Passed__
+null|Simple null test|__Passed__
 ...|...|much todo (orz)
 array|Simple array operations|Not planned yet
 member|Simple member function and call|Not planned yet
@@ -103,3 +103,5 @@ Status|Notes
 + 2020.03.04 __LLVM IR now produce only used top-level things__
 + 2020.03.04 Remove unnecessary modifier data of some classes
 + 2020.03.04 Adjust class-type in LLVM IR
++ 2020.03.05 Test class constructor
++ 2020.03.05 Support null value
