@@ -80,7 +80,7 @@ sealed class Type(val size: Int) {
                 Void -> Unknown.also {
                     ASTErrorRecorder.error(location!!, "void type doesn't have array type")
                 }
-                else -> if (Pair(base, dimension) in pool) pool[base to dimension]!!
+                else -> if (base to dimension in pool) pool[base to dimension]!!
                 else (if (dimension > 1) Array(get(base, dimension - 1)) else Array(base)).also {
                     pool[base to dimension] = it
                 }
