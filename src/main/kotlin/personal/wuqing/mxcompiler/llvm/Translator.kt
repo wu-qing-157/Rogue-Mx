@@ -87,9 +87,7 @@ object Translator {
         is Function.Builtin -> throw Exception("declared function resolved as builtin")
     }
 
-    operator fun get(g: Variable) = global[g] ?: LLVMGlobal(g.name, this[g.type], LLVMName.Const(0)).also {
-        global[g] = it
-    }
+    operator fun get(g: Variable) = global[g]!!
 
     private var literalCount = 0
     private operator fun get(s: String) = literal[s] ?: LLVMGlobal(
@@ -98,7 +96,16 @@ object Translator {
         LLVMName.Literal(s.length, "$s\u0000")
     ).also { literal[s] = it }
 
-    operator fun invoke(main: Function): LLVMProgram {
+    operator fun invoke(ast: ASTNode.Program, main: Function): LLVMProgram {
+        ast.declarations.filterIsInstance<ASTNode.Declaration.Variable>().map { it.actual }.forEach {
+            global[it] = LLVMGlobal(
+                it.name, this[it.type], when (it.type) {
+                    Type.Primitive.Int, Type.Primitive.Bool -> LLVMName.Const(0)
+                    is Type.Class, is Type.Array, Type.Primitive.String -> LLVMName.Null
+                    Type.Unknown, Type.Void, Type.Null -> throw Exception("unexpected global variable type")
+                }
+            )
+        }
         this[main]
         while (toProcess.isNotEmpty()) toProcess.poll().body
         return LLVMProgram(
@@ -163,11 +170,19 @@ object Translator {
         val size = classType.members.size
         val name = nextName()
         this += LLVMStatement.Call(
-            name, LLVMType.string, this[Function.Builtin.Malloc].name,
-            listOf(LLVMType.I32 to LLVMName.Const(size))
+            name, LLVMType.string, this[Function.Builtin.Malloc].name, listOf(LLVMType.I32 to LLVMName.Const(size))
         )
         val cast = nextName()
         this += LLVMStatement.Cast(cast, LLVMType.string, name, llvmType)
+        for ((variable, index) in classType.members.delta) if (variable.declaration.init != null) {
+            val value = this(variable.declaration.init).rvalue()
+            val memberType = this[variable.type]
+            val member = nextName()
+            this += LLVMStatement.Element(member, classType, llvmType, cast, listOf(
+                LLVMType.I32 to LLVMName.Const(0), LLVMType.I32 to LLVMName.Const(index)
+            ))
+            this += LLVMStatement.Store(value, memberType, member, LLVMType.Pointer(memberType))
+        }
         val constructor =
             ast.baseType.type.functions["__constructor__"] ?: throw Exception("constructor not found after semantic")
         if (constructor !is Function.Builtin.DefaultConstructor) {
@@ -179,7 +194,7 @@ object Translator {
         return Value(llvmType, false, cast)
     }
 
-    private operator fun invoke(ast: ASTNode.Expression.NewArray): Value = TODO("ast")
+    private operator fun invoke(ast: ASTNode.Expression.NewArray): Value = TODO("$ast")
 
     private operator fun invoke(ast: ASTNode.Expression.MemberAccess): Value {
         val parent = this(ast.parent).rvalue()
@@ -700,7 +715,17 @@ object Translator {
         if (function.member) thisReference = (function.args.last() as? LLVMType.Pointer
             ?: throw Exception("unexpected non-class type")) to function.argName.last()
         localBlocks.clear()
-        this += LLVMBlock("__entry__")
+        val entry = LLVMBlock("__entry__")
+        if (function.name == LLVMName.Global("main")) {
+            this += LLVMBlock("__init__global__")
+            for ((variable, global) in global) if (variable.declaration.init != null) {
+                val value = this(variable.declaration.init).rvalue()
+                val type = global.type
+                this += LLVMStatement.Store(value, type, global.name, LLVMType.Pointer(global.type))
+            }
+            this += LLVMStatement.Jump(entry.name)
+        }
+        this += entry
         function.ast.parameterList.withIndex().forEach { (i, variable) ->
             val t = function.args[i]
             val n = function.argName[i]

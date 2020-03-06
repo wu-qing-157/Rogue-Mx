@@ -1,0 +1,10 @@
+class pair {
+    int a = 1, b = 2;
+};
+
+int main() {
+    pair p = new pair;
+    printlnInt(p.b);
+    printlnInt(p.a);
+    return 0;
+}

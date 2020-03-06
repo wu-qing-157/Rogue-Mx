@@ -42,7 +42,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
 
         if (target == Target.SEMANTIC) return Unit.also { SemanticMain.reportSuccess() }
 
-        val llvm = Translator(SemanticMain.getMain())
+        val llvm = Translator(root, SemanticMain.getMain())
 
         if (target == Target.LLVM) {
             output(LLVMPrinter(llvm))

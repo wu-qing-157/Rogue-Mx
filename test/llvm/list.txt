@@ -1,4 +1,4 @@
-return plus global
+return plus
 suffix prefix assign
 printInt hello
 function
@@ -6,4 +6,5 @@ ternary bool
 string
 null
 class-1 class-2 class-3 class-4
+global
 if while for control

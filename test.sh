@@ -36,7 +36,11 @@ elif [ "$1" = "llvm" ]; then
             llc test/llvm/"$name".ll
             gcc -o test/llvm/"$name" test/llvm/"$name".s test/llvm/builtin_functions.s -no-pie
             echo "    \e[32mbuild successful\e[0m"
-            test/llvm/"$name" > test/llvm/"$name".out || echo exit code: $? >> test/llvm/"$name".out
+            if test -f test/llvm/"$name".in; then
+                test/llvm/"$name" < test/llvm/"$name".in > test/llvm/"$name".out || echo exit code: $? >> test/llvm/"$name".out
+            else
+                test/llvm/"$name" > test/llvm/"$name".out || echo exit code: $? >> test/llvm/"$name".out
+            fi
             diff test/llvm/"$name".out test/llvm/"$name".ans
             echo "    \e[32mtest ok\e[0m"
         done
@@ -52,7 +56,11 @@ elif [ "$1" = "llvm" ]; then
         echo "\e[34mgcc -no-pie\e[0m"
         gcc -o test/llvm/"$2" test/llvm/"$2".s test/llvm/builtin_functions.s -no-pie
         echo "\e[34mexecute\e[0m"
-        result=$(test/llvm/"$2" || echo exit code: $?)
+        if test -f test/llvm/"$2".in; then
+            result=$(test/llvm/"$2" < test/llvm/"$2".in || echo exit code: $?)
+        else
+            result=$(test/llvm/"$2" || echo exit code: $?)
+        fi
         echo "$result"
         echo "$result" > test/llvm/"$2".out
         echo "\e[34mdiff\e[0m"

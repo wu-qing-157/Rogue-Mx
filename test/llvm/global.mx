@@ -1,6 +1,20 @@
-int a;
+class pair {
+    int a, b;
+    pair(int aa, int bb) {
+        a = aa;
+        b = bb;
+    }
+};
+
+int a = 102, b = getInt();
+string x = "123";
+pair p = new pair(101, 34);
 
 int main() {
-    a = 102;
-    return a;
+    printlnInt(a);
+    printlnInt(b);
+    println(x);
+    printlnInt(p.a);
+    printlnInt(p.b);
+    return 0;
 }

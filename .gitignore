@@ -13,6 +13,7 @@
 /test/*/*.ll
 /test/*/*.s
 /test/*/*.out
+/test/test.*
 
 /src/*/resources/*.ll
 /src/*/resources/*.s

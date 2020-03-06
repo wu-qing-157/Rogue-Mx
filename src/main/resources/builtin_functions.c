@@ -121,6 +121,3 @@ char __string__geq__(char *s, char *t) {
 int __array__size__(void *a) {
     return *((int *) (a - 4));
 }
-
-void __empty__() {
-}

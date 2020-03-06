@@ -9,15 +9,14 @@ Description|Status
 ANTLR4|Completed
 AST|Completed
 Semantic|Completed, __pass__ given test suite
-LLVM IR|Preliminarily completed, __a lot todo__, __partly untested__
+LLVM IR|Almost completed, __partly untested__
 ...|Not planned yet
 
 ## Known Issues
 
 + compilation error unfixed in source set _test_
-+ llvm: global variable does not support init
-+ llvm: class member does not support init
 + llvm: unicode characters in string literal
++ grammar: built-in function does not override `toString()`
 
 ## Test Cases
 
@@ -54,7 +53,7 @@ bool|Simple bool operation|__Passed__
 class-1|Simple class definition|__Passed__
 class-2|Simple constructor|__Passed__
 class-3|Simple member function|__Passed__
-class-4|Simple member init|On the way
+class-4|Simple member init|__Passed__
 null|Simple null test|__Passed__
 if|Simple if|__Passed__
 while|Simple while|__Passed__
@@ -106,3 +105,4 @@ Status|Notes
 + 2020.03.05 Support null value
 + 2020.03.05 Test member function, fix identifier resolve
 + 2020.03.05 Pass control test
++ 2020.03.06 Support init global variable and class member
