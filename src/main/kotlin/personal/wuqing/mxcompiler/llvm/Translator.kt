@@ -87,7 +87,7 @@ object Translator {
         is Function.Builtin -> throw Exception("declared function resolved as builtin")
     }
 
-    operator fun get(g: Variable) = global[g]!!
+    operator fun get(g: Variable) = global[g] ?: throw Exception("cannot find global variable")
 
     private var literalCount = 0
     private operator fun get(s: String) = literal[s] ?: LLVMGlobal(

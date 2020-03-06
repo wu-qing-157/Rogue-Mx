@@ -40,7 +40,7 @@ Test Case|Description|Status
 ---|---|---
 return|Simple main|__Passed__
 plus|Simple operator|__Passed__
-global|Simple global variable|Pending re-test
+global|Simple global variable|__Passed__
 suffix|Simple suffix operator|__Passed__
 prefix|Simple prefix operator|__Passed__
 assign|Simple assignment|__Passed__
@@ -106,3 +106,74 @@ Status|Notes
 + 2020.03.05 Test member function, fix identifier resolve
 + 2020.03.05 Pass control test
 + 2020.03.06 Support init global variable and class member
+
+
+## Some notes
+
+### Exit code info
+
+Exit code|description
+---|---
+1|Unexpected compiler internal exception
+2|Parser does not accept the code
+3|AST builder does not accept the code
+4|Semantic does not accept the code
+99|Option parser does not generate any executable work
+
+### Info about implementation
+
+This part contains notes for future development.
+
+#### `option.OptionMain` `io.OutputMethod`
+
++ maybe to use separate exit code for `IOException` in the future
+
+#### `grammar.Variable`
+
++ only one `Variable` constructed for each declaration,
+so unnecessary to override `equals()` and `hashCode()`
++ currently do not keep init info, access it using `Variable.def.init`
+
+#### `semantic.SemanticMain`
+
++ maybe to `return` the `main` function in
+`operator fun invoke(ASTNode.Program)` in the future,
+as it is needed by llvm `Translator`
+
+#### `ast.ASTNode` `personal.wuqiing.ast.ASTType`
+
++ `ASTNode` cannot be separated due to the limitation of `sealed class`
++ `ASTType` is separated from `ASTNode`
+to prevent an extremely large source file
+
+#### `llvm.LLVMType`
+
++ an `LLVMType.Pointer` may be constructed multiple time,
+if needed in the future, a `data` modifier will be added
+
+#### `llvm.LLVMName`
+
++ currently every subclass is a `data class`
++ however, only `LLVMName.Const` and `LLVMName.Global("main")`
+may be constructed multiple times for same value,
+so the `data` modifier may be removed in the future
+
+#### `llvm.LLVMStatement`
+
++ some members of the subclasses may be unnecessary,
+so maybe to delete them in the future
+
+#### `llvm.Translator`
+
++ currently initialize global variables before the `__entry__`
+in `main` function,
+maybe to add an extra `main` function to initialize global variables
+and call the actual `main` function
++ currently use `kotlin.Exception` for all unexpected situation,
+may be changed into a specified `Exception` in the future,
+also, another alternative may be to `printStackTrace()` only when
+`--debug` option is specified, as these `Exception` should not
+appear in final version
++ this file is somehow large,
+and _Intellij IDEA_ takes a lot time analyzing it,
+so it maybe separated to multiple files in the future
