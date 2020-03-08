@@ -1,4 +1,4 @@
-package personal.wuqing.mxcompiler.llvm
+package personal.wuqing.mxcompiler.llvm.grammar
 
 class LLVMGlobal private constructor(val name: LLVMName, val type: LLVMType, val value: LLVMName) {
     constructor(name: String, type: LLVMType, value: LLVMName) :

@@ -1,4 +1,4 @@
-package personal.wuqing.mxcompiler.llvm
+package personal.wuqing.mxcompiler.llvm.grammar
 
 sealed class LLVMName {
     data class Local(val name: String) : LLVMName() {

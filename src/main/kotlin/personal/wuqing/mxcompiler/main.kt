@@ -4,7 +4,7 @@ import personal.wuqing.mxcompiler.ast.ASTBuilder
 import personal.wuqing.mxcompiler.ast.ASTMain
 import personal.wuqing.mxcompiler.io.OutputMethod
 import personal.wuqing.mxcompiler.llvm.LLVMPrinter
-import personal.wuqing.mxcompiler.llvm.Translator
+import personal.wuqing.mxcompiler.llvm.LLVMTranslator
 import personal.wuqing.mxcompiler.option.OptionMain
 import personal.wuqing.mxcompiler.option.Target
 import personal.wuqing.mxcompiler.parser.ParserMain
@@ -42,7 +42,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
 
         if (target == Target.SEMANTIC) return Unit.also { SemanticMain.reportSuccess() }
 
-        val llvm = Translator(root, SemanticMain.getMain())
+        val llvm = LLVMTranslator(root, SemanticMain.getMain())
 
         if (target == Target.LLVM) {
             output(LLVMPrinter(llvm))

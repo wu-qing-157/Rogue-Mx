@@ -1,6 +1,15 @@
 set -e
 
 if [ "$2" = "all" ]; then
+    if [ "$1" = "semantic" ]; then
+        run=semantic
+    elif [ "$1" = "llvm" ]; then
+        run=codegen
+    elif [ "$1" = "codegen" ]; then
+        run=codegen
+    else
+        return 1
+    fi
     p=$(pwd)
     judge=$p/assignment/local-judge
     config=$judge/config.yaml
@@ -15,7 +24,7 @@ if [ "$2" = "all" ]; then
     echo "  simulator: $simulator" >> $config
     echo "  simulator-executable: $simulator/ravel" >> $config
     echo "  built-in: $p/build/resources/main/builtin_functions.s" >> $config
-    echo "stage: $1" >> $config
+    echo "stage: $run" >> $config
     echo "timelimit: 15" >> $config
     (cd assignment/local-judge && python judge.py)
 elif [ "$1" = "semantic" ]; then
@@ -31,39 +40,50 @@ elif [ "$1" = "llvm" ]; then
         echo "\e[34mbuild compiler\e[0m"
         zsh gradlew installDist
         for name in $(cat test/llvm/list.txt); do
+            full="test/llvm/$name"
             echo "\e[34mtestcase $name:\e[0m"
-            \time -f "    compile time: %E" mxc --llvm test/llvm/"$name".mx
-            llc test/llvm/"$name".ll
-            gcc -o test/llvm/"$name" test/llvm/"$name".s test/llvm/builtin_functions.s -no-pie
+            \time -f "    compile time: %E" mxc --llvm $full.mx
+            llc $full.ll
+            gcc -o $full $full.s test/llvm/builtin_functions.s -no-pie
             echo "    \e[32mbuild successful\e[0m"
-            if test -f test/llvm/"$name".in; then
-                test/llvm/"$name" < test/llvm/"$name".in > test/llvm/"$name".out || echo exit code: $? >> test/llvm/"$name".out
+            if test -f $full.in; then
+                $full < $full.in > $full.out || echo exit code: $? >> $full.out
             else
-                test/llvm/"$name" > test/llvm/"$name".out || echo exit code: $? >> test/llvm/"$name".out
+                $full > $full.out || echo exit code: $? >> $full.out
             fi
-            diff test/llvm/"$name".out test/llvm/"$name".ans
+            diff $full.out $full.ans
             echo "    \e[32mtest ok\e[0m"
         done
     elif [ "$3" = "show" ]; then
         cat test/llvm/"$2".ll
     else
+        full="test/llvm/$2"
         echo "\e[34mbuild compiler\e[0m"
         zsh gradlew installDist
         echo "\e[34mmxc --llvm\e[0m"
-        time mxc --llvm test/llvm/"$2".mx
+        time mxc --llvm $full.mx
         echo "\e[34mllc\e[0m"
-        llc test/llvm/"$2".ll
+        llc $full.ll
         echo "\e[34mgcc -no-pie\e[0m"
-        gcc -o test/llvm/"$2" test/llvm/"$2".s test/llvm/builtin_functions.s -no-pie
-        echo "\e[34mexecute\e[0m"
-        if test -f test/llvm/"$2".in; then
-            result=$(test/llvm/"$2" < test/llvm/"$2".in || echo exit code: $?)
+        gcc -o $full $full.s test/llvm/builtin_functions.s -no-pie
+        if [ "$3" = "debug" ]; then
+            echo "\e[34mdebug\e[0m"
+            if test -f $full.in; then
+                $full < $full.in || echo exit code: $?
+            else
+                $full || echo exit code: $?
+            fi
         else
-            result=$(test/llvm/"$2" || echo exit code: $?)
+            echo "\e[34mexecute\e[0m"
+            if test -f $full.in; then
+                result=$($full < $full.in || echo exit code: $?)
+            else
+                result=$($full || echo exit code: $?)
+            fi
+            echo "$result"
+            echo "$result" > $full.out
+            echo "\e[34mdiff\e[0m"
+            diff $full.out $full.ans
         fi
-        echo "$result"
-        echo "$result" > test/llvm/"$2".out
-        echo "\e[34mdiff\e[0m"
-        diff test/llvm/"$2".out test/llvm/"$2".ans
     fi
 fi

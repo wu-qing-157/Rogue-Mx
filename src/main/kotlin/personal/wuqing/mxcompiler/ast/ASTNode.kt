@@ -1,13 +1,13 @@
 package personal.wuqing.mxcompiler.ast
 
-import personal.wuqing.mxcompiler.grammar.BinaryOperator
-import personal.wuqing.mxcompiler.grammar.PrefixOperator
-import personal.wuqing.mxcompiler.grammar.SuffixOperator
+import personal.wuqing.mxcompiler.grammar.operator.MxBinary
+import personal.wuqing.mxcompiler.grammar.operator.MxPrefix
+import personal.wuqing.mxcompiler.grammar.operator.MxSuffix
 import personal.wuqing.mxcompiler.utils.Location
-import personal.wuqing.mxcompiler.grammar.Function as Function_
-import personal.wuqing.mxcompiler.grammar.Type as Type_
-import personal.wuqing.mxcompiler.grammar.Type.Class as Class_
-import personal.wuqing.mxcompiler.grammar.Variable as Variable_
+import personal.wuqing.mxcompiler.grammar.MxFunction as Function_
+import personal.wuqing.mxcompiler.grammar.MxType as Type_
+import personal.wuqing.mxcompiler.grammar.MxType.Class as Class_
+import personal.wuqing.mxcompiler.grammar.MxVariable as Variable_
 
 sealed class ASTNode {
     abstract val location: Location
@@ -90,31 +90,24 @@ sealed class ASTNode {
             override val summary get() = "(VariableDeclaration)"
         }
 
-        interface WithCondition {
-            val condition: ASTNode.Expression
-            val simpleCondition
-                get() = (condition as? ASTNode.Expression.Binary)?.simpleCompare ?: false
-        }
-
         class If(
-            override val location: Location,
-            override val condition: ASTNode.Expression, val then: Statement, val els: Statement?
-        ) : Statement(), WithCondition {
+            override val location: Location, val condition: ASTNode.Expression, val then: Statement, val els: Statement?
+        ) : Statement() {
             override val summary get() = "(If)"
         }
 
         sealed class Loop : Statement() {
             class While(
-                override val location: Location, override val condition: ASTNode.Expression, val statement: Statement
-            ) : Loop(), WithCondition {
+                override val location: Location, val condition: ASTNode.Expression, val statement: Statement
+            ) : Loop() {
                 override val summary get() = "(While)"
             }
 
             class For(
                 override val location: Location,
-                val init: Statement?,
-                override val condition: ASTNode.Expression, val step: ASTNode.Expression?, val statement: Statement
-            ) : Loop(), WithCondition {
+                val init: Statement?, val condition: ASTNode.Expression, val step: ASTNode.Expression?,
+                val statement: Statement
+            ) : Loop() {
                 override val summary get() = "(For)"
             }
         }
@@ -211,7 +204,7 @@ sealed class ASTNode {
         }
 
         class Suffix(
-            override val location: Location, val operand: Expression, val operator: SuffixOperator
+            override val location: Location, val operand: Expression, val operator: MxSuffix
         ) : Expression() {
             override val summary get() = "'$operator' (SuffixOperator)"
             override val type by type()
@@ -219,7 +212,7 @@ sealed class ASTNode {
         }
 
         class Prefix(
-            override val location: Location, val operand: Expression, val operator: PrefixOperator
+            override val location: Location, val operand: Expression, val operator: MxPrefix
         ) : Expression() {
             override val summary get() = "'$operator' (PrefixOperator)"
             override val type by type()
@@ -227,20 +220,11 @@ sealed class ASTNode {
         }
 
         class Binary(
-            override val location: Location, val lhs: Expression, val rhs: Expression, val operator: BinaryOperator
+            override val location: Location, val lhs: Expression, val rhs: Expression, val operator: MxBinary
         ) : Expression() {
             override val summary get() = "'$operator' (BinaryOperator)"
             override val type by type()
             override val lvalue = operator.lvalue
-            val simpleCompare
-                get() = operator in listOf(
-                    BinaryOperator.EQUAL,
-                    BinaryOperator.NEQ,
-                    BinaryOperator.LESS,
-                    BinaryOperator.LEQ,
-                    BinaryOperator.GREATER,
-                    BinaryOperator.GEQ
-                ) && lhs.type != Type_.Primitive.String && rhs.type != Type_.Primitive.String
         }
 
         class Ternary(

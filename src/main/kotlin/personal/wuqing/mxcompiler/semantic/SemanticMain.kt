@@ -1,10 +1,15 @@
 package personal.wuqing.mxcompiler.semantic
 
 import personal.wuqing.mxcompiler.ast.ASTNode
-import personal.wuqing.mxcompiler.grammar.BinaryOperator
-import personal.wuqing.mxcompiler.grammar.Function
-import personal.wuqing.mxcompiler.grammar.Type
-import personal.wuqing.mxcompiler.grammar.Variable
+import personal.wuqing.mxcompiler.grammar.operator.MxBinary
+import personal.wuqing.mxcompiler.grammar.MxFunction
+import personal.wuqing.mxcompiler.grammar.MxType
+import personal.wuqing.mxcompiler.grammar.MxVariable
+import personal.wuqing.mxcompiler.semantic.table.ClassTable
+import personal.wuqing.mxcompiler.semantic.table.FunctionTable
+import personal.wuqing.mxcompiler.semantic.table.SymbolTable
+import personal.wuqing.mxcompiler.semantic.table.SymbolTableException
+import personal.wuqing.mxcompiler.semantic.table.VariableTable
 import personal.wuqing.mxcompiler.utils.Location
 import personal.wuqing.mxcompiler.utils.SemanticErrorRecorder
 
@@ -28,19 +33,19 @@ object SemanticMain {
         }
 
     private fun initBuiltinFunction() = mapOf(
-        "print" to Function.Builtin.Print,
-        "println" to Function.Builtin.Println,
-        "printInt" to Function.Builtin.PrintInt,
-        "printlnInt" to Function.Builtin.PrintlnInt,
-        "getString" to Function.Builtin.GetString,
-        "getInt" to Function.Builtin.GetInt,
-        "toString" to Function.Builtin.ToString
+        "print" to MxFunction.Builtin.Print,
+        "println" to MxFunction.Builtin.Println,
+        "printInt" to MxFunction.Builtin.PrintInt,
+        "printlnInt" to MxFunction.Builtin.PrintlnInt,
+        "getString" to MxFunction.Builtin.GetString,
+        "getInt" to MxFunction.Builtin.GetInt,
+        "toString" to MxFunction.Builtin.ToString
     ).forEach { (def, func) -> FunctionTable[def] = func }
 
     private fun initFunctions(root: ASTNode.Program) =
         root.declarations.filterIsInstance<ASTNode.Declaration.Function>().forEach {
             try {
-                FunctionTable[it.name] = Function.Top(
+                FunctionTable[it.name] = MxFunction.Top(
                     it.result.type, it.name, it.parameterList.map { p -> p.type.type }, it
                 )
             } catch (e: SymbolTableException) {
@@ -59,23 +64,23 @@ object SemanticMain {
                                     it.location,
                                     "constructor of \"${it.result.type}\" found in definition of \"${clazz.actual}\""
                                 )
-                            clazz.actual[it.name] = Function.Member(
+                            clazz.actual[it.name] = MxFunction.Member(
                                 it.result.type, clazz.actual, it.name,
                                 it.parameterList.map { p -> p.type.type }, it
                             )
                         }
                         is ASTNode.Declaration.Variable ->
-                            clazz.actual[it.name] = Variable(it.type.type, it.name, it)
+                            clazz.actual[it.name] = MxVariable(it.type.type, it.name, it)
                     }
-                } catch (e: Type.Class.DuplicatedException) {
+                } catch (e: MxType.Class.DuplicatedException) {
                     SemanticErrorRecorder.error(it.location, e.message!!)
                 }
             }
             if (clazz.declarations.none { it is ASTNode.Declaration.Constructor })
                 try {
                     clazz.actual["__constructor__"] =
-                        Function.Builtin.DefaultConstructor(clazz.actual)
-                } catch (e: Type.Class.DuplicatedException) {
+                        MxFunction.Builtin.DefaultConstructor(clazz.actual)
+                } catch (e: MxType.Class.DuplicatedException) {
                     SemanticErrorRecorder.error(clazz.location, e.message!!)
                 }
         }
@@ -102,11 +107,11 @@ object SemanticMain {
         SymbolTable.drop()
     }
 
-    private fun visit(node: ASTNode.Declaration.Variable, member: Type.Class? = null) {
-        if (node.type.type == Type.Void)
+    private fun visit(node: ASTNode.Declaration.Variable, member: MxType.Class? = null) {
+        if (node.type.type == MxType.Void)
             SemanticErrorRecorder.error(node.location, "cannot declare variable of void type")
         if (node.init != null &&
-            BinaryOperator.ASSIGN.accept(node.type.type to true, node.init.type to false) == null
+            MxBinary.ASSIGN.accept(node.type.type to true, node.init.type to false) == null
         )
             SemanticErrorRecorder.error(
                 node.location,
@@ -115,7 +120,7 @@ object SemanticMain {
         else
             try {
                 VariableTable[node.name] =
-                    member?.variables?.get(node.name) ?: Variable(node.type.type, node.name, node)
+                    member?.variables?.get(node.name) ?: MxVariable(node.type.type, node.name, node)
             } catch (e: SymbolTableException) {
                 SemanticErrorRecorder.error(node.location, e.message!!)
             }
@@ -131,7 +136,7 @@ object SemanticMain {
             is ASTNode.Statement.Expression -> node.expression.type
             is ASTNode.Statement.Variable -> node.variables.forEach { visit(it) }
             is ASTNode.Statement.If -> {
-                if (node.condition.type != Type.Primitive.Bool && node.condition.type != Type.Unknown) SemanticErrorRecorder.error(
+                if (node.condition.type != MxType.Primitive.Bool && node.condition.type != MxType.Unknown) SemanticErrorRecorder.error(
                     node.location, "condition must have type \"bool\", but \"${node.condition.type}\" found"
                 )
                 SymbolTable.new()
@@ -144,7 +149,7 @@ object SemanticMain {
                 }
             }
             is ASTNode.Statement.Loop.While -> {
-                if (node.condition.type != Type.Primitive.Bool && node.condition.type != Type.Unknown) SemanticErrorRecorder.error(
+                if (node.condition.type != MxType.Primitive.Bool && node.condition.type != MxType.Unknown) SemanticErrorRecorder.error(
                     node.location, "condition must have type \"bool\", but \"${node.condition.type}\" found"
                 )
                 SymbolTable.new()
@@ -156,7 +161,7 @@ object SemanticMain {
             is ASTNode.Statement.Loop.For -> {
                 SymbolTable.new()
                 node.init?.let { visit(it) }
-                if (node.condition.type != Type.Primitive.Bool && node.condition.type != Type.Unknown) SemanticErrorRecorder.error(
+                if (node.condition.type != MxType.Primitive.Bool && node.condition.type != MxType.Unknown) SemanticErrorRecorder.error(
                     node.location, "condition must have type \"bool\", but \"${node.condition.type}\" found"
                 )
                 node.step?.type
@@ -172,13 +177,13 @@ object SemanticMain {
             is ASTNode.Statement.Return -> {
                 if (SymbolTable.returnType == null)
                     SemanticErrorRecorder.error(node.location, "\"return\" found without function")
-                else if (SymbolTable.returnType!! != Type.Unknown
-                    && node.expression?.type != Type.Unknown
-                    && (if (SymbolTable.returnType == Type.Void) node.expression != null else node.expression == null
-                            || (node.expression.type != Type.Null && node.expression.type != SymbolTable.returnType))
+                else if (SymbolTable.returnType!! != MxType.Unknown
+                    && node.expression?.type != MxType.Unknown
+                    && (if (SymbolTable.returnType == MxType.Void) node.expression != null else node.expression == null
+                            || (node.expression.type != MxType.Null && node.expression.type != SymbolTable.returnType))
                 )
                     SemanticErrorRecorder.error(
-                        node.location, "\"${node.expression?.type ?: Type.Void}\" returned, " +
+                        node.location, "\"${node.expression?.type ?: MxType.Void}\" returned, " +
                                 "but \"${SymbolTable.returnType}\" expected"
                     )
             }
@@ -187,7 +192,7 @@ object SemanticMain {
 
     private fun checkMain(location: Location) {
         try {
-            if (FunctionTable["main"].match(location, listOf()) !in listOf(Type.Unknown, Type.Primitive.Int))
+            if (FunctionTable["main"].match(location, listOf()) !in listOf(MxType.Unknown, MxType.Primitive.Int))
                 SemanticErrorRecorder.error(location, "\"main()\" must return \"int\", but \"$this\" found")
         } catch (e: SymbolTableException) {
             SemanticErrorRecorder.error(location, "cannot find function \"main()\"")

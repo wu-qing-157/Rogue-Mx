@@ -1,9 +1,10 @@
-package personal.wuqing.mxcompiler.llvm
+package personal.wuqing.mxcompiler.llvm.grammar
 
 sealed class LLVMStatement {
     interface Terminating
 
-    class Ret(val type: LLVMType, val name: LLVMName?) : LLVMStatement(), Terminating {
+    class Ret(val type: LLVMType, val name: LLVMName?) : LLVMStatement(),
+        Terminating {
         override fun toString() = "ret $type${name?.let { " $name" } ?: ""}"
     }
 
@@ -22,24 +23,26 @@ sealed class LLVMStatement {
     }
 
     class ICalc(
-        val result: LLVMName, val operator: ICalcOperator, val type: LLVMType, val op1: LLVMName, val op2: LLVMName
+        val result: LLVMName, val operator: LLVMCalc, val type: LLVMType, val op1: LLVMName, val op2: LLVMName
     ) : LLVMStatement() {
         override fun toString() = "$result = $operator $type $op1, $op2"
     }
 
     class ICmp(
-        val result: LLVMName, val operator: IComOperator, val type: LLVMType, val op1: LLVMName, val op2: LLVMName
+        val result: LLVMName, val operator: LLVMCmp, val type: LLVMType, val op1: LLVMName, val op2: LLVMName
     ) : LLVMStatement() {
         override fun toString() = "$result = icmp $operator $type $op1, $op2"
     }
 
     class Branch(
         val condType: LLVMType, val cond: LLVMName, val op1: LLVMName, val op2: LLVMName
-    ) : LLVMStatement(), Terminating {
+    ) : LLVMStatement(),
+        Terminating {
         override fun toString() = "br $condType $cond, label $op1, label $op2"
     }
 
-    class Jump(val dest: LLVMName) : LLVMStatement(), Terminating {
+    class Jump(val dest: LLVMName) : LLVMStatement(),
+        Terminating {
         override fun toString() = "br label $dest"
     }
 

@@ -1,6 +1,7 @@
-package personal.wuqing.mxcompiler.llvm
+package personal.wuqing.mxcompiler.llvm.grammar
 
 import personal.wuqing.mxcompiler.ast.ASTNode
+import personal.wuqing.mxcompiler.llvm.LLVMTranslator
 
 sealed class LLVMFunction(
     val ret: LLVMType, val name: LLVMName, val args: List<LLVMType>
@@ -9,7 +10,7 @@ sealed class LLVMFunction(
         ret: LLVMType, name: String, args: List<LLVMType>, val argName: List<LLVMName>, val member: Boolean,
         val ast: ASTNode.Declaration.Function
     ) : LLVMFunction(ret, LLVMName.Global(name), args) {
-        val body by lazy(LazyThreadSafetyMode.NONE) { Translator.processBody(this) }
+        val body by lazy(LazyThreadSafetyMode.NONE) { LLVMTranslator.processBody(this) }
         fun definition() = "define $ret $name(${(args zip argName).joinToString { (t, n) -> "$t $n" }}) {"
     }
 
@@ -19,6 +20,7 @@ sealed class LLVMFunction(
         override fun toString() = "declare $ret $name(${args.joinToString()})"
 
         object Malloc : External(LLVMType.string, "malloc", listOf(LLVMType.I32))
+        object MallocArray : External(LLVMType.string, "__malloc__array__", listOf(LLVMType.I32, LLVMType.I32))
         object GetInt : External(LLVMType.I32, "__getInt__", listOf())
         object GetString : External(LLVMType.string, "__getString__", listOf())
         object Print : External(LLVMType.Void, "__print__", listOf(LLVMType.string))
@@ -36,24 +38,12 @@ sealed class LLVMFunction(
         object StringConcatenate :
             External(LLVMType.string, "__string__concatenate__", listOf(LLVMType.string, LLVMType.string))
 
-        object StringEqual :
-            External(LLVMType.I8, "__string__equal__", listOf(LLVMType.string, LLVMType.string))
-
-        object StringNeq :
-            External(LLVMType.I8, "__string__neq__", listOf(LLVMType.string, LLVMType.string))
-
-        object StringLess :
-            External(LLVMType.I8, "__string__less__", listOf(LLVMType.string, LLVMType.string))
-
-        object StringLeq :
-            External(LLVMType.I8, "__string__leq__", listOf(LLVMType.string, LLVMType.string))
-
-        object StringGreater :
-            External(LLVMType.I8, "__string__greater__", listOf(LLVMType.string, LLVMType.string))
-
-        object StringGeq :
-            External(LLVMType.I8, "__string__geq__", listOf(LLVMType.string, LLVMType.string))
-
-        object ArraySize : External(LLVMType.I32, "__array__size__", listOf(LLVMType.Pointer(LLVMType.Void)))
+        object StringEqual : External(LLVMType.I8, "__string__equal__", listOf(LLVMType.string, LLVMType.string))
+        object StringNeq : External(LLVMType.I8, "__string__neq__", listOf(LLVMType.string, LLVMType.string))
+        object StringLess : External(LLVMType.I8, "__string__less__", listOf(LLVMType.string, LLVMType.string))
+        object StringLeq : External(LLVMType.I8, "__string__leq__", listOf(LLVMType.string, LLVMType.string))
+        object StringGreater : External(LLVMType.I8, "__string__greater__", listOf(LLVMType.string, LLVMType.string))
+        object StringGeq : External(LLVMType.I8, "__string__geq__", listOf(LLVMType.string, LLVMType.string))
+        object ArraySize : External(LLVMType.I32, "__array__size__", listOf(LLVMType.string))
     }
 }

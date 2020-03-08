@@ -1,0 +1,8 @@
+int main() {
+    int[] a = new int[10];
+    a[0] = 0;
+    a[9] = a.size();
+    printlnInt(a[0]);
+    printlnInt(a[9]);
+    return 0;
+}

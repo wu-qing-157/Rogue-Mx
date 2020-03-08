@@ -1,0 +1,11 @@
+int main() {
+    int[][] a = new int[4][5];
+    a[1] = new int[10];
+    a[0][0] = a[0].size();
+    a[1][0] = a[1].size();
+    a[1][9] = a.size();
+    printlnInt(a[0][0]);
+    printlnInt(a[1][0]);
+    printlnInt(a[1][9]);
+    return 0;
+}

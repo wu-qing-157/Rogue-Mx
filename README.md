@@ -9,7 +9,7 @@ Description|Status
 ANTLR4|Completed
 AST|Completed
 Semantic|Completed, __pass__ given test suite
-LLVM IR|Almost completed, __partly untested__
+LLVM IR|Almost completed, __pass custom tests__, __pending given tests__
 ...|Not planned yet
 
 ## Known Issues
@@ -59,7 +59,9 @@ if|Simple if|__Passed__
 while|Simple while|__Passed__
 for|Simple for|__Passed__
 control|Simple mixture of control statements|__Passed__
-array|Simple array operations|A lot todo (orz)
+array-1|Simple array operations|__Passed__
+array-2|Simple 2-dimension array|__Passed__
+array-3|Simple interleaved array|__Passed__
 ...|...|(maybe no more)
 
 #### Given Test Suite
@@ -106,7 +108,8 @@ Status|Notes
 + 2020.03.05 Test member function, fix identifier resolve
 + 2020.03.05 Pass control test
 + 2020.03.06 Support init global variable and class member
-
++ 2020.03.07 Optimize project structure
++ 2020.03.08 Pass array tests
 
 ## Some notes
 
@@ -175,5 +178,5 @@ also, another alternative may be to `printStackTrace()` only when
 `--debug` option is specified, as these `Exception` should not
 appear in final version
 + this file is somehow large,
-and _Intellij IDEA_ takes a lot time analyzing it,
+and _Intellij IDEA_ takes a lot of time analyzing it,
 so it maybe separated to multiple files in the future

@@ -2,8 +2,10 @@
 #include "stdio.h"
 #include "string.h"
 
-void *__malloc__(int length) {
-    return malloc(length);
+void *__malloc__array__(int size, int length) {
+    void *ret = malloc(size + 4);
+    *((int *) ret) = length;
+    return ret + 4;
 }
 
 int __getInt__() {

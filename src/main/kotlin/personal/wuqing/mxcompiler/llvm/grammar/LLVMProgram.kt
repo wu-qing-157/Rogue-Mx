@@ -1,4 +1,4 @@
-package personal.wuqing.mxcompiler.llvm
+package personal.wuqing.mxcompiler.llvm.grammar
 
 class LLVMProgram(
     val struct: List<LLVMType.Class>, val global: List<LLVMGlobal>,

@@ -1,4 +1,4 @@
-package personal.wuqing.mxcompiler.llvm
+package personal.wuqing.mxcompiler.llvm.grammar
 
 class LLVMBlock private constructor(val name: LLVMName.Local) {
     val statements = mutableListOf<LLVMStatement>()

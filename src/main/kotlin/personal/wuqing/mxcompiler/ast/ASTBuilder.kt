@@ -1,8 +1,8 @@
 package personal.wuqing.mxcompiler.ast
 
-import personal.wuqing.mxcompiler.grammar.BinaryOperator
-import personal.wuqing.mxcompiler.grammar.PrefixOperator
-import personal.wuqing.mxcompiler.grammar.SuffixOperator
+import personal.wuqing.mxcompiler.grammar.operator.MxBinary
+import personal.wuqing.mxcompiler.grammar.operator.MxPrefix
+import personal.wuqing.mxcompiler.grammar.operator.MxSuffix
 import personal.wuqing.mxcompiler.parser.MxLangBaseVisitor
 import personal.wuqing.mxcompiler.parser.MxLangParser
 import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
@@ -249,8 +249,8 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             location = Location(filename, ctx!!),
             operand = visit(ctx.expression()) as ASTNode.Expression,
             operator = when (ctx.op.text) {
-                "++" -> SuffixOperator.INC
-                "--" -> SuffixOperator.DEC
+                "++" -> MxSuffix.INC
+                "--" -> MxSuffix.DEC
                 else -> throw Exception("unknown suffix unary operator when building AST")
             }
         )
@@ -260,12 +260,12 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             location = Location(filename, ctx!!),
             operand = visit(ctx.expression()) as ASTNode.Expression,
             operator = when (ctx.op.text) {
-                "++" -> PrefixOperator.INC
-                "--" -> PrefixOperator.DEC
-                "+" -> PrefixOperator.POS
-                "-" -> PrefixOperator.NEG
-                "!" -> PrefixOperator.L_NEG
-                "~" -> PrefixOperator.INV
+                "++" -> MxPrefix.INC
+                "--" -> MxPrefix.DEC
+                "+" -> MxPrefix.POS
+                "-" -> MxPrefix.NEG
+                "!" -> MxPrefix.L_NEG
+                "~" -> MxPrefix.INV
                 else -> throw Exception("unknown prefix unary operator when building AST")
             }
         )
@@ -276,37 +276,37 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
             lhs = visit(ctx.expression(0)) as ASTNode.Expression,
             rhs = visit(ctx.expression(1)) as ASTNode.Expression,
             operator = when (ctx.op.text) {
-                "*" -> BinaryOperator.TIMES
-                "/" -> BinaryOperator.DIV
-                "%" -> BinaryOperator.REM
-                "+" -> BinaryOperator.PLUS
-                "-" -> BinaryOperator.MINUS
-                "<<" -> BinaryOperator.SHL
-                ">>" -> BinaryOperator.SHR
-                ">>>" -> BinaryOperator.U_SHR
-                "<" -> BinaryOperator.LESS
-                ">" -> BinaryOperator.GREATER
-                "<=" -> BinaryOperator.LEQ
-                ">=" -> BinaryOperator.GEQ
-                "==" -> BinaryOperator.EQUAL
-                "!=" -> BinaryOperator.NEQ
-                "&" -> BinaryOperator.A_AND
-                "^" -> BinaryOperator.A_XOR
-                "|" -> BinaryOperator.A_OR
-                "&&" -> BinaryOperator.L_AND
-                "||" -> BinaryOperator.L_OR
-                "=" -> BinaryOperator.ASSIGN
-                "+=" -> BinaryOperator.PLUS_I
-                "-=" -> BinaryOperator.MINUS_I
-                "*=" -> BinaryOperator.TIMES_I
-                "/=" -> BinaryOperator.DIV_I
-                "%=" -> BinaryOperator.REM_I
-                "&=" -> BinaryOperator.AND_I
-                "^=" -> BinaryOperator.XOR_I
-                "|=" -> BinaryOperator.OR_I
-                "<<=" -> BinaryOperator.SHL_I
-                ">>=" -> BinaryOperator.SHR_I
-                ">>>=" -> BinaryOperator.U_SHR_I
+                "*" -> MxBinary.TIMES
+                "/" -> MxBinary.DIV
+                "%" -> MxBinary.REM
+                "+" -> MxBinary.PLUS
+                "-" -> MxBinary.MINUS
+                "<<" -> MxBinary.SHL
+                ">>" -> MxBinary.SHR
+                ">>>" -> MxBinary.U_SHR
+                "<" -> MxBinary.LESS
+                ">" -> MxBinary.GREATER
+                "<=" -> MxBinary.LEQ
+                ">=" -> MxBinary.GEQ
+                "==" -> MxBinary.EQUAL
+                "!=" -> MxBinary.NEQ
+                "&" -> MxBinary.A_AND
+                "^" -> MxBinary.A_XOR
+                "|" -> MxBinary.A_OR
+                "&&" -> MxBinary.L_AND
+                "||" -> MxBinary.L_OR
+                "=" -> MxBinary.ASSIGN
+                "+=" -> MxBinary.PLUS_I
+                "-=" -> MxBinary.MINUS_I
+                "*=" -> MxBinary.TIMES_I
+                "/=" -> MxBinary.DIV_I
+                "%=" -> MxBinary.REM_I
+                "&=" -> MxBinary.AND_I
+                "^=" -> MxBinary.XOR_I
+                "|=" -> MxBinary.OR_I
+                "<<=" -> MxBinary.SHL_I
+                ">>=" -> MxBinary.SHR_I
+                ">>>=" -> MxBinary.U_SHR_I
                 else -> throw Exception("unknown binary operator when building AST")
             }
         )

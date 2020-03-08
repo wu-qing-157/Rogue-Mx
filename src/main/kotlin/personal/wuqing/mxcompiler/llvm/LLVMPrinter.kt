@@ -1,5 +1,11 @@
 package personal.wuqing.mxcompiler.llvm
 
+import personal.wuqing.mxcompiler.llvm.grammar.LLVMBlock
+import personal.wuqing.mxcompiler.llvm.grammar.LLVMFunction
+import personal.wuqing.mxcompiler.llvm.grammar.LLVMGlobal
+import personal.wuqing.mxcompiler.llvm.grammar.LLVMProgram
+import personal.wuqing.mxcompiler.llvm.grammar.LLVMType
+
 object LLVMPrinter {
     private val result = StringBuilder()
 

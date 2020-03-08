@@ -4,60 +4,60 @@ import personal.wuqing.mxcompiler.ast.ASTNode
 import personal.wuqing.mxcompiler.utils.ASTErrorRecorder
 import personal.wuqing.mxcompiler.utils.Location
 
-sealed class Type(val size: Int) {
-    abstract val functions: Map<String, Function>
+sealed class MxType(val size: Int) {
+    abstract val functions: Map<String, MxFunction>
 
-    sealed class Primitive(size: kotlin.Int) : Type(size) {
+    sealed class Primitive(size: kotlin.Int) : MxType(size) {
         object Int : Primitive(4) {
-            override val functions = mapOf<kotlin.String, Function>()
+            override val functions = mapOf<kotlin.String, MxFunction>()
             override fun toString() = "int"
         }
 
         object Bool : Primitive(1) {
-            override val functions = mapOf<kotlin.String, Function>()
+            override val functions = mapOf<kotlin.String, MxFunction>()
             override fun toString() = "bool"
         }
 
         object String : Primitive(8) {
             override val functions = mapOf(
-                "length" to Function.Builtin.StringLength,
-                "substring" to Function.Builtin.StringSubstring,
-                "parseInt" to Function.Builtin.StringParseInt,
-                "ord" to Function.Builtin.StringOrd
+                "length" to MxFunction.Builtin.StringLength,
+                "substring" to MxFunction.Builtin.StringSubstring,
+                "parseInt" to MxFunction.Builtin.StringParseInt,
+                "ord" to MxFunction.Builtin.StringOrd
             )
 
             override fun toString() = "string"
         }
     }
 
-    object Null : Type(8) {
-        override val functions = mapOf<String, Function>()
+    object Null : MxType(8) {
+        override val functions = mapOf<String, MxFunction>()
         override fun toString() = "null"
     }
 
-    object Void : Type(0) {
-        override val functions = mapOf<String, Function>()
+    object Void : MxType(0) {
+        override val functions = mapOf<String, MxFunction>()
         override fun toString() = "void"
     }
 
-    object Unknown : Type(0) {
-        override val functions = mapOf<String, Function>()
+    object Unknown : MxType(0) {
+        override val functions = mapOf<String, MxFunction>()
         override fun toString() = "<unknown type>"
     }
 
-    class Class(val name: String, val def: ASTNode.Declaration.Class) : Type(8) {
+    class Class(val name: String, val def: ASTNode.Declaration.Class) : MxType(8) {
         class DuplicatedException(message: String) : Exception(message)
 
-        val variables = mutableMapOf<String, Variable>()
-        override val functions = mutableMapOf<String, Function>()
-        operator fun set(name: String, variable: Variable) {
+        val variables = mutableMapOf<String, MxVariable>()
+        override val functions = mutableMapOf<String, MxFunction>()
+        operator fun set(name: String, variable: MxVariable) {
             if (name in functions) throw DuplicatedException("\"$name\" is already defined as a function in \"$this\"")
             if (name in variables) throw DuplicatedException("\"$name\" is already defined as a variable in \"$this\"")
             if (name == this.name) throw DuplicatedException("\"$name\" has the same name of the class")
             variables[name] = variable
         }
 
-        operator fun set(name: String, function: Function) {
+        operator fun set(name: String, function: MxFunction) {
             if (name in functions) throw DuplicatedException("\"$name\" is already defined as a function in \"$this\"")
             if (name in variables) throw DuplicatedException("\"$name\" is already defined as a variable in \"$this\"")
             if (name == this.name) throw DuplicatedException("\"$name\" has the same name of the class")
@@ -68,14 +68,14 @@ sealed class Type(val size: Int) {
     }
 
     class Array(
-        val base: Type
-    ) : Type(8) {
-        override val functions = mapOf("size" to Function.Builtin.ArraySize(this))
+        val base: MxType
+    ) : MxType(8) {
+        override val functions = mapOf("size" to MxFunction.Builtin.ArraySize(this))
         override fun toString() = "$base[]"
 
         companion object {
-            private val pool = mutableMapOf<Pair<Type, Int>, Array>()
-            fun get(base: Type, dimension: Int, location: Location? = null): Type = when (base) {
+            private val pool = mutableMapOf<Pair<MxType, Int>, Array>()
+            fun get(base: MxType, dimension: Int, location: Location? = null): MxType = when (base) {
                 Unknown -> Unknown
                 Void -> Unknown.also {
                     ASTErrorRecorder.error(location!!, "void type doesn't have array type")
