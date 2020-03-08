@@ -110,6 +110,7 @@ Status|Notes
 + 2020.03.06 Support init global variable and class member
 + 2020.03.07 Optimize project structure
 + 2020.03.08 Pass array tests
++ 2020.03.08 Fix an internal exception caused by lexer failure
 
 ## Some notes
 

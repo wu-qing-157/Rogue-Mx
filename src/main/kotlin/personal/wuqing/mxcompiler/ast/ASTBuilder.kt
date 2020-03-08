@@ -90,7 +90,9 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                     location = Location(filename, it),
                     type = visit(ctx.type()) as ASTNode.Type,
                     name = it.Identifier()?.text ?: "<unknown>",
-                    init = it.expression()?.let { expression -> visit(expression) as ASTNode.Expression }
+                    init = it.expression()?.let { expression ->
+                        visit(expression) as? ASTNode.Expression ?: throw Exception("null expression")
+                    }
                 )
             }
         )
