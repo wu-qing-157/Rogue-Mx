@@ -13,6 +13,7 @@
       <w>mxcompiler</w>
       <w>printf</w>
       <w>putchar</w>
+      <w>risc</w>
       <w>riscv</w>
       <w>scanf</w>
       <w>sdiv</w>
