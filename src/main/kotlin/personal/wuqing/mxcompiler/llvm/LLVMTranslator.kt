@@ -316,7 +316,7 @@ object LLVMTranslator {
                 Value(LLVMType.I32, true, lvalue)
             }
             MxPrefix.L_NEG -> {
-                this += LLVMStatement.ICmp(name, LLVMCmp.NE, LLVMType.I1, rvalue, LLVMName.Const(0))
+                this += LLVMStatement.ICmp(name, LLVMCmp.EQ, LLVMType.I1, rvalue, LLVMName.Const(0))
                 Value(LLVMType.I1, false, name)
             }
             MxPrefix.INV -> {

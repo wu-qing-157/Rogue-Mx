@@ -16,7 +16,7 @@ int __getInt__() {
 
 char *__getString__() {
     char *s = malloc(261) + 4;
-    fgets(s, 257, stdin);
+    scanf("%s", s);
     *((int *) (s - 4)) = strlen(s);
     return s;
 }
