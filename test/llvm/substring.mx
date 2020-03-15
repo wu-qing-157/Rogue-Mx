@@ -1,0 +1,5 @@
+int main() {
+    string s = "123Hello456";
+    println(s.substring(3, 8));
+    return 0;
+}

@@ -102,6 +102,7 @@ control|Simple mixture of control statements|__Passed__
 array-1|Simple array operations|__Passed__
 array-2|Simple 2-dimension array|__Passed__
 array-3|Simple interleaved array|__Passed__
+substring|Simple substring|__Passed__
 ...|...|(maybe no more)
 
 #### Given Test Suite
@@ -151,6 +152,7 @@ Status|Notes
 + 2020.03.07 Optimize project structure
 + 2020.03.08 Pass array tests
 + 2020.03.08 Fix an internal exception caused by lexer failure
++ 2020.03.15 Fix substring
 
 ## Some notes
 

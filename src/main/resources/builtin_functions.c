@@ -59,7 +59,7 @@ int __string__parseInt__(char *s) {
 }
 
 char *__string__substring__(int l, int r, char *s) {
-    int length = r - l + 1;
+    int length = r - l;
     char *ret = malloc(5 + length) + 4;
     *((int *) (ret - 4)) = length;
     s += l;
