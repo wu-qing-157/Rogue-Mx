@@ -21,7 +21,7 @@ import personal.wuqing.mxcompiler.llvm.map.FunctionMap
 import personal.wuqing.mxcompiler.llvm.map.GlobalMap
 import personal.wuqing.mxcompiler.llvm.map.LiteralMap
 import personal.wuqing.mxcompiler.llvm.map.TypeMap
-import java.util.*
+import java.util.LinkedList
 
 object LLVMTranslator {
     val toProcess = LinkedList<LLVMFunction.Declared>()
@@ -55,11 +55,12 @@ object LLVMTranslator {
     private val localBlocks = mutableListOf<LLVMBlock>()
     private val currentBlock get() = localBlocks.last()
     private val loopTarget = mutableMapOf<ASTNode.Statement.Loop, Pair<LLVMBlock, LLVMBlock>>()
+    private val terminating
+        get() = currentBlock.statements.lastOrNull()?.let { it is LLVMStatement.Terminating } == true
     private var thisReference: Pair<LLVMType.Pointer, LLVMName>? = null
 
     private operator fun plusAssign(statement: LLVMStatement) {
-        if (currentBlock.statements.lastOrNull()?.let { it is LLVMStatement.Terminating } != true)
-            currentBlock.statements += statement
+        currentBlock.statements += statement
     }
 
     private operator fun plusAssign(block: LLVMBlock) {
@@ -663,6 +664,7 @@ object LLVMTranslator {
     }
 
     private operator fun invoke(ast: ASTNode.Statement) {
+        if (terminating) return
         when (ast) {
             is ASTNode.Statement.Empty -> Unit
             is ASTNode.Statement.Block -> ast.statements.forEach { this(it) }
