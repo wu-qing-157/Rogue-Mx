@@ -22,6 +22,7 @@
       <w>sprintf</w>
       <w>srem</w>
       <w>sscanf</w>
+      <w>strcpy</w>
       <w>strlen</w>
       <w>wuqing</w>
     </words>

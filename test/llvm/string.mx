@@ -11,5 +11,6 @@ int main() {
     println(a != b ? "OK" : "err");
     println(a > b ? "err" : "OK");
     println(a >= b ? "err" : "OK");
+    println(toString(123));
     return 0;
 }

@@ -153,6 +153,7 @@ Status|Notes
 + 2020.03.08 Pass array tests
 + 2020.03.08 Fix an internal exception caused by lexer failure
 + 2020.03.15 Fix substring
++ 2020.03.16 Change implementation of string literal
 
 ## Some notes
 
@@ -223,3 +224,7 @@ appear in final version
 + this file is somehow large,
 and _Intellij IDEA_ takes a lot of time analyzing it,
 so it maybe separated to multiple files in the future
+
+#### Built-in functions
+
++ several implementation of built-in functions may be simplified

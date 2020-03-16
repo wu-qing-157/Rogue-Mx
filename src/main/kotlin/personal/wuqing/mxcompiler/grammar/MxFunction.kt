@@ -55,7 +55,9 @@ sealed class MxFunction(val result: MxType, open val base: MxType?, val name: St
                 return javaClass.hashCode()
             }
         }
+
         class DefaultConstructor(type: MxType.Class) : Builtin(type, type, "__constructor__", listOf())
+        object StringLiteral : Builtin(String_, null, "__string__literal__", listOf(String_, Int_))
         object StringOrd : Builtin(Int_, String_, "ord", listOf(Int_))
         object StringSubstring : Builtin(String_, String_, "substring", listOf(Int_, Int_))
         object Malloc : Builtin(String_, null, "__malloc__", listOf(Int_))

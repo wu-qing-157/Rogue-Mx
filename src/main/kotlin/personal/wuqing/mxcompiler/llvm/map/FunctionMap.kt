@@ -40,6 +40,7 @@ object FunctionMap {
             MxFunction.Builtin.StringParseInt -> LLVMFunction.External.StringParseInt
             is MxFunction.Builtin.ArraySize -> LLVMFunction.External.ArraySize
             is MxFunction.Builtin.DefaultConstructor -> throw Exception("analyzing default constructor")
+            MxFunction.Builtin.StringLiteral -> LLVMFunction.External.StringLiteral
             MxFunction.Builtin.StringOrd -> LLVMFunction.External.StringOrd
             MxFunction.Builtin.StringSubstring -> LLVMFunction.External.StringSubstring
             MxFunction.Builtin.Malloc -> LLVMFunction.External.Malloc

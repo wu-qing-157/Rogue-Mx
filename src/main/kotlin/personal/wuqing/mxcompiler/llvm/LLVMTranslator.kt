@@ -653,13 +653,14 @@ object LLVMTranslator {
 
     private operator fun invoke(ast: ASTNode.Expression.Constant.String): Value {
         val global = LiteralMap[ast.value]
-        val name = nextName()
-        this += LLVMStatement.Element(
-            name, global.type, LLVMType.Pointer(global.type), global.name, listOf(
-                LLVMType.I32 to LLVMName.Const(0),
-                LLVMType.I32 to LLVMName.Const(4)
-            )
-        )
+        val cast = nextName().also {
+            this += LLVMStatement.Cast(it, LLVMType.Pointer(global.type), global.name, LLVMType.string)
+        }
+        val name = nextName().also {
+            this += LLVMStatement.Call(it, LLVMType.string, FunctionMap[MxFunction.Builtin.StringLiteral].name, listOf(
+                LLVMType.string to cast, LLVMType.I32 to LLVMName.Const(ast.value.toByteArray().size)
+            ))
+        }
         return Value(LLVMType.string, false, name)
     }
 

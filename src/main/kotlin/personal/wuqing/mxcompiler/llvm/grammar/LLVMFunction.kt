@@ -28,6 +28,7 @@ sealed class LLVMFunction(
         object PrintInt : External(LLVMType.Void, "__printInt__", listOf(LLVMType.I32))
         object PrintlnInt : External(LLVMType.Void, "__printlnInt__", listOf(LLVMType.I32))
         object ToString : External(LLVMType.string, "__toString__", listOf(LLVMType.I32))
+        object StringLiteral : External(LLVMType.string, "__string__literal__", listOf(LLVMType.string, LLVMType.I32))
         object StringLength : External(LLVMType.I32, "__string__length__", listOf(LLVMType.string))
         object StringParseInt : External(LLVMType.I32, "__string__parseInt__", listOf(LLVMType.string))
         object StringOrd : External(LLVMType.I32, "__string__ord__", listOf(LLVMType.I32, LLVMType.string))

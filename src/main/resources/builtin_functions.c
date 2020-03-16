@@ -26,7 +26,7 @@ void __print__(char *s) {
 }
 
 void __println__(char *s) {
-    printf("%s\n", s);
+    puts(s);
 }
 
 void __printInt__(int i) {
@@ -38,10 +38,25 @@ void __printlnInt__(int i) {
 }
 
 char *__toString__(int i) {
-    char *s = malloc(15) + 4;
-    sprintf(s, "%d", i);
-    *((int *) (s - 4)) = strlen(s);
+    char *s = malloc(15) + 15, *t;
+    *(t = --s) = '\0';
+    char neg = i < 0;
+    if (neg) i = -i;
+    if (i == 0) *--s = '0';
+    while (i) {
+        *--s = i % 10 + '0';
+        i /= 10;
+    }
+    if (neg) *--s = '-';
+    *((int *) (s - 4)) = t - s;
     return s;
+}
+
+char *__string__literal__(char *s, int l) {
+    char *ret = malloc(l + 5) + 4;
+    strcpy(ret, s);
+    *((int *) (ret - 4)) = l;
+    return ret;
 }
 
 int __string__length__(char *s) {

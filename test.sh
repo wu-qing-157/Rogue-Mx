@@ -14,7 +14,7 @@ if [ "$2" = "all" ]; then
     judge=$p/assignment/local-judge
     config=$judge/config.yaml
     dataset=$judge/testcase
-    simulator=$p/assignment/ravel/build/bin
+    simulator=/opt/ravel/bin
     echo "buildlimit: 120" > $config
     echo "instlimit: -1" >> $config
     echo "memlimit: 512" >> $config

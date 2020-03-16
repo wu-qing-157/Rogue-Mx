@@ -14,12 +14,7 @@ sealed class LLVMName {
     }
 
     data class Literal(val l: Int, val s: String) : LLVMName() {
-        private val display = l.let {
-            ("\\${(it and 255).toString(16).padStart(2, '0')}" +
-                    "\\${(it shr 8 and 255).toString(16).padStart(2, '0')}" +
-                    "\\${(it shr 16 and 255).toString(16).padStart(2, '0')}" +
-                    "\\${(it shr 24 and 255).toString(16).padStart(2, '0')}").toUpperCase()
-        } + s.replace(Regex("[^0-9a-zA-Z]")) {
+        private val display = s.replace(Regex("[^0-9a-zA-Z]")) {
             it.value.toByteArray().joinToString { b -> "\\${b.toString(16).padStart(2, '0').toUpperCase()}" }
         }
 
