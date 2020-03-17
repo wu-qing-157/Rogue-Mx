@@ -1,4 +1,5 @@
 int main() {
+    println("a" + toString(123) + "b");
     string a = "a", b = "b", c = "c", ab = "ab", temp = "";
     temp += a + c;
     temp += temp;

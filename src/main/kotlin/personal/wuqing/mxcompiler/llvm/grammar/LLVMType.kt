@@ -1,5 +1,6 @@
 package personal.wuqing.mxcompiler.llvm.grammar
 
+import personal.wuqing.mxcompiler.A64
 import personal.wuqing.mxcompiler.llvm.map.TypeMap
 
 sealed class LLVMType(val size: Int) {
@@ -28,13 +29,12 @@ sealed class LLVMType(val size: Int) {
         fun definition() = "${toString()} = type { ${members.members.joinToString { TypeMap[it.type].toString() }} }"
     }
 
-    class Pointer(val type: LLVMType) : LLVMType(4) {
+    class Pointer(val type: LLVMType) : LLVMType(if (A64) 8 else 4) {
         override fun toString() = "$type*"
     }
 
     companion object {
-        val string =
-            Pointer(I8)
+        val string = Pointer(I8)
     }
 
     object Void : LLVMType(1) {

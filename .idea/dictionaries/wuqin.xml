@@ -24,6 +24,7 @@
       <w>sscanf</w>
       <w>strcpy</w>
       <w>strlen</w>
+      <w>subprocess</w>
       <w>wuqing</w>
     </words>
   </dictionary>

@@ -9,19 +9,17 @@ import org.apache.commons.cli.ParseException
 import personal.wuqing.mxcompiler.PROJECT_NAME
 import personal.wuqing.mxcompiler.USAGE
 import personal.wuqing.mxcompiler.VERSION
-import personal.wuqing.mxcompiler.ast.ASTNode
 import personal.wuqing.mxcompiler.io.OutputMethod
 import personal.wuqing.mxcompiler.utils.OptionErrorRecorder
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
-import java.io.ObjectInputStream
 
 object OptionMain {
     sealed class Result {
         object Exit : Result()
         data class FromSource(
-            val input: InputStream, val output: OutputMethod, val source: String, val target: Target
+            val input: InputStream, val output: OutputMethod, val source: String, val target: Target, val a64: Boolean
         ) : Result()
     }
 
@@ -37,6 +35,7 @@ object OptionMain {
                     Result.Exit
                 }
                 else -> {
+                    var a64 = false
                     val source = when {
                         hasOption("stdin") -> {
                             if (args.isNotEmpty())
@@ -63,6 +62,7 @@ object OptionMain {
                         else FileInputStream(source)
                     val target = when {
                         hasOption("llvm") -> Target.LLVM
+                        hasOption("llvm64") -> Target.LLVM.also { a64 = true }
                         hasOption("semantic") -> Target.SEMANTIC
                         else -> Target.ALL
                     }
@@ -71,7 +71,7 @@ object OptionMain {
                         hasOption("output") -> OutputMethod.File(getOptionValue("output"))
                         else -> OutputMethod.File(source.replace(Regex("\\..*?$"), "") + target.ext)
                     }
-                    Result.FromSource(input, output, source, target)
+                    Result.FromSource(input, output, source, target, a64)
                 }
             }
         }
@@ -97,7 +97,8 @@ object OptionMain {
             addOption(Option(null, "stdout", false, "Output the result to stdout"))
         })
         addOptionGroup(OptionGroup().apply {
-            addOption(Option(null, "llvm", false, "Generate LLVMi Result Only"))
+            addOption(Option(null, "llvm", false, "Generate LLVM Result Only"))
+            addOption(Option(null, "llvm64", false, "Generate LLVM IR for 64-bit Only"))
             addOption(Option(null, "semantic", false, "Run Semantic"))
         })
     }

@@ -20,12 +20,13 @@ import kotlin.system.exitProcess
 const val PROJECT_NAME = "Mx-Compiler"
 val USAGE = ANSI.bold("mxc <sourcefiles> [options]")
 const val VERSION = "0.9"
+var A64 = false; private set
 
 fun main(arguments: Array<String>) {
     when (val result = OptionMain(arguments)) {
         is OptionMain.Result.Exit -> exitProcess(99)
         is OptionMain.Result.FromSource -> {
-            val (input, output, source, target) = result
+            val (input, output, source, target) = result.apply { A64 = a64 }
             fromSource(input, output, source, target)
         }
     }

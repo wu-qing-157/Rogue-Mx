@@ -688,7 +688,7 @@ object LLVMTranslator {
 
     private operator fun invoke(ast: ASTNode.Statement.Variable) {
         ast.variables.forEach { variable ->
-            val name = LLVMName.Local(variable.name)
+            val name = nextName()
             val type = TypeMap[variable.type.type]
             local[variable.actual] = type to name
             this += LLVMStatement.Alloca(name, type)

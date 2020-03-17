@@ -1,5 +1,9 @@
 /.idea/workspace.xml
 
+/build.sh
+/semantic.sh
+/codegen.sh
+
 /.gradle/
 /build/
 
@@ -14,6 +18,8 @@
 /test/*/*.s
 /test/*/*.out
 /test/test.*
+/test/test
+/test/builtin.s
 
 /src/*/resources/*.ll
 /src/*/resources/*.s
