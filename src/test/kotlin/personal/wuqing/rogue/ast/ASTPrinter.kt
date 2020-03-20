@@ -74,11 +74,7 @@ object ASTPrinter {
                 summary(root.statement, depth + 1)
             }
             is ASTNode.Statement.Loop.For -> {
-                root.initVariable.forEach {
-                    write(indent + "init: ")
-                    summary(it, depth + 1)
-                }
-                root.initExpression?.let {
+                root.init?.let {
                     write(indent + "init: ")
                     summary(it, depth + 1)
                 }
@@ -109,10 +105,8 @@ object ASTPrinter {
                 write(indent + "type: ")
                 summary(root.baseType, depth + 1)
                 root.length.forEach {
-                    it?.let {
-                        write(indent + "length: ")
-                        summary(it, depth + 1)
-                    } ?: write(indent + "length: <unspecified>")
+                    write(indent + "length: ")
+                    summary(it, depth + 1)
                 }
             }
             is ASTNode.Expression.MemberAccess -> {

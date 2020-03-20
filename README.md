@@ -21,7 +21,6 @@ LLVM IR|Almost completed, __pass custom tests__, __pending given tests__
 
 ## Known Issues
 
-+ compilation error unfixed in source set _test_
 + llvm: unicode characters in string literal
 + llvm: `null` does not work
 + custom-test: fail if '\\' in output, use debug mode can avoid this issue
