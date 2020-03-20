@@ -32,7 +32,7 @@ LLVM IR|Almost completed, __pass custom tests__, __pending given tests__
 
 #### Given Test Suite
 
-run with `sh test.sh semantic all` or `sh test.sh semantic <package> <number>`
+run with `zsh assigned.sh semantic all` or `zsh assigned.sh semantic <package> <number>`
 
 Status|Notes
 ---|---
@@ -42,7 +42,7 @@ Status|Notes
 
 ##### Custom Test
 
-run with `sh custom-test.sh all` or `sh custom-test.sh llvm <case>`
+run with `zsh custom.sh llvm all` or `zsh custom.sh llvm <case>`
 
 Test Case|Description|Status
 ---|---|---
@@ -75,7 +75,7 @@ substring|Simple substring|__Passed__
 
 #### Given Test Suite
 
-run with `sh test.sh llvm all` or `sh test.sh llvm <name>`
+run with `zsh assigned.sh llvm all` or `zsh assigned.sh llvm <name>`
 
 Test Case|Status|Description
 ---|---|---
