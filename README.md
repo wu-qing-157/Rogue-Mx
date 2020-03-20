@@ -1,12 +1,12 @@
-# Mx-Compiler
+# Rogue-Mx
 
-This is a compiler from Mx** to RISC-V, 32 bit, integer Extended,
+_Rogue-Mx_ is a compiler from _Mx**_ to _RISC-V, 32 bit, integer Extended_,
 the project for _Compiler Design and Implementation_ at SJTU.
-It's implemented mainly in Kotlin-JVM,
-with the exception that the lexer and parser part contains Java,
+It's implemented mainly in _Kotlin/JVM_,
+with the exception that the lexer and parser part contains _Java_,
 since _antlr 4_ is used.
 
-The language reference for Mx** may be found in the
+The language reference for _Mx**_ may be found in the
 [project assignment](https://github.com/peterzheng98/Compiler-2020).
 
 ## Progress
@@ -33,7 +33,7 @@ LLVM IR|Almost completed, __pass custom tests__, __pending given tests__
 
 #### Given Test Suite
 
-run with `sh test.sh semantic all` or `sh test.sh <package> <number>`
+run with `sh test.sh semantic all` or `sh test.sh semantic <package> <number>`
 
 Status|Notes
 ---|---
@@ -43,7 +43,7 @@ Status|Notes
 
 ##### Custom Test
 
-run with `sh custom-test.sh all` or `sh test.sh llvm <case>`
+run with `sh custom-test.sh all` or `sh custom-test.sh llvm <case>`
 
 Test Case|Description|Status
 ---|---|---
@@ -145,9 +145,9 @@ or, on windows,
 ```shell script
 gradlew.bat installDist
 ```
-and the result will be installed in `build/install/Mx-Compiler`.
+and the result will be installed in `build/install/Rogue-Mx`.
 
-JDK 11 are used for development. JDK >= 1.8 should be okay for build.
+_JDK 11_ are used for development. _JDK >= 1.8_ should be okay for build.
 
 There is also another version in submodule _submit_,
 which can be built offline with local resources in the judge docker.
@@ -200,7 +200,7 @@ so unnecessary to override `equals()` and `hashCode()`
 `operator fun invoke(ASTNode.Program)` in the future,
 as it is needed by llvm `Translator`
 
-#### `ast.ASTNode` `personal.wuqiing.ast.ASTType`
+#### `ast.ASTNode` `ast.ASTType`
 
 + `ASTNode` cannot be separated due to the limitation of `sealed class`
 + `ASTType` is separated from `ASTNode`

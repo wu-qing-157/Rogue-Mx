@@ -5,6 +5,7 @@
     <mapping directory="$PROJECT_DIR$/assignment" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/assignment/local-judge" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/assignment/local-judge/testcase" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/assignment/ravel" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/assignment/testcase" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/submit" vcs="Git" />
   </component>

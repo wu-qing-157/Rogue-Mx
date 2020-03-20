@@ -15,7 +15,7 @@ repositories {
 }
 
 application {
-    mainClassName "personal.wuqing.mxcompiler.MainKt"
+    mainClassName "personal.wuqing.rogue.MainKt"
 }
 
 dependencies {
@@ -25,7 +25,7 @@ dependencies {
 }
 
 generateGrammarSource {
-    arguments += ['-no-listener', '-visitor', '-package', 'personal.wuqing.mxcompiler.parser']
+    arguments += ['-no-listener', '-visitor', '-package', 'personal.wuqing.rogue.parser']
 }
 
 compileKotlin {

@@ -1,14 +1,15 @@
 set -e
 
 if [ "$2" = "all" ]; then
+    echo "sh gradlew installDist" > build.sh
     if [ "$1" = "semantic" ]; then
         run=semantic
-        echo "mxc --stdin --semantic" > semantic.sh
+        echo "build/install/Rogue-Mx/bin/mxc --stdin --semantic" > semantic.sh
     elif [ "$1" = "llvm" ]; then
         run=codegen
         sh gradlew generateBuiltin
         echo "# This shell script is only for llvm IR test" > codegen.sh
-        echo "mxc --llvm --stdin --stdout | llc --march=riscv32 --mattr=+m - -o /dev/stdout" >> codegen.sh
+        echo "build/install/Rogue-Mx/bin/mxc --llvm --stdin --stdout | llc --march=riscv32 --mattr=+m - -o /dev/stdout" >> codegen.sh
     elif [ "$1" = "codegen" ]; then
         exit 1
     else
