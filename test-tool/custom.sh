@@ -15,7 +15,7 @@ typeset default='\033'\[0m
 
 generateBuiltin() {
     echo $blue"generate built-in functions"$default
-    gcc -S src/main/resources/builtin_functions.c -o "$built"
+    gcc -S src/main/resources/builtin.c -o "$built"
 }
 
 buildLLVM64() {

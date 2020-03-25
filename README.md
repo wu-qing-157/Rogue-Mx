@@ -80,16 +80,13 @@ run with `zsh assigned.sh llvm all` or `zsh assigned.sh llvm <name>`
 Test Case|Status|Description
 ---|---|---
 t64|should pass|python's subprocess pipe is too slow
-t25|should pass|pass on x86_64, simulation result loses the last line
-t31|should pass|pass on x86_64, simulation result loses the last line
-t61|fail|issue about null
-t1|should pass|answer seems incorrect in the first line
+t21|should pass|wrong standard output
+t2|should pass|wrong standard output
 t55|should pass|python's subprocess pipe is too slow
-t65|fail|issue about null
-t27|should pass|pass on x86_64, simulation result destroys the last line
-t67|should pass|pass on x86_64, simulation not support some escape characters
-t12|should pass|answer seems incorrect in exit code
-e10|should pass|pass on x86_64, simulation fails mysteriously
+t65|should pass|escape character unsupported by ravel
+t4|should pass|wrong standard output
+e1|should pass|wrong standard output
+t12|should pass|wrong standard exit code
 
 ## Timeline
 
@@ -133,6 +130,8 @@ e10|should pass|pass on x86_64, simulation fails mysteriously
 + 2020.03.15 Fix substring
 + 2020.03.16 Change implementation of string literal
 + 2020.03.18 Test LLVM IR with given test suite
++ 2020.03.25 Reconstruct LLVM type and name system
++ 2020.03.25 __LLVM IR (should) pass assigned test suite__ o(\*￣▽￣\*)ブ
 
 ## How to build the compiler
 

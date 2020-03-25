@@ -3,22 +3,25 @@ package personal.wuqing.rogue.llvm.grammar
 import personal.wuqing.rogue.A64
 import personal.wuqing.rogue.llvm.map.TypeMap
 
-sealed class LLVMType(val size: Int) {
+sealed class IRType(val size: Int) {
 
-    object I32 : LLVMType(4) {
+    object I32 : IRType(4) {
+        infix fun const(value: Int) = IRItem.Const(this, value)
         override fun toString() = "i32"
     }
 
-    object I8 : LLVMType(1) {
+    object I8 : IRType(1) {
+        infix fun const(value: Int) = IRItem.Const(this, value)
         override fun toString() = "i8"
     }
 
-    object I1 : LLVMType(1) {
+    object I1 : IRType(1) {
+        infix fun const(value: Int) = IRItem.Const(this, value)
         override fun toString() = "i1"
     }
 
-    class Class(val name: String) : LLVMType(4) {
-        override fun toString() = "%__class__.$name"
+    class Class(val name: String) : IRType(4) {
+        override fun toString() = "%class.$name"
         override fun equals(other: Any?) = other is Class && name == other.name
         override fun hashCode() = name.hashCode()
         lateinit var members: MemberArrangement private set
@@ -29,23 +32,24 @@ sealed class LLVMType(val size: Int) {
         fun definition() = "${toString()} = type { ${members.members.joinToString { TypeMap[it.type].toString() }} }"
     }
 
-    class Pointer(val type: LLVMType) : LLVMType(if (A64) 8 else 4) {
-        override fun toString() = "$type*"
+    data class Pointer(val base: IRType) : IRType(if (A64) 8 else 4) {
+        override fun toString() = "$base*"
     }
 
     companion object {
+        val I8P = Pointer(I8)
         val string = Pointer(I8)
     }
 
-    object Void : LLVMType(1) {
+    object Void : IRType(1) {
         override fun toString() = "void"
     }
 
-    class Vector(val length: Int, val base: LLVMType) : LLVMType(length * base.size) {
+    class Vector(val length: Int, val base: IRType) : IRType(length * base.size) {
         override fun toString() = "[ $length x $base ]"
     }
 
-    object Null : LLVMType(4) {
+    object Null : IRType(4) {
         override fun toString() = "i8*"
     }
 }

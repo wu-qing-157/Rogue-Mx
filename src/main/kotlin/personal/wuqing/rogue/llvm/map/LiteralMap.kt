@@ -1,16 +1,14 @@
 package personal.wuqing.rogue.llvm.map
 
-import personal.wuqing.rogue.llvm.grammar.LLVMGlobal
-import personal.wuqing.rogue.llvm.grammar.LLVMName
-import personal.wuqing.rogue.llvm.grammar.LLVMType
+import personal.wuqing.rogue.llvm.grammar.IRGlobal
+import personal.wuqing.rogue.llvm.grammar.IRItem
+import personal.wuqing.rogue.llvm.grammar.IRType
 
 object LiteralMap {
-    private val map = mutableMapOf<String, LLVMGlobal>()
+    private val map = mutableMapOf<String, IRGlobal>()
     private var count = 0
-    operator fun get(s: String) = map[s] ?: LLVMGlobal(
-        "__literal__.${count++}",
-        LLVMType.Vector(s.toByteArray().size + 1, LLVMType.I8),
-        LLVMName.Literal(s.length, "$s\u0000")
-    ).also { map[s] = it }
+    operator fun get(s: String) = map[s] ?: IRItem.Literal(s).let {
+        IRGlobal(IRItem.Global(IRType.Pointer(it.type), "literal.${count++}"), it)
+    }.also { map[s] = it }
     fun all() = map.values
 }

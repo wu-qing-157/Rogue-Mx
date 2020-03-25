@@ -11,11 +11,7 @@ class MemberArrangement private constructor(val size: Int, val members: List<MxV
             val sum = sorted.sumBy { it.type.size }
             val delta = sorted.zip(Array(sorted.size) { it }).toMap()
             val allocSize = (sum + 7) / 8 * 8
-            return MemberArrangement(
-                allocSize,
-                sorted,
-                delta
-            )
+            return MemberArrangement(allocSize, sorted, delta)
         }
     }
 }

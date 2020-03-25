@@ -50,3 +50,13 @@ task generateBuiltin(type: Exec) {
     workingDir 'build/resources/main'
     commandLine 'riscv32-unknown-linux-gnu-gcc', '-S', '-std=c99', '-fno-section-anchors', 'builtin.c', '-o', 'builtin.s'
 }
+
+task generateSubmit(type: Exec) {
+    commandLine 'rsync', '--archive', '--delete', 'src/main', 'submit/src'
+}
+
+task commitSubmit(type: Exec) {
+    dependsOn generateSubmit
+    workingDir 'submit'
+    commandLine 'git', 'commit', '-a', '-m', new Date().format('yyyyMMdd')
+}

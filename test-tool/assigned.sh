@@ -55,7 +55,7 @@ elif [ "$1" = "semantic" ]; then
     time mxc --semantic "$testtool"/test.mx
 elif [ "$1" = "llvm" ]; then
     cp "$built" "$testtool/builtin.s"
-    diff "$dataset"/codegen/"$2".mx "$testcase.mx" > /dev/null || (rm -f "$testcase.in" && vim -o "$testcase.in" "$testcase.mx")
+    diff "$dataset"/codegen/"$2".mx "$testcase.mx" > /dev/null || (rm -f "$testcase.in" && vim -o "$testcase.in" "$dataset/codegen/$2.mx")
     cp "$dataset"/codegen/"$2".mx "$testcase.mx"
     echo $blue"mxc -llvm"$default
     typeset TIMEFMT="compile time: %*E"

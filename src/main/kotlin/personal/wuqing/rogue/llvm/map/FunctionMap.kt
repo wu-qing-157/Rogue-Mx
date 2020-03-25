@@ -1,68 +1,58 @@
 package personal.wuqing.rogue.llvm.map
 
 import personal.wuqing.rogue.grammar.MxFunction
-import personal.wuqing.rogue.llvm.LLVMTranslator
-import personal.wuqing.rogue.llvm.grammar.LLVMFunction
-import personal.wuqing.rogue.llvm.grammar.LLVMName
+import personal.wuqing.rogue.llvm.IRTranslator
+import personal.wuqing.rogue.llvm.grammar.IRFunction
+import personal.wuqing.rogue.llvm.grammar.IRItem
+import personal.wuqing.rogue.llvm.grammar.IRType
 
 object FunctionMap {
-    private val map = mutableMapOf<MxFunction, LLVMFunction>()
+    private val map = mutableMapOf<MxFunction, IRFunction>()
 
-    private fun MxFunction.llvmName() = when (this) {
-        is MxFunction.Top -> if (name == "main") "main" else "__toplevel__.$name"
-        is MxFunction.Member -> "$base.$name"
-        MxFunction.Builtin.Print -> "__print__"
-        MxFunction.Builtin.Println -> "__println__"
-        MxFunction.Builtin.PrintInt -> "__printInt__"
-        MxFunction.Builtin.PrintlnInt -> "__printlnInt__"
-        MxFunction.Builtin.GetString -> "__getString__"
-        MxFunction.Builtin.GetInt -> "__getInt__"
-        MxFunction.Builtin.ToString -> "__toString__"
-        MxFunction.Builtin.StringLength -> "__string__length__"
-        MxFunction.Builtin.StringParseInt -> "__string__parseInt__"
-        is MxFunction.Builtin.ArraySize -> "__array__size__"
-        is MxFunction.Builtin.DefaultConstructor -> "__empty__"
-        MxFunction.Builtin.StringOrd -> "__string__ord__"
-        MxFunction.Builtin.StringSubstring -> "__string__substring__"
-        is MxFunction.Builtin -> name // string binary operators
-    }
+    private fun MxFunction.Top.llvmName() = if (name == "main") "main" else "_top_.$name"
 
     operator fun get(f: MxFunction) = map[f] ?: if (f is MxFunction.Builtin)
-        (when (f) {
-            MxFunction.Builtin.Print -> LLVMFunction.External.Print
-            MxFunction.Builtin.Println -> LLVMFunction.External.Println
-            MxFunction.Builtin.PrintInt -> LLVMFunction.External.PrintInt
-            MxFunction.Builtin.PrintlnInt -> LLVMFunction.External.PrintlnInt
-            MxFunction.Builtin.GetString -> LLVMFunction.External.GetString
-            MxFunction.Builtin.GetInt -> LLVMFunction.External.GetInt
-            MxFunction.Builtin.ToString -> LLVMFunction.External.ToString
-            MxFunction.Builtin.StringLength -> LLVMFunction.External.StringLength
-            MxFunction.Builtin.StringParseInt -> LLVMFunction.External.StringParseInt
-            is MxFunction.Builtin.ArraySize -> LLVMFunction.External.ArraySize
+        when (f) {
+            MxFunction.Builtin.Print -> IRFunction.External.Print
+            MxFunction.Builtin.Println -> IRFunction.External.Println
+            MxFunction.Builtin.PrintInt -> IRFunction.External.PrintInt
+            MxFunction.Builtin.PrintlnInt -> IRFunction.External.PrintlnInt
+            MxFunction.Builtin.GetString -> IRFunction.External.GetString
+            MxFunction.Builtin.GetInt -> IRFunction.External.GetInt
+            MxFunction.Builtin.ToString -> IRFunction.External.ToString
+            MxFunction.Builtin.StringLength -> IRFunction.External.StringLength
+            MxFunction.Builtin.StringParseInt -> IRFunction.External.StringParse
+            is MxFunction.Builtin.ArraySize -> IRFunction.External.ArraySize
             is MxFunction.Builtin.DefaultConstructor -> throw Exception("analyzing default constructor")
-            MxFunction.Builtin.StringLiteral -> LLVMFunction.External.StringLiteral
-            MxFunction.Builtin.StringOrd -> LLVMFunction.External.StringOrd
-            MxFunction.Builtin.StringSubstring -> LLVMFunction.External.StringSubstring
-            MxFunction.Builtin.Malloc -> LLVMFunction.External.Malloc
-            MxFunction.Builtin.MallocArray -> LLVMFunction.External.MallocArray
-            MxFunction.Builtin.StringConcatenate -> LLVMFunction.External.StringConcatenate
-            MxFunction.Builtin.StringEqual -> LLVMFunction.External.StringEqual
-            MxFunction.Builtin.StringNeq -> LLVMFunction.External.StringNeq
-            MxFunction.Builtin.StringLess -> LLVMFunction.External.StringLess
-            MxFunction.Builtin.StringLeq -> LLVMFunction.External.StringLeq
-            MxFunction.Builtin.StringGreater -> LLVMFunction.External.StringGreater
-            MxFunction.Builtin.StringGeq -> LLVMFunction.External.StringGeq
-        }).also { map[f] = it }
+            MxFunction.Builtin.StringLiteral -> IRFunction.External.StringLiteral
+            MxFunction.Builtin.StringOrd -> IRFunction.External.StringOrd
+            MxFunction.Builtin.StringSubstring -> IRFunction.External.StringSubstring
+            MxFunction.Builtin.Malloc -> IRFunction.External.Malloc
+            MxFunction.Builtin.MallocArray -> IRFunction.External.MallocArray
+            MxFunction.Builtin.StringConcatenate -> IRFunction.External.StringConcatenate
+            MxFunction.Builtin.StringEqual -> IRFunction.External.StringEqual
+            MxFunction.Builtin.StringNeq -> IRFunction.External.StringNeq
+            MxFunction.Builtin.StringLess -> IRFunction.External.StringLess
+            MxFunction.Builtin.StringLeq -> IRFunction.External.StringLeq
+            MxFunction.Builtin.StringGreater -> IRFunction.External.StringGreater
+            MxFunction.Builtin.StringGeq -> IRFunction.External.StringGeq
+        }.also { map[f] = it }
     else when (f) {
-        is MxFunction.Top -> LLVMFunction.Declared(
-            TypeMap[f.result], f.llvmName(), f.parameters.map { TypeMap[it] },
-            f.def.parameterList.map { LLVMName.Local("__p__.${it.name}") }, false, f.def
-        ).also { map[f] = it }.also { LLVMTranslator.toProcess += it }
-        is MxFunction.Member -> LLVMFunction.Declared(
-            TypeMap[f.def.returnType], f.llvmName(), (f.parameters + f.base).map { TypeMap[it] },
-            f.def.parameterList.map { LLVMName.Local("__p__.${it.name}") } + LLVMName.Local("__this__"),
-            true, f.def
-        ).also { map[f] = it }.also { LLVMTranslator.toProcess += it }
+        is MxFunction.Top -> IRFunction.Declared(
+            ret = TypeMap[f.result],
+            namedArgs = f.def.parameterList.map { IRItem.Local(TypeMap[it.type.type], "p.${it.name}") },
+            name = f.llvmName(),
+            ast = f.def,
+            member = false
+        ).also { map[f] = it }.also { IRTranslator.toProcess += it }
+        is MxFunction.Member -> IRFunction.Declared(
+            ret = if (f.name == "__constructor__") IRType.Void else TypeMap[f.result],
+            namedArgs = listOf(IRItem.Local(TypeMap[f.base], "p.this"))
+                    + f.def.parameterList.map { IRItem.Local(TypeMap[it.type.type], "p.${it.name}") },
+            name = "${f.base}.${f.name}",
+            ast = f.def,
+            member = true
+        ).also { map[f] = it }.also { IRTranslator.toProcess += it }
         is MxFunction.Builtin -> throw Exception("declared map resolved as builtin")
     }
 

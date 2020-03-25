@@ -2,42 +2,42 @@
 #include "stdio.h"
 #include "string.h"
 
-void *__malloc__array__(int size, int length) {
+void *_malloc_a_(int size, int length) {
     void *ret = malloc(size + 4);
     *((int *) ret) = length;
     return ret + 4;
 }
 
-int __getInt__() {
+int _get_i_() {
     int a;
     scanf("%d", &a);
     return a;
 }
 
-char *__getString__() {
+char *_get_s_() {
     char *s = malloc(261) + 4;
     scanf("%s", s);
     *((int *) (s - 4)) = strlen(s);
     return s;
 }
 
-void __print__(char *s) {
+void _print_s_(char *s) {
     printf("%s", s);
 }
 
-void __println__(char *s) {
+void _println_s_(char *s) {
     puts(s);
 }
 
-void __printInt__(int i) {
+void _print_i_(int i) {
     printf("%d", i);
 }
 
-void __printlnInt__(int i) {
+void _println_i_(int i) {
     printf("%d\n", i);
 }
 
-char *__toString__(int i) {
+char *_to_str_(int i) {
     char *s = malloc(15) + 15, *t;
     *(t = --s) = '\0';
     char neg = i < 0;
@@ -52,28 +52,28 @@ char *__toString__(int i) {
     return s;
 }
 
-char *__string__literal__(char *s, int l) {
+char *_s_literal_(char *s, int l) {
     char *ret = malloc(l + 5) + 4;
     strcpy(ret, s);
     *((int *) (ret - 4)) = l;
     return ret;
 }
 
-int __string__length__(char *s) {
+int _s_length_(char *s) {
     return *((int *) (s - 4));
 }
 
-int __string__ord__(int index, char *s) {
+int _s_ord_(char *s, int index) {
     return s[index];
 }
 
-int __string__parseInt__(char *s) {
+int _s_parse_(char *s) {
     int i;
     sscanf(s, "%d", &i);
     return i;
 }
 
-char *__string__substring__(int l, int r, char *s) {
+char *_s_substring_(char *s, int l, int r) {
     int length = r - l;
     char *ret = malloc(5 + length) + 4;
     *((int *) (ret - 4)) = length;
@@ -83,7 +83,7 @@ char *__string__substring__(int l, int r, char *s) {
     return ret;
 }
 
-char *__string__concatenate__(char *s, char *t) {
+char *_s_concatenate_(char *s, char *t) {
     int ls = *((int *) (s - 4)), tot = *((int *) (t - 4)) + ls;
     t -= ls;
     char *ret = malloc(5 + tot) + 4;
@@ -95,46 +95,46 @@ char *__string__concatenate__(char *s, char *t) {
     return ret;
 }
 
-char __string__equal__(char *s, char *t) {
+char _s_equal_(char *s, char *t) {
     for (; ; s++, t++)
         if (*s != *t) return 0;
         else if (*s == '\0') return 1;
 }
 
-char __string__neq__(char *s, char *t) {
+char _s_neq_(char *s, char *t) {
     for (; ; s++, t++)
         if (*s != *t) return 1;
         else if (*s == '\0') return 0;
 }
 
-char __string__less__(char *s, char *t) {
+char _s_less_(char *s, char *t) {
     for (; ; s++, t++)
         if (*s < *t) return 1;
         else if (*s > *t) return 0;
         else if (*s == '\0') return 0;
 }
 
-char __string__leq__(char *s, char *t) {
+char _s_leq_(char *s, char *t) {
     for (; ; s++, t++)
         if (*s < *t) return 1;
         else if (*s > *t) return 0;
         else if (*s == '\0') return 1;
 }
 
-char __string__greater__(char *s, char *t) {
+char _s_greater_(char *s, char *t) {
     for (; ; s++, t++)
         if (*s < *t) return 0;
         else if (*s > *t) return 1;
         else if (*s == '\0') return 0;
 }
 
-char __string__geq__(char *s, char *t) {
+char _s_geq_(char *s, char *t) {
     for (; ; s++, t++)
         if (*s < *t) return 0;
         else if (*s > *t) return 1;
         else if (*s == '\0') return 1;
 }
 
-int __array__size__(void *a) {
+int _a_size_(void *a) {
     return *((int *) (a - 4));
 }

@@ -3,8 +3,8 @@ package personal.wuqing.rogue
 import personal.wuqing.rogue.ast.ASTBuilder
 import personal.wuqing.rogue.ast.ASTMain
 import personal.wuqing.rogue.io.OutputMethod
-import personal.wuqing.rogue.llvm.LLVMPrinter
-import personal.wuqing.rogue.llvm.LLVMTranslator
+import personal.wuqing.rogue.llvm.IRPrinter
+import personal.wuqing.rogue.llvm.IRTranslator
 import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
 import personal.wuqing.rogue.parser.ParserMain
@@ -43,10 +43,10 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
 
         if (target == Target.SEMANTIC) return Unit.also { SemanticMain.reportSuccess() }
 
-        val llvm = LLVMTranslator(root, SemanticMain.getMain())
+        val llvm = IRTranslator(root, SemanticMain.getMain())
 
         if (target == Target.LLVM) {
-            output(LLVMPrinter(llvm))
+            output(IRPrinter(llvm))
             return
         }
 
