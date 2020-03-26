@@ -1,5 +1,7 @@
 package personal.wuqing.rogue.utils
 
+import personal.wuqing.rogue.INFO
+
 open class ErrorRecorderException(val exit: Int) : Exception()
 
 object OptionErrorRecorder {
@@ -12,7 +14,7 @@ object OptionErrorRecorder {
 }
 
 object ParserErrorRecorder {
-    object Exception : ErrorRecorderException(2)
+    object Exception : ErrorRecorderException(3)
 
     private var error = false
     fun report() = if (error) throw Exception else Unit
@@ -27,24 +29,41 @@ object ParserErrorRecorder {
 }
 
 object ASTErrorRecorder {
-    object Exception : ErrorRecorderException(3)
+    object Exception : ErrorRecorderException(4)
 
     private var error = false
     fun report() = if (error) throw Exception else Unit
+
     // fun warning(location: Location, msg: String) = LogPrinter.println("$location ${ErrorType.Warning} $msg")
     fun error(location: Location, msg: String) = LogPrinter.println("$location ${ErrorType.Error} $msg").also {
         error = true
     }
 }
 
+object LogRecorder {
+    operator fun invoke(log: String) {
+        if (INFO) LogPrinter.println("${ErrorType.Info} $log")
+    }
+}
+
 object SemanticErrorRecorder {
-    object Exception : ErrorRecorderException(4)
+    object Exception : ErrorRecorderException(5)
 
     private var error = false
     fun report() = if (error) throw Exception else Unit
     fun info(msg: String) = LogPrinter.println("${ErrorType.Info} $msg")
+
     // fun warning(location: Location, msg: String) = LogPrinter.println("$location ${ErrorType.Warning} $msg")
     fun error(location: Location, msg: String) = LogPrinter.println("$location ${ErrorType.Error} $msg").also {
         error = true
     }
+}
+
+object InternalExceptionRecorder {
+    const val exit = 1
+
+    operator fun invoke(e: Throwable) =
+        LogPrinter.println("${ErrorType.Fatal} compiler internal error, use --info to see more information").also {
+            if (INFO) e.printStackTrace()
+        }
 }

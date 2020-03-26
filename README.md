@@ -21,16 +21,22 @@ LLVM IR|Almost completed, __pass custom tests__, __pending given tests__
 
 ## Known Issues
 
-+ custom-test: fail if '\\' in output, use debug mode can avoid this issue
 + internal: built-in function does not override `toString()`
 
 ## Test Cases
+
+Some scripts are in `test-tool` to automate testing.
+They should be executed with _Z Shell_ in the project root folder.
+
+Single-case custom test may fail if `\ ` in output,
+no plan to fix this issue as it is rarely met.
+Using debug mode can avoid this issue.
 
 ### Semantic Test
 
 #### Given Test Suite
 
-run with `zsh assigned.sh semantic all` or `zsh assigned.sh semantic <package> <number>`
+run with `assigned.sh semantic all` or `assigned.sh semantic <package> <number>`
 
 Status|Notes
 ---|---
@@ -40,36 +46,11 @@ Status|Notes
 
 ##### Custom Test
 
-run with `zsh custom.sh llvm all` or `zsh custom.sh llvm <case>`
+run with `custom.sh llvm all` or `custom.sh llvm <case> [debug]`
 
-Test Case|Description|Status
----|---|---
-return|Simple main|__Passed__
-plus|Simple operator|__Passed__
-global|Simple global variable|__Passed__
-suffix|Simple suffix operator|__Passed__
-prefix|Simple prefix operator|__Passed__
-assign|Simple assignment|__Passed__
-printInt|Call built-in function|__Passed__
-hello|Hello World!|__Passed__
-function|Simple function and call|__Passed__
-ternary|Simple ternary expression|__Passed__
-string|Simple string operation|__Passed__
-bool|Simple bool operation|__Passed__
-class-1|Simple class definition|__Passed__
-class-2|Simple constructor|__Passed__
-class-3|Simple member function|__Passed__
-class-4|Simple member init|__Passed__
-null|Simple null test|__Passed__
-if|Simple if|__Passed__
-while|Simple while|__Passed__
-for|Simple for|__Passed__
-control|Simple mixture of control statements|__Passed__
-array-1|Simple array operations|__Passed__
-array-2|Simple 2-dimension array|__Passed__
-array-3|Simple interleaved array|__Passed__
-substring|Simple substring|__Passed__
-...|...|(maybe no more)
+Status|Notes
+---|---
+all cases|__All Passed__
 
 #### Given Test Suite
 
@@ -131,6 +112,7 @@ t12|should pass|wrong standard exit code
 + 2020.03.25 Reconstruct LLVM type and name system
 + 2020.03.25 __LLVM IR (should) pass assigned test suite__ o(\*￣▽￣\*)ブ
 + 2020.03.26 Fix unicode character and unicode escape (but what is the use?)
++ 2020.03.26 Fix behavior when exception met
 
 ## How to build the compiler
 
@@ -171,19 +153,15 @@ configured with
 
 Exit code|description
 ---|---
-1|Unexpected compiler internal exception
-2|Parser does not accept the code
-3|AST builder does not accept the code
-4|Semantic does not accept the code
-99|Option parser does not generate any executable work
+1|Nothing to execute or internal error
+2|IO failure
+3|Parser does not accept the code
+4|AST builder does not accept the code
+5|Semantic does not accept the code
 
 ### Info about implementation
 
 This part contains notes for future development.
-
-#### `option.OptionMain` `io.OutputMethod`
-
-+ maybe to use separate exit code for `IOException` in the future
 
 #### `grammar.Variable`
 
@@ -203,37 +181,17 @@ as it is needed by llvm `Translator`
 + `ASTType` is separated from `ASTNode`
 to prevent an extremely large source file
 
-#### `llvm.LLVMType`
-
-+ an `LLVMType.Pointer` may be constructed multiple time,
-if needed in the future, a `data` modifier will be added
-
-#### `llvm.LLVMName`
-
-+ currently every subclass is a `data class`
-+ however, only `LLVMName.Const` and `LLVMName.Global("main")`
-may be constructed multiple times for same value,
-so the `data` modifier may be removed in the future
-
-#### `llvm.LLVMStatement`
-
-+ some members of the subclasses may be unnecessary,
-so maybe to delete them in the future
-
 #### `llvm.Translator`
 
-+ currently initialize global variables before the `__entry__`
++ currently initialize global variables before the `entry.entry`
 in `main` function,
 maybe to add an extra `main` function to initialize global variables
 and call the actual `main` function
-+ currently use `kotlin.Exception` for all unexpected situation,
-may be changed into a specified `Exception` in the future,
-also, another alternative may be to `printStackTrace()` only when
-`--debug` option is specified, as these `Exception` should not
-appear in final version
++ currently use `kotlin.error` for all unexpected situation,
+no plan to add specify a new `Exception` type.
+However, the `stderr` output will be changed in the future
 + this file is somehow large,
-and _Intellij IDEA_ takes a lot of time analyzing it,
-so it maybe separated to multiple files in the future
+but currently no plan to separate it
 
 #### Built-in functions
 

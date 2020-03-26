@@ -200,6 +200,4 @@ object SemanticMain {
     }
 
     fun getMain() = FunctionTable["main"]
-
-    fun reportSuccess() = SemanticErrorRecorder.info("semantic passed successful")
 }

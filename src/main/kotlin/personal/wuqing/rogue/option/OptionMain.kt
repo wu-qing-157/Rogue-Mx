@@ -17,9 +17,10 @@ import java.io.InputStream
 
 object OptionMain {
     sealed class Result {
-        object Exit : Result()
+        class Exit(val exit: Int) : Result()
         data class FromSource(
-            val input: InputStream, val output: OutputMethod, val source: String, val target: Target, val a64: Boolean
+            val input: InputStream, val output: OutputMethod, val source: String, val target: Target,
+            val a64: Boolean, val info: Boolean
         ) : Result()
     }
 
@@ -28,11 +29,11 @@ object OptionMain {
             when {
                 hasOption("help") -> {
                     HelpFormatter().printHelp(USAGE, OptionMain.options)
-                    Result.Exit
+                    Result.Exit(0)
                 }
                 hasOption("version") -> {
                     OptionErrorRecorder.info("$PROJECT_NAME $VERSION")
-                    Result.Exit
+                    Result.Exit(0)
                 }
                 else -> {
                     var a64 = false
@@ -47,12 +48,12 @@ object OptionMain {
                                 OptionErrorRecorder.warning("input file ignored: ${args.joinToString()}")
                             OptionErrorRecorder.info("please input file name: ", false)
                             readLine().apply {
-                                if (isNullOrEmpty()) return Result.Exit.also {
+                                if (isNullOrEmpty()) return Result.Exit(1).also {
                                     OptionErrorRecorder.fatalError("empty input")
                                 }
                             }!!
                         }
-                        else -> args.singleOrNull() ?: return Result.Exit.also {
+                        else -> args.singleOrNull() ?: return Result.Exit(1).also {
                             if (args.isEmpty()) OptionErrorRecorder.fatalError("no input file")
                             else OptionErrorRecorder.unsupported("multiple input files")
                         }
@@ -71,16 +72,17 @@ object OptionMain {
                         hasOption("output") -> OutputMethod.File(getOptionValue("output"))
                         else -> OutputMethod.File(source.replace(Regex("\\..*?$"), "") + target.ext)
                     }
-                    Result.FromSource(input, output, source, target, a64)
+                    Result.FromSource(input, output, source, target, a64, hasOption("info"))
                 }
             }
         }
     } catch (e: ParseException) {
+        OptionErrorRecorder.fatalError(e.message ?: "unknown")
         HelpFormatter().printHelp(USAGE, options)
-        Result.Exit
+        Result.Exit(1)
     } catch (e: IOException) {
         OptionErrorRecorder.fatalError(e.toString())
-        Result.Exit
+        Result.Exit(2)
     }
 
     private val options = Options().apply {
@@ -101,5 +103,6 @@ object OptionMain {
             addOption(Option(null, "llvm64", false, "Generate LLVM IR for 64-bit Only"))
             addOption(Option(null, "semantic", false, "Run Semantic"))
         })
+        addOption(Option(null, "info", false, "Display more info when executing"))
     }
 }
