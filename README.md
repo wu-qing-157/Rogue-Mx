@@ -21,8 +21,6 @@ LLVM IR|Almost completed, __pass custom tests__, __pending given tests__
 
 ## Known Issues
 
-+ llvm: unicode characters in string literal
-+ llvm: `null` does not work
 + custom-test: fail if '\\' in output, use debug mode can avoid this issue
 + internal: built-in function does not override `toString()`
 
@@ -132,6 +130,7 @@ t12|should pass|wrong standard exit code
 + 2020.03.18 Test LLVM IR with given test suite
 + 2020.03.25 Reconstruct LLVM type and name system
 + 2020.03.25 __LLVM IR (should) pass assigned test suite__ o(\*￣▽￣\*)ブ
++ 2020.03.26 Fix unicode character and unicode escape (but what is the use?)
 
 ## How to build the compiler
 

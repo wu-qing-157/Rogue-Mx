@@ -21,7 +21,7 @@ sealed class IRItem(val type: IRType) {
 
     class Literal(val value: String) : IRItem(IRType.Vector(value.toByteArray().size + 1, IRType.I8)) {
         private val llvmFormat = value.replace(Regex("[^0-9a-zA-Z]")) {
-            it.value.toByteArray().joinToString { b -> "\\%02X".format(b) }
+            it.value.toByteArray().joinToString("") { b -> "\\%02X".format(b) }
         } + "\\00"
         override val display = "c\"$llvmFormat\""
     }

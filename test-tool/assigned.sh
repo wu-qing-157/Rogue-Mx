@@ -1,5 +1,4 @@
-#!/bin/zsh
-set -e
+#!/bin/zsh -e
 
 sh gradlew generateBuiltin installDist
 

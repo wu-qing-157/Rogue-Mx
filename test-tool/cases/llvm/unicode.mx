@@ -1,0 +1,5 @@
+int main() {
+    println("\u4f60\u597d");
+    println("另外一种你好");
+    println(" 3.824s  ~/Rogue-Mx  .pypy3   master !4 ?3 ❯");
+}
