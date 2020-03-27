@@ -113,6 +113,7 @@ t12|should pass|wrong standard exit code
 + 2020.03.25 __LLVM IR (should) pass assigned test suite__ o(\*￣▽￣\*)ブ
 + 2020.03.26 Fix unicode character and unicode escape (but what is the use?)
 + 2020.03.26 Fix behavior when exception met
++ 2020.03.28 Implement a dominator tree for future use
 
 ## How to build the compiler
 
@@ -187,9 +188,6 @@ to prevent an extremely large source file
 in `main` function,
 maybe to add an extra `main` function to initialize global variables
 and call the actual `main` function
-+ currently use `kotlin.error` for all unexpected situation,
-no plan to add specify a new `Exception` type.
-However, the `stderr` output will be changed in the future
 + this file is somehow large,
 but currently no plan to separate it
 

@@ -10,6 +10,7 @@
       <w>getelementptr</w>
       <w>gradlew</w>
       <w>icmp</w>
+      <w>idom</w>
       <w>lshr</w>
       <w>mxcompiler</w>
       <w>printf</w>
