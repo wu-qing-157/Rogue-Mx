@@ -1,9 +1,31 @@
 package personal.wuqing.rogue.utils
 
-class DomTree<T : DirectionalNodeWithPrev<T>> private constructor(val root: T, val child: Map<T, List<T>>) {
-    constructor(root: T) : this(root, Builder(root).build())
+class DomTree<T : DirectionalNodeWithPrev<T>> private constructor(val root: T, builder: Builder<T>) {
+    constructor(root: T) : this(root, Builder(root))
 
-    class Builder<T : DirectionalNodeWithPrev<T>>(private val root: T) {
+    val child: Map<T, List<T>> = builder.child
+    val idom: Map<T, T> = builder.idom
+
+    private val frontierMap = mutableMapOf<T, List<T>>()
+
+    private fun frontierSingle(n: T): List<T> {
+        val s = mutableListOf<T>()
+        for (y in n.next) if (idom[y] != n) s += y
+        for (c in child[n] ?: listOf()) {
+            frontierMap[c] = frontierSingle(c).also {
+                for (w in it) if (n != idom[w] || n == w) s += w
+            }
+        }
+        return s
+    }
+
+    fun frontier(): Map<T, List<T>> {
+        frontierMap.clear()
+        frontierMap[root] = frontierSingle(root)
+        return frontierMap
+    }
+
+    private class Builder<T : DirectionalNodeWithPrev<T>>(private val root: T) {
         private var cnt = 0
         private val dfn = mutableMapOf<T, Int>()
         private val vertex = mutableListOf<T>()
@@ -11,7 +33,8 @@ class DomTree<T : DirectionalNodeWithPrev<T>> private constructor(val root: T, v
         private val semi = mutableMapOf<T, T>()
         private val ancestor = mutableMapOf<T, T>()
         private val sameDom = mutableMapOf<T, T>()
-        private val idom = mutableMapOf<T, T>()
+        val idom = mutableMapOf<T, T>()
+        val child: Map<T, MutableList<T>>
         private val best = mutableMapOf<T, T>()
 
         private val bucket = mutableMapOf<T, MutableList<T>>()
@@ -67,11 +90,10 @@ class DomTree<T : DirectionalNodeWithPrev<T>> private constructor(val root: T, v
             }
         }
 
-        fun build(): Map<T, List<T>> {
+        init {
             dominators()
-            val child = (vertex zip vertex.map { mutableListOf<T>() }).toMap()
-            idom.forEach { (t, u) -> child[u]?.add(t) }
-            return child
+            child = (vertex zip vertex.map { mutableListOf<T>() }).toMap()
+            idom.forEach { (t, u) -> child[u] ?: error("cannot find vertex dominator tree") += t }
         }
     }
 }

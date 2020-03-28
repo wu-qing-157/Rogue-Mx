@@ -1,7 +1,9 @@
 int main() {
     int i, j = 0, z = 0;
     for (i = 0; i <= 10; i++) {
+        //println(toString(i) + " " + toString(j) + " " + toString(z));
         j = -1;
+        //println(toString(i) + " " + toString(j) + " " + toString(z));
         while (true) {
             if (i == 5) z += i * 2;
             j++;

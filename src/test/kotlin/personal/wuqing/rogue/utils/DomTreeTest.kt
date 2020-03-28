@@ -45,4 +45,6 @@ fun main() {
     link(l, m)
     val tree = DomTree(a)
     println(tree.child)
+    val frontier = tree.frontier()
+    println(frontier)
 }

@@ -5,6 +5,7 @@ import personal.wuqing.rogue.ast.ASTMain
 import personal.wuqing.rogue.io.OutputMethod
 import personal.wuqing.rogue.llvm.IRPrinter
 import personal.wuqing.rogue.llvm.IRTranslator
+import personal.wuqing.rogue.optimize.Mem2Reg
 import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
 import personal.wuqing.rogue.parser.ParserMain
@@ -16,6 +17,7 @@ import personal.wuqing.rogue.utils.InternalExceptionRecorder
 import personal.wuqing.rogue.utils.LogRecorder
 import personal.wuqing.rogue.utils.ParserErrorRecorder
 import personal.wuqing.rogue.utils.SemanticErrorRecorder
+import java.io.FileWriter
 import java.io.IOException
 import java.io.InputStream
 import kotlin.system.exitProcess
@@ -25,12 +27,13 @@ val USAGE = ANSI.bold("mxc <sourcefiles> [options]")
 const val VERSION = "0.9"
 var A64 = false; private set
 var INFO = false; private set
+private var STEPS = false
 
 fun main(arguments: Array<String>) {
     when (val result = OptionMain(arguments)) {
         is OptionMain.Result.Exit -> exitProcess(result.exit)
         is OptionMain.Result.FromSource -> {
-            val (input, output, source, target) = result.apply { A64 = a64; INFO = info }
+            val (input, output, source, target) = result.apply { A64 = a64; INFO = info; STEPS = steps }
             fromSource(input, output, source, target)
         }
     }
@@ -49,6 +52,18 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
         if (target == Target.SEMANTIC) return
 
         val llvm = IRTranslator(root, SemanticMain.getMain())
+
+        if (STEPS) FileWriter("steps/o0.ll").use {
+            it.write("// Current Step: Generate IR\n")
+            it.write(IRPrinter(llvm))
+        }
+
+        llvm.function.forEach { Mem2Reg(it, "o1") }
+
+        if (STEPS) FileWriter("steps/o1.ll").use {
+            it.write("// Current Step: SSA\n")
+            it.write(IRPrinter(llvm))
+        }
 
         if (target == Target.LLVM) {
             output(IRPrinter(llvm))

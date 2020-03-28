@@ -56,7 +56,7 @@ elif [ "$1" = "llvm" ]; then
     cp "$built" "$testtool/builtin.s"
     diff "$dataset"/codegen/"$2".mx "$testcase.mx" > /dev/null || (rm -f "$testcase.in" && vim -o "$testcase.in" "$dataset/codegen/$2.mx")
     cp "$dataset"/codegen/"$2".mx "$testcase.mx"
-    echo $blue"mxc -llvm"$default
+    echo $blue"mxc --llvm --steps"$default
     typeset TIMEFMT="compile time: %*E"
     time (mxc --llvm "$testcase.mx" && echo -n $cyan) && echo -n $default
     echo $blue"llc --march=riscv32 --mattr=+m"$default

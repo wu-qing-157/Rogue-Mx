@@ -1,0 +1,13 @@
+int f(int a, int b, int c) {
+    int d = a + b, e;
+    for (e = 0; e <= 10; e++) {
+        a = b + c + d;
+        if (b >= 10) c -= 10;
+        a += b <= 10 ? c : d;
+    }
+}
+
+int main() {
+    int a = f(1, 2, 3);
+    return a;
+}

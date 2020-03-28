@@ -20,7 +20,7 @@ object OptionMain {
         class Exit(val exit: Int) : Result()
         data class FromSource(
             val input: InputStream, val output: OutputMethod, val source: String, val target: Target,
-            val a64: Boolean, val info: Boolean
+            val a64: Boolean, val info: Boolean, val steps: Boolean
         ) : Result()
     }
 
@@ -70,9 +70,9 @@ object OptionMain {
                     val output = when {
                         hasOption("stdout") || hasOption("semantic") -> OutputMethod.Stdout
                         hasOption("output") -> OutputMethod.File(getOptionValue("output"))
-                        else -> OutputMethod.File(source.replace(Regex("\\..*?$"), "") + target.ext)
+                        else -> OutputMethod.File(source.replace(Regex("\\..*?$"), ".") + target.ext)
                     }
-                    Result.FromSource(input, output, source, target, a64, hasOption("info"))
+                    Result.FromSource(input, output, source, target, a64, hasOption("info"), hasOption("steps"))
                 }
             }
         }
@@ -104,5 +104,6 @@ object OptionMain {
             addOption(Option(null, "semantic", false, "Run Semantic"))
         })
         addOption(Option(null, "info", false, "Display more info when executing"))
+        addOption(Option(null, "steps", false, "Output all available LLVM versions during optimization"))
     }
 }

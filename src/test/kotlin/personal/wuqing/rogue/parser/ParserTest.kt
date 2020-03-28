@@ -4,7 +4,7 @@ import org.antlr.v4.gui.Trees
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 
-const val fileName = "test/104.mx"
+const val fileName = "test-tool/cases/llvm/return.mx"
 
 fun main() {
     println("Lexer Test:")

@@ -24,7 +24,7 @@ buildLLVM64() {
     typeset indent="$3"
     if [ "$detail" = "true" ]; then echo $blue$indent"mxc --llvm64"$default; fi
     typeset TIMEFMT=$indent"compile time: %*E"
-    time (mxc --llvm64 "$current.mx"; echo -n $cyan) && echo -n $default
+    time (mxc --llvm64 --steps "$current.mx"; echo -n $cyan) && echo -n $default
     if [ "$detail" = "true" ]; then echo $blue$indent"llc"$default; fi
     llc $current.ll
     if [ "$detail" = "true" ]; then echo $blue$indent"gcc -no-pie"$default; fi

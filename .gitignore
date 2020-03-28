@@ -11,5 +11,8 @@
 /test-tool/cases/llvm/*.s
 /test-tool/cases/llvm/*.bin
 /test-tool/cases/llvm/*.out
+/test-tool/cases/llvm/zky.*
 /test-tool/test.*
 /test-tool/builtin.s
+
+/steps/

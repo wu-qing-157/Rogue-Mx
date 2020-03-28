@@ -4,6 +4,7 @@ import personal.wuqing.rogue.llvm.grammar.IRBlock
 import personal.wuqing.rogue.llvm.grammar.IRFunction
 import personal.wuqing.rogue.llvm.grammar.IRGlobal
 import personal.wuqing.rogue.llvm.grammar.IRProgram
+import personal.wuqing.rogue.llvm.grammar.IRStatement
 import personal.wuqing.rogue.llvm.grammar.IRType
 
 object IRPrinter {
@@ -42,6 +43,8 @@ object IRPrinter {
 
     private operator fun invoke(block: IRBlock) {
         this += "  ${block.name}:"
-        block.statements.forEach { this += "    $it" }
+        block.phi.forEach { this += "    $it" }
+        block.normal.filter { it !is IRStatement.Normal.Nop }.forEach { this += "    $it" }
+        block.terminate.let { this += "    $it" }
     }
 }

@@ -17,6 +17,7 @@ ANTLR4|Completed
 AST|Completed
 Semantic|Completed, __pass__ given test suite
 LLVM IR|Almost completed, __pass custom tests__, __pending given tests__
+Optimize|Much to do, refer to _Optimize_ section
 ...|Not planned yet
 
 ## Known Issues
@@ -67,6 +68,12 @@ t4|should pass|wrong standard output
 e1|should pass|wrong standard output
 t12|should pass|wrong standard exit code
 
+## Optimize
+
+This section keeps track of implemented optimizations
+
+### TODO
+
 ## Timeline
 
 + 2020.01.14 __Add a lexer & parser full of bugs__
@@ -114,6 +121,7 @@ t12|should pass|wrong standard exit code
 + 2020.03.26 Fix unicode character and unicode escape (but what is the use?)
 + 2020.03.26 Fix behavior when exception met
 + 2020.03.28 Implement a dominator tree for future use
++ 2020.03.29 __Force SSA form for all local variable__
 
 ## How to build the compiler
 
