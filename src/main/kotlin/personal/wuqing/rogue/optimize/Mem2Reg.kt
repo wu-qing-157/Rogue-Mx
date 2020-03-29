@@ -3,6 +3,7 @@ package personal.wuqing.rogue.optimize
 import personal.wuqing.rogue.llvm.grammar.IRBlock
 import personal.wuqing.rogue.llvm.grammar.IRFunction
 import personal.wuqing.rogue.llvm.grammar.IRItem
+import personal.wuqing.rogue.llvm.grammar.IRProgram
 import personal.wuqing.rogue.llvm.grammar.IRStatement
 import personal.wuqing.rogue.llvm.grammar.IRType
 import personal.wuqing.rogue.utils.DomTree
@@ -156,7 +157,7 @@ object Mem2Reg {
         }
     }
 
-    operator fun invoke(function: IRFunction.Declared, prefix: String) {
+    private operator fun invoke(function: IRFunction.Declared, prefix: String) {
         clear()
         val tree = DomTree(function.body.first())
         val blocks = tree.child.keys
@@ -168,5 +169,11 @@ object Mem2Reg {
         for ((key, entry) in phi)
             key.first.phi += IRStatement.Phi(result[key]!!, entry.map { (block, item) -> item to block })
         blocks.forEach { eliminateAlias(it) }
+    }
+
+    operator fun invoke(program: IRProgram, prefix: String) = try {
+        program.function.forEach { this(it, prefix) }
+    } catch (e: NullPointerException) {
+        error("unexpected null pointer in mem2reg")
     }
 }

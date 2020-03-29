@@ -58,7 +58,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             it.write(IRPrinter(llvm))
         }
 
-        llvm.function.forEach { Mem2Reg(it, "o1") }
+        Mem2Reg(llvm, "o1")
 
         if (STEPS) FileWriter("steps/o1.ll").use {
             it.write("// Current Step: SSA\n")
