@@ -122,6 +122,7 @@ This section keeps track of implemented optimizations
 + 2020.03.26 Fix behavior when exception met
 + 2020.03.28 Implement a dominator tree for future use
 + 2020.03.29 __Force SSA form for all local variable__
++ 2020.03.30 Use kotlin script for gradle build script (Groovy really sucks!)
 
 ## How to build the compiler
 
