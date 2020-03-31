@@ -70,7 +70,7 @@ object OptionMain {
                     val output = when {
                         hasOption("stdout") || hasOption("semantic") -> OutputMethod.Stdout
                         hasOption("output") -> OutputMethod.File(getOptionValue("output"))
-                        else -> OutputMethod.File(source.replace(Regex("\\..*?$"), ".") + target.ext)
+                        else -> OutputMethod.File(source.replace(Regex("\\..*?$"), "") + "." + target.ext)
                     }
                     Result.FromSource(input, output, source, target, a64, hasOption("info"), hasOption("steps"))
                 }

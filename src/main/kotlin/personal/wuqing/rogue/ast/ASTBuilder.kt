@@ -352,15 +352,17 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                 location = Location(filename, ctx),
                 value = ctx.StringConstant().text
                     .removeSurrounding("\"")
-                    .replace("\\t", "\t")
-                    .replace("\\b", "\b")
-                    .replace("\\n", "\n")
-                    .replace("\\r", "\r")
-                    .replace("\\\"", "\"")
-                    .replace(Regex("\\\\[uU]([0-9a-fA-F]{4})")) {
-                        it.groups[1]!!.value.toInt(16).toChar().toString()
+                    .replace(Regex("\\\\(([\\\\benrt])|u([0-9]{4}))")) {
+                        when (it.groupValues[2]) {
+                            "t" -> "\t"
+                            "b" -> "\b"
+                            "e" -> "\u001b"
+                            "r" -> "\r"
+                            "n" -> "\n"
+                            "\\" -> "\\"
+                            else -> it.groupValues[3].toInt(16).toChar().toString()
+                        }
                     }
-                    .replace("\\\\", "\\")
             )
             ctx.Null() != null -> ASTNode.Expression.Constant.Null(Location(filename, ctx))
             ctx.True() != null -> ASTNode.Expression.Constant.True(Location(filename, ctx))
