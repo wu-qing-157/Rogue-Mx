@@ -124,6 +124,7 @@ This section keeps track of implemented optimizations
 + 2020.03.29 __Force SSA form for all local variable__
 + 2020.03.30 Use kotlin script for gradle build script (Groovy really sucks!)
 + 2020.03.31 Fix a (terrible) issue about escape character (so poisonous)
++ 2020.04.03 Fix escape character (again, more poisonous)
 
 ## How to build the compiler
 

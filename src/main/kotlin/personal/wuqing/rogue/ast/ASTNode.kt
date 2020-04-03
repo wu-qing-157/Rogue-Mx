@@ -61,7 +61,7 @@ sealed class ASTNode {
             val declarations: List<Declaration>
         ) : Declaration() {
             override val summary get() = "$name (ClassDeclaration)"
-            val actual = Class_(name, this)
+            val actual = Class_(name)
         }
     }
 

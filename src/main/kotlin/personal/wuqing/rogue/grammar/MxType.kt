@@ -1,6 +1,5 @@
 package personal.wuqing.rogue.grammar
 
-import personal.wuqing.rogue.ast.ASTNode
 import personal.wuqing.rogue.utils.ASTErrorRecorder
 import personal.wuqing.rogue.utils.Location
 
@@ -45,7 +44,7 @@ sealed class MxType(val size: Int) {
         override fun toString() = "<unknown type>"
     }
 
-    class Class(val name: String, val def: ASTNode.Declaration.Class) : MxType(8) {
+    class Class(val name: String) : MxType(8) {
         class DuplicatedException(message: String) : Exception(message)
 
         val variables = mutableMapOf<String, MxVariable>()
