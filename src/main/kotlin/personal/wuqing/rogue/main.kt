@@ -3,8 +3,8 @@ package personal.wuqing.rogue
 import personal.wuqing.rogue.ast.ASTBuilder
 import personal.wuqing.rogue.ast.ASTMain
 import personal.wuqing.rogue.io.OutputMethod
-import personal.wuqing.rogue.llvm.IRPrinter
-import personal.wuqing.rogue.llvm.IRTranslator
+import personal.wuqing.rogue.ir.LLVMPrinter
+import personal.wuqing.rogue.ir.IRTranslator
 import personal.wuqing.rogue.optimize.Mem2Reg
 import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
@@ -55,18 +55,18 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
 
         if (STEPS) FileWriter("steps/o0.ll").use {
             it.write("// Current Step: Generate IR\n")
-            it.write(IRPrinter(llvm))
+            it.write(LLVMPrinter.print(llvm))
         }
 
         Mem2Reg(llvm, "o1")
 
         if (STEPS) FileWriter("steps/o1.ll").use {
             it.write("// Current Step: SSA\n")
-            it.write(IRPrinter(llvm))
+            it.write(LLVMPrinter.print(llvm))
         }
 
         if (target == Target.LLVM) {
-            output(IRPrinter(llvm))
+            output(LLVMPrinter(llvm))
             return
         }
 

@@ -1,4 +1,4 @@
-package personal.wuqing.rogue.llvm.grammar
+package personal.wuqing.rogue.ir.grammar
 
 enum class IRCalcOp(private val text: String) {
     ADD("add"), SUB("sub"), MUL("mul"), SDIV("sdiv"), SREM("srem"),

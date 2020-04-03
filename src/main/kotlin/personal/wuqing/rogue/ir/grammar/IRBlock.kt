@@ -1,4 +1,4 @@
-package personal.wuqing.rogue.llvm.grammar
+package personal.wuqing.rogue.ir.grammar
 
 import personal.wuqing.rogue.utils.DirectionalNodeWithPrev
 

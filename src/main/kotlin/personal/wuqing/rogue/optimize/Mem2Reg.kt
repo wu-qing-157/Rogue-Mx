@@ -1,11 +1,11 @@
 package personal.wuqing.rogue.optimize
 
-import personal.wuqing.rogue.llvm.grammar.IRBlock
-import personal.wuqing.rogue.llvm.grammar.IRFunction
-import personal.wuqing.rogue.llvm.grammar.IRItem
-import personal.wuqing.rogue.llvm.grammar.IRProgram
-import personal.wuqing.rogue.llvm.grammar.IRStatement
-import personal.wuqing.rogue.llvm.grammar.IRType
+import personal.wuqing.rogue.ir.grammar.IRBlock
+import personal.wuqing.rogue.ir.grammar.IRFunction
+import personal.wuqing.rogue.ir.grammar.IRItem
+import personal.wuqing.rogue.ir.grammar.IRProgram
+import personal.wuqing.rogue.ir.grammar.IRStatement
+import personal.wuqing.rogue.ir.grammar.IRType
 import personal.wuqing.rogue.utils.DomTree
 import java.util.LinkedList
 

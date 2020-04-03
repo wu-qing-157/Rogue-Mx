@@ -1,4 +1,4 @@
-package personal.wuqing.rogue.llvm
+package personal.wuqing.rogue.ir
 
 import personal.wuqing.rogue.ast.ASTNode
 import personal.wuqing.rogue.ast.ReferenceType
@@ -8,19 +8,18 @@ import personal.wuqing.rogue.grammar.MxVariable
 import personal.wuqing.rogue.grammar.operator.MxPrefix
 import personal.wuqing.rogue.grammar.operator.MxSuffix
 import personal.wuqing.rogue.grammar.operator.Operation
-import personal.wuqing.rogue.llvm.grammar.IRBlock
-import personal.wuqing.rogue.llvm.grammar.IRCalcOp
-import personal.wuqing.rogue.llvm.grammar.IRCmpOp
-import personal.wuqing.rogue.llvm.grammar.IRFunction
-import personal.wuqing.rogue.llvm.grammar.IRGlobal
-import personal.wuqing.rogue.llvm.grammar.IRItem
-import personal.wuqing.rogue.llvm.grammar.IRProgram
-import personal.wuqing.rogue.llvm.grammar.IRStatement
-import personal.wuqing.rogue.llvm.grammar.IRType
-import personal.wuqing.rogue.llvm.map.FunctionMap
-import personal.wuqing.rogue.llvm.map.GlobalMap
-import personal.wuqing.rogue.llvm.map.LiteralMap
-import personal.wuqing.rogue.llvm.map.TypeMap
+import personal.wuqing.rogue.ir.grammar.IRBlock
+import personal.wuqing.rogue.ir.grammar.IRCalcOp
+import personal.wuqing.rogue.ir.grammar.IRCmpOp
+import personal.wuqing.rogue.ir.grammar.IRFunction
+import personal.wuqing.rogue.ir.grammar.IRItem
+import personal.wuqing.rogue.ir.grammar.IRProgram
+import personal.wuqing.rogue.ir.grammar.IRStatement
+import personal.wuqing.rogue.ir.grammar.IRType
+import personal.wuqing.rogue.ir.map.FunctionMap
+import personal.wuqing.rogue.ir.map.GlobalMap
+import personal.wuqing.rogue.ir.map.LiteralMap
+import personal.wuqing.rogue.ir.map.TypeMap
 import java.util.LinkedList
 
 object IRTranslator {
@@ -28,31 +27,19 @@ object IRTranslator {
 
     operator fun invoke(ast: ASTNode.Program, main: MxFunction): IRProgram {
         ast.declarations.filterIsInstance<ASTNode.Declaration.Variable>().map { it.actual }.forEach {
-            GlobalMap[it] = IRGlobal(
-                IRItem.Global(IRType.Pointer(TypeMap[it.type]), it.name),
-                when (it.type) {
-                    MxType.Primitive.Int -> IRType.I32 const 0
-                    MxType.Primitive.Bool -> IRType.I1 const 0
-                    is MxType.Class, is MxType.Array, MxType.Primitive.String -> IRItem.Null(TypeMap[it.type])
-                    MxType.Unknown, MxType.Void, MxType.Null -> error("unexpected global variable type")
-                }
-            )
+            GlobalMap[it] = IRItem.Global(TypeMap[it.type])
         }
         FunctionMap[main]
         while (toProcess.isNotEmpty()) toProcess.poll().body
         return IRProgram(
-            struct = TypeMap.all()
-                .filterIsInstance<IRType.Pointer>()
-                .map { it.base }
-                .filterIsInstance<IRType.Class>(),
-            global = GlobalMap.all() + LiteralMap.all(),
-            function = FunctionMap.all().filterIsInstance<IRFunction.Declared>(),
-            external = FunctionMap.all().filterIsInstance<IRFunction.External>()
+            struct = TypeMap.all(),
+            literal = LiteralMap.all().toMutableSet(),
+            global = GlobalMap.all().toMutableSet(),
+            function = FunctionMap.all().toMutableSet()
         )
     }
 
-    private var localCount = 0
-    private fun next(type: IRType) = if (type is IRType.Void) IRItem.Void else IRItem.Local(type, ".${localCount++}")
+    private fun next(type: IRType) = if (type is IRType.Void) IRItem.Void else IRItem.Local(type)
     private val local = mutableMapOf<MxVariable, IRItem>()
     private val blocks = mutableListOf<IRBlock>()
     private val currentBlock get() = blocks.last()
@@ -77,7 +64,7 @@ object IRTranslator {
         terminating = true
     }
 
-    private operator fun plusAssign(block: IRBlock) {
+    private fun enterNewBlock(block: IRBlock) {
         if (!terminating) error("previous block not terminated")
         blocks += block
         terminating = false
@@ -110,27 +97,21 @@ object IRTranslator {
         is ASTNode.Expression.Constant.String -> this(ast)
         is ASTNode.Expression.Constant.True -> IRType.I1 const 1 lvalue false
         is ASTNode.Expression.Constant.False -> IRType.I1 const 0 lvalue false
-        is ASTNode.Expression.Constant.Null -> IRItem.Null(IRType.I8P) lvalue false
+        is ASTNode.Expression.Constant.Null -> IRItem.Null(IRType.Null) lvalue false
     }
 
     private operator fun invoke(ast: ASTNode.Expression.NewObject): Value {
-        val type = ast.baseType.type as? MxType.Class ?: error("new non-class type found after semantic")
-        val llvmType = TypeMap[type] as? IRType.Pointer ?: error("invalid class type status")
-        val classType = llvmType.base as? IRType.Class ?: error("unexpected non-class type")
-        val size = classType.members.size
-        val raw = next(IRType.I8P).also {
-            this += IRStatement.Normal.Call(it, FunctionMap[MxFunction.Builtin.Malloc], listOf(IRType.I32 const size))
+        val mxType = ast.baseType.type as? MxType.Class ?: error("new non-class type found after semantic")
+        val irType = TypeMap[mxType] as? IRType.Class ?: error("invalid class type status")
+        val size = irType.members.size
+        val ret = next(irType).also {
+            this += IRStatement.Normal.Call(it, IRFunction.External.Malloc(irType), listOf(IRType.I32 const size))
         }
-        val cast = next(llvmType).also {
-            this += IRStatement.Normal.Cast(from = raw, to = it)
-        }
-        for ((variable, index) in classType.members.delta) if (variable.declaration.init != null) {
+        for ((variable, index) in irType.members.index) if (variable.declaration.init != null) {
             val value = this(variable.declaration.init).rvalue()
-            val memberType = IRType.Pointer(TypeMap[variable.type])
+            val memberType = TypeMap[variable.type]
             val member = next(memberType).also {
-                this += IRStatement.Normal.Element(
-                    result = it, src = cast, indices = listOf(IRType.I32 const 0, IRType.I32 const index)
-                )
+                this += IRStatement.Normal.Member(it, ret, index)
             }
             this += IRStatement.Normal.Store(src = value, dest = member)
         }
@@ -140,22 +121,23 @@ object IRTranslator {
             this += IRStatement.Normal.Call(
                 result = IRItem.Void,
                 function = FunctionMap[constructor],
-                args = listOf(cast) + FunctionMap[constructor].args.run { subList(1, this.size) }.zip(ast.parameters)
+                args = listOf(ret) + FunctionMap[constructor].args.run { subList(1, this.size) }.zip(ast.parameters)
                     .map { (t, a) -> this(a).rvalue().nullable(t) }
             )
         }
-        return cast lvalue false
+        return ret lvalue false
     }
+
+    private var arrayBlockCount = 0
 
     private fun arraySugar(length: List<IRItem>, parent: IRItem, current: Int) {
         if (current == length.size) return
-        val type =
-            (parent.type as? IRType.Pointer)?.base as? IRType.Pointer ?: error("unexpected non-array type")
-        val childSize = type.base.size
-        val id = localCount++
-        val cond = IRBlock(".$id.array.cond")
-        val body = IRBlock(".$id.array.body")
-        val end = IRBlock(".$id.array.end")
+        val type = (parent.type as? IRType.Array)?.base ?: error("unexpected non-array type")
+        val singleSize = type.size
+        val id = arrayBlockCount++
+        val cond = IRBlock("array.$id.cond")
+        val body = IRBlock("array.$id.body")
+        val end = IRBlock("array.$id.end")
         val total = next(IRType.I32).also {
             this += IRStatement.Normal.ICalc(it, IRCalcOp.SUB, length[current - 1], IRType.I32 const 0)
         }
@@ -164,74 +146,60 @@ object IRTranslator {
             this += IRStatement.Normal.Store(src = total, dest = it)
         }
         this += IRStatement.Terminate.Jump(cond)
-        this += cond
+        enterNewBlock(cond)
         val index = next(IRType.I32).also {
             this += IRStatement.Normal.Load(dest = it, src = loop)
         }
         val location = next(IRType.Pointer(type)).also {
-            this += IRStatement.Normal.Element(it, parent, listOf(index))
+            this += IRStatement.Normal.Index(it, parent, index)
         }
         val condition = next(IRType.I1).also {
             this += IRStatement.Normal.ICmp(it, IRCmpOp.SGE, index, IRType.I32 const 0)
         }
         this += IRStatement.Terminate.Branch(cond = condition, then = body, els = end)
-        this += body
-        val size = next(IRType.I32).also {
-            this += IRStatement.Normal.ICalc(it, IRCalcOp.MUL, length[current], IRType.I32 const childSize)
-        }
-        val raw = next(IRType.I8P).also {
+        enterNewBlock(body)
+        val cur = next(type).also {
             this += IRStatement.Normal.Call(
-                it, FunctionMap[MxFunction.Builtin.MallocArray], listOf(size, length[current])
+                it, FunctionMap[MxFunction.Builtin.MallocArray], listOf(IRType.I32 const singleSize, length[current])
             )
         }
-        val cast = next(type).also {
-            this += IRStatement.Normal.Cast(from = raw, to = it)
-        }
-        this += IRStatement.Normal.Store(src = cast, dest = location)
-        arraySugar(length, cast, current + 1)
+        this += IRStatement.Normal.Store(src = cur, dest = location)
+        arraySugar(length, cur, current + 1)
         val next = next(IRType.I32).also {
             this += IRStatement.Normal.ICalc(it, IRCalcOp.SUB, index, IRType.I32 const 1)
         }
         this += IRStatement.Normal.Store(src = next, dest = loop)
         this += IRStatement.Terminate.Jump(cond)
-        this += end
+        enterNewBlock(end)
     }
 
     private operator fun invoke(ast: ASTNode.Expression.NewArray): Value {
-        val type = TypeMap[ast.type] as? IRType.Pointer ?: error("unexpected non-array type")
-        val childSize = type.base.size
+        val type = TypeMap[ast.type] as? IRType.Array ?: error("unexpected non-array type")
+        val single = type.base.size
         val length = ast.length.map { this(it).rvalue() }
-        val size = next(IRType.I32).also {
-            this += IRStatement.Normal.ICalc(it, IRCalcOp.MUL, length[0], IRType.I32 const childSize)
+        val ret = next(type).also {
+            this += IRStatement.Normal.Call(
+                it, IRFunction.External.MallocArray, listOf(IRType.I32 const single, length[0])
+            )
         }
-        val raw = next(IRType.I8P).also {
-            this += IRStatement.Normal.Call(it, FunctionMap[MxFunction.Builtin.MallocArray], listOf(size, length[0]))
-        }
-        val cast = next(type).also {
-            this += IRStatement.Normal.Cast(from = raw, to = it)
-        }
-        arraySugar(length, cast, 1)
-        return cast lvalue false
+        arraySugar(length, ret, 1)
+        return ret lvalue false
     }
 
     private operator fun invoke(ast: ASTNode.Expression.MemberAccess): Value {
         val parent = this(ast.parent).rvalue()
-        val parentType = TypeMap[ast.parent.type] as? IRType.Pointer ?: error("invalid class type status")
+        val parentType = TypeMap[ast.parent.type] as? IRType.Array ?: error("invalid class type status")
         val variable = ast.reference
         val resultType = IRType.Pointer(TypeMap[variable.type])
         val classType = parentType.base as? IRType.Class ?: error("unexpected non-class type")
-        val index = classType.members.delta[variable] ?: error("member not arranged")
+        val index = classType.members.index[variable] ?: error("member not arranged")
         return next(resultType).also {
-            this += IRStatement.Normal.Element(it, parent, listOf(IRType.I32 const 0, IRType.I32 const index))
+            this += IRStatement.Normal.Index(it, parent, IRType.I32 const index)
         } lvalue true
     }
 
     private operator fun invoke(ast: ASTNode.Expression.MemberFunction): Value {
-        val parent = this(ast.base).rvalue().let {
-            if (ast.reference is MxFunction.Builtin.ArraySize) next(IRType.I8P).also { cast ->
-                this += IRStatement.Normal.Cast(from = it, to = cast)
-            } else it
-        }
+        val parent = this(ast.base).rvalue()
         return next(TypeMap[ast.type]).also {
             this += IRStatement.Normal.Call(
                 result = it, function = FunctionMap[ast.reference],
@@ -319,10 +287,10 @@ object IRTranslator {
             this +=
                 if (operation == Operation.BAnd) IRStatement.Terminate.Branch(lr, second, result)
                 else IRStatement.Terminate.Branch(lr, result, second)
-            this += second
+            enterNewBlock(second)
             val rr = this(ast.rhs).rvalue()
             this += IRStatement.Terminate.Jump(result)
-            this += result
+            enterNewBlock(result)
             val ret = next(IRType.I1).also {
                 this += IRStatement.Phi(
                     it, listOf((IRType.I32 const if (operation == Operation.BAnd) 0 else 1) to current, rr to second)
@@ -449,13 +417,13 @@ object IRTranslator {
         val els = IRBlock(".$id.ternary.else")
         val end = IRBlock(".$id.ternary.end")
         this += IRStatement.Terminate.Branch(cond, then, els)
-        this += then
+        enterNewBlock(then)
         val thenValue = this(ast.then).rvalue()
         this += IRStatement.Terminate.Jump(end)
-        this += els
+        enterNewBlock(els)
         val elsValue = this(ast.els).rvalue()
         this += IRStatement.Terminate.Jump(end)
-        this += end
+        enterNewBlock(end)
         return next(TypeMap[ast.type]).also {
             this += IRStatement.Phi(it, listOf(thenValue to then, elsValue to els))
         } lvalue false
@@ -469,7 +437,7 @@ object IRTranslator {
                 thi ?: error("unresolved identifier after semantic")
                 val classType =
                     (thi!!.type as? IRType.Pointer)?.base as? IRType.Class ?: error("unexpected non-class type")
-                val index = classType.members.delta[variable] ?: error("member not arranged")
+                val index = classType.members.index[variable] ?: error("member not arranged")
                 val resultType = IRType.Pointer(TypeMap[variable.type])
                 return next(resultType).also {
                     this += IRStatement.Normal.Element(it, thi!!, listOf(IRType.I32 const 0, IRType.I32 const index))
@@ -545,15 +513,15 @@ object IRTranslator {
         val end = IRBlock(".$id.if.end")
         val condition = this(ast.condition).rvalue()
         this += IRStatement.Terminate.Branch(condition, then, if (ast.els == null) end else els)
-        this += then
+        enterNewBlock(then)
         this(ast.then)
         this += IRStatement.Terminate.Jump(end)
         if (ast.els != null) {
-            this += els
+            enterNewBlock(els)
             this(ast.els)
             this += IRStatement.Terminate.Jump(end)
         }
-        this += end
+        enterNewBlock(end)
     }
 
     private operator fun invoke(ast: ASTNode.Statement.Loop.While) {
@@ -563,13 +531,13 @@ object IRTranslator {
         val end = IRBlock(".$id.while.end")
         loopTarget[ast] = cond to end
         this += IRStatement.Terminate.Jump(cond)
-        this += cond
+        enterNewBlock(cond)
         val condition = this(ast.condition).rvalue()
         this += IRStatement.Terminate.Branch(condition, body, end)
-        this += body
+        enterNewBlock(body)
         this(ast.statement)
         this += IRStatement.Terminate.Jump(cond)
-        this += end
+        enterNewBlock(end)
     }
 
     private operator fun invoke(ast: ASTNode.Statement.Loop.For) {
@@ -581,16 +549,16 @@ object IRTranslator {
         val step = IRBlock(".$id.for.step")
         loopTarget[ast] = step to end
         this += IRStatement.Terminate.Jump(cond)
-        this += cond
+        enterNewBlock(cond)
         val condition = this(ast.condition).rvalue()
         this += IRStatement.Terminate.Branch(condition, body, end)
-        this += body
+        enterNewBlock(body)
         this(ast.statement)
         this += IRStatement.Terminate.Jump(step)
-        this += step
+        enterNewBlock(step)
         ast.step?.let { this(it) }
         this += IRStatement.Terminate.Jump(cond)
-        this += end
+        enterNewBlock(end)
     }
 
     fun processBody(function: IRFunction.Declared): MutableList<IRBlock> {
@@ -600,14 +568,14 @@ object IRTranslator {
         returnType = function.ret
         val entry = IRBlock(".entry")
         if (function.name == "main") {
-            this += IRBlock(".init_global")
+            enterNewBlock(IRBlock(".init_global"))
             for ((variable, global) in GlobalMap.entries()) if (variable.declaration.init != null) {
                 val value = this(variable.declaration.init).rvalue().nullable(global.name.type)
                 this += IRStatement.Normal.Store(src = value, dest = global.name)
             }
             this += IRStatement.Terminate.Jump(entry)
         }
-        this += entry
+        enterNewBlock(entry)
         function.ast.parameterList.zip(function.namedArgs.run { if (function.member) subList(1, size) else this })
             .forEach { (variable, arg) ->
                 next(IRType.Pointer(arg.type)).also {
