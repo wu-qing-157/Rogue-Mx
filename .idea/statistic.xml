@@ -11,6 +11,9 @@
         <option value="$PROJECT_DIR$/assignment" />
         <option value="$PROJECT_DIR$/.gradle" />
         <option value="$PROJECT_DIR$/temp" />
+        <option value="$PROJECT_DIR$/submit" />
+        <option value="$PROJECT_DIR$/test-tool" />
+        <option value="$PROJECT_DIR$/steps" />
       </list>
     </option>
   </component>

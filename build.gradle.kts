@@ -16,6 +16,9 @@ application {
     mainClassName = "personal.wuqing.rogue.MainKt"
 }
 
+// force IDEA to consider it as source root
+sourceSets.getByName("main").allJava.srcDir("src/main/antlr")
+
 dependencies {
     antlr(group = "org.antlr", name = "antlr4", version = "4.8")
     implementation(group = "commons-cli", name = "commons-cli", version = "1.4")

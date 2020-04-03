@@ -2,6 +2,22 @@
 #include "stdio.h"
 #include "string.h"
 
+struct string {
+    int size;
+    char *s;
+};
+
+typedef struct string *string;
+
+const int s_size = sizeof(struct string);
+
+inline string _malloc_s_(int size) {
+    void *alloc = malloc(s_size + size);
+    string cast = alloc;
+    cast->s = alloc + s_size;
+    return cast;
+}
+
 void *_malloc_a_(int size, int length) {
     void *ret = malloc(size + 4);
     *((int *) ret) = length;
@@ -14,19 +30,19 @@ int _get_i_() {
     return a;
 }
 
-char *_get_s_() {
-    char *s = malloc(261) + 4;
-    scanf("%s", s);
-    *((int *) (s - 4)) = strlen(s);
-    return s;
+string _get_s_() {
+    string ret = _malloc_s_(257);
+    scanf("%s", ret->s);
+    ret->size = strlen(ret->s);
+    return ret;
 }
 
-void _print_s_(char *s) {
-    printf("%s", s);
+void _print_s_(struct string *str) {
+    printf("%s", str->s);
 }
 
-void _println_s_(char *s) {
-    puts(s);
+void _println_s_(struct string *str) {
+    puts(str->s);
 }
 
 void _print_i_(int i) {
@@ -35,6 +51,23 @@ void _print_i_(int i) {
 
 void _println_i_(int i) {
     printf("%d\n", i);
+}
+
+char d[15];
+
+string _to_str_(int i) {
+    string ret = _malloc_s_(15);
+    char *c = d, *r = ret->s;
+    if (i < 0) {
+        *(r++) = '-';
+        i = -i;
+    }
+    if (i == 0) *(c++) = '0';
+    while (i) {
+        *(c++) = i % 10 + '0';
+        i /= 10;
+    }
+
 }
 
 char *_to_str_(int i) {
