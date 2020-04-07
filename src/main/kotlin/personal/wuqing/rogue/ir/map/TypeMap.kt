@@ -13,7 +13,7 @@ object TypeMap {
         MxType.Void -> IRType.Void
         MxType.Unknown -> error("unknown type when building IR")
         is MxType.Class -> map.computeIfAbsent(t) { IRType.Class(t, t.name) }
-        is MxType.Array -> IRType.Array
+        is MxType.Array -> IRType.Array(this[t.base])
     }
     fun all() = map.values
 }

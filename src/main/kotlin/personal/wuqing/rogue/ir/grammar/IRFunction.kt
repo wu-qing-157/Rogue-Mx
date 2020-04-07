@@ -1,16 +1,14 @@
 package personal.wuqing.rogue.ir.grammar
 
 import personal.wuqing.rogue.ast.ASTNode
-import personal.wuqing.rogue.ir.IRTranslator
+import personal.wuqing.rogue.ir.translator.TopLevelTranslator
 
 sealed class IRFunction(val ret: IRType, val args: List<IRType>, val name: String) {
-    val display = "@$name"
-
     class Declared(
         ret: IRType, val namedArgs: List<IRItem>, name: String,
         val ast: ASTNode.Declaration.Function, val member: Boolean
     ) : IRFunction(ret, namedArgs.map { it.type }, name) {
-        val body by lazy(LazyThreadSafetyMode.NONE) { IRTranslator.processBody(this) }
+        val body by lazy(LazyThreadSafetyMode.NONE) { TopLevelTranslator(this) }
     }
 
     sealed class External(ret: IRType, args: List<IRType>, name: String) : IRFunction(ret, args, name) {
@@ -19,11 +17,8 @@ sealed class IRFunction(val ret: IRType, val args: List<IRType>, val name: Strin
             val i1 = IRType.I1
             val void_ = IRType.Void
             val str = IRType.String
-            val array = IRType.Array
         }
 
-        object Malloc : External(type, listOf(i32), "malloc")
-        object MallocArray : External(array, listOf(i32, i32), "_malloc_a_")
         object GetInt : External(i32, listOf(), "_get_i_")
         object GetString : External(str, listOf(), "_get_s_")
         object Print : External(void_, listOf(str), "_print_s_")

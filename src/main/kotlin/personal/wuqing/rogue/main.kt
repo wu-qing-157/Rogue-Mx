@@ -4,8 +4,7 @@ import personal.wuqing.rogue.ast.ASTBuilder
 import personal.wuqing.rogue.ast.ASTMain
 import personal.wuqing.rogue.io.OutputMethod
 import personal.wuqing.rogue.ir.LLVMPrinter
-import personal.wuqing.rogue.ir.IRTranslator
-import personal.wuqing.rogue.optimize.Mem2Reg
+import personal.wuqing.rogue.ir.translator.TopLevelTranslator
 import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
 import personal.wuqing.rogue.parser.ParserMain
@@ -51,19 +50,19 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
 
         if (target == Target.SEMANTIC) return
 
-        val llvm = IRTranslator(root, SemanticMain.getMain())
+        val llvm = TopLevelTranslator(root, SemanticMain.getMain())
 
         if (STEPS) FileWriter("steps/o0.ll").use {
-            it.write("// Current Step: Generate IR\n")
-            it.write(LLVMPrinter.print(llvm))
+            it.write("; Current Step: Generate IR\n")
+            it.write(LLVMPrinter(llvm))
         }
 
-        Mem2Reg(llvm, "o1")
+        /*Mem2Reg(llvm, "o1")
 
         if (STEPS) FileWriter("steps/o1.ll").use {
-            it.write("// Current Step: SSA\n")
-            it.write(LLVMPrinter.print(llvm))
-        }
+            it.write("; Current Step: SSA\n")
+            it.write(LLVMPrinter(llvm))
+        }*/
 
         if (target == Target.LLVM) {
             output(LLVMPrinter(llvm))

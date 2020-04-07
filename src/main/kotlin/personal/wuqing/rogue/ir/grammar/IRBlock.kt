@@ -3,8 +3,6 @@ package personal.wuqing.rogue.ir.grammar
 import personal.wuqing.rogue.utils.DirectionalNodeWithPrev
 
 class IRBlock constructor(val name: String): DirectionalNodeWithPrev<IRBlock> {
-    override fun toString() = "%$name"
-
     val phi = mutableListOf<IRStatement.Phi>()
     val normal = mutableListOf<IRStatement.Normal>()
     lateinit var terminate: IRStatement.Terminate

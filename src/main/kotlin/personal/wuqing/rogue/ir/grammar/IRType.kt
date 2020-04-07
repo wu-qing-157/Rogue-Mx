@@ -13,35 +13,45 @@ sealed class IRType(val size: Int) {
     object I32 : IRType(4) {
         infix fun const(value: Int) = IRItem.Const(this, value)
         override val default = I32 const 0
+        override fun toString() = "i32"
     }
 
     object I1 : IRType(1) {
         infix fun const(value: Int) = IRItem.Const(this, value)
         override val default = I1 const 0
+        override fun toString() = "i1"
     }
 
     object String : IRType(ptr) {
         override val default = IRItem.Null(String)
+        override fun toString() = "{i32, i8*}*"
     }
 
     data class Array(val base: IRType) : IRType(ptr) {
         override val default = IRItem.Null(this)
+        override fun toString() = "{i32, $base*}*"
+        val reference = "{i32, $base*}"
     }
 
     data class Class(private val mx: MxType.Class, val name: kotlin.String) : IRType(ptr) {
         val members by lazy(LazyThreadSafetyMode.NONE) { MemberArrangement(mx) }
         override val default get() = IRItem.Null(this)
+        override fun toString() = "$reference*"
+        val reference = members.types.joinToString(prefix = "{", postfix = "}")
     }
 
-    data class Pointer(val base: IRType) : IRType(ptr) {
-        override val default get() = IRItem.Null(this)
+    data class Address(val type: IRType) : IRType(ptr) {
+        override val default get() = error("getting default value of address")
+        override fun toString() = "$type*"
     }
 
-    object Void : IRType(1) {
-        override val default get() = error("getting default value of void")
-    }
-
-    object Null : IRType(4) {
+    object Null : IRType(ptr) {
         override val default get() = error("getting default value of null")
+        override fun toString() = "null"
+    }
+
+    object Void : IRType(0) {
+        override val default get() = error("getting default value of void")
+        override fun toString() = "void"
     }
 }

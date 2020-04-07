@@ -16,7 +16,11 @@ struct array {
 
 typedef struct array *array;
 
-inline string _malloc_s_(int length) {
+int *_malloc_o_(int size) {
+    return malloc(size);
+}
+
+string _malloc_s_(int length) {
     string ret = malloc(sizeof(int) + length + 1);
     ret->length = length;
     ret->s[length] = '\0';

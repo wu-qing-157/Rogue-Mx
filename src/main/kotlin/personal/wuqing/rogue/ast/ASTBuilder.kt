@@ -352,7 +352,7 @@ class ASTBuilder(private val filename: String) : MxLangBaseVisitor<ASTNode>() {
                 location = Location(filename, ctx),
                 value = ctx.StringConstant().text
                     .removeSurrounding("\"")
-                    .replace(Regex("\\\\(([\\\\benrt])|u([0-9]{4}))")) {
+                    .replace(Regex("\\\\(([\\\\benrt])|u([0-9a-fA-F]{4}))")) {
                         when (it.groupValues[2]) {
                             "t" -> "\t"
                             "b" -> "\b"
