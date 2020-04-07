@@ -125,6 +125,7 @@ This section keeps track of implemented optimizations
 + 2020.03.30 Use kotlin script for gradle build script (Groovy really sucks!)
 + 2020.03.31 Fix a (terrible) issue about escape character (so poisonous)
 + 2020.04.03 Fix escape character (again, more poisonous)
++ 2020.04.07 Fix escape character (again and again, even more poisonous)
 
 ## How to build the compiler
 
