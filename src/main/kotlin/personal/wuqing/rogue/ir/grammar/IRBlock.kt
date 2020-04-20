@@ -16,4 +16,6 @@ class IRBlock constructor(val name: String): DirectionalNodeWithPrev<IRBlock> {
                 (terminate as IRStatement.Terminate.Branch).let { listOf(it.then, it.els) }
         }.apply { forEach { it.prev += this@IRBlock } }
     }
+
+    override fun toString() = name
 }

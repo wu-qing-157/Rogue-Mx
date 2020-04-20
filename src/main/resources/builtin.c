@@ -4,15 +4,10 @@
 
 struct string {
     int length;
-    char *s;
+    char s[0];
 };
 
 typedef struct string *string;
-
-struct array {
-    int size;
-    void *mem;
-};
 
 typedef struct array *array;
 
@@ -27,10 +22,10 @@ string _malloc_s_(int length) {
     return ret;
 }
 
-array _malloc_a_(int single, int size) {
-    array ret = malloc(sizeof(int) + single * size);
-    ret->size = size;
-    return ret;
+int *_malloc_a_(int size) {
+    int *ret = malloc(sizeof(int) + size * 4);
+    *ret = size;
+    return ret + 1;
 }
 
 int _get_i_() {
@@ -154,8 +149,4 @@ char _s_geq_(string s, string t) {
         if (*a < *b) return 0;
         if (*a > *b || *a == '\0') return 1;
     }
-}
-
-int _a_size_(array a) {
-    return a->size;
 }

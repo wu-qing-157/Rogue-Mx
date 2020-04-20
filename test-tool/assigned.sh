@@ -23,11 +23,9 @@ prepareLocalJudge() {
     if [ "$1" = "semantic" ]; then
         typeset run=semantic
         echo "build/install/Rogue-Mx/bin/mxc --stdin --semantic" > semantic.sh
-    elif [ "$1" = "llvm" ]; then
-        typeset run=codegen
-        echo "mxc --llvm --stdin --stdout | llc --march=riscv32 --mattr=+m - -o /dev/stdout" > codegen.sh
     elif [ "$1" = "codegen" ]; then
-        exit 1
+        typeset run=codegen
+        echo "mxc --stdin --stdout" > codegen.sh
     else
         exit 1
     fi
@@ -44,26 +42,7 @@ prepareLocalJudge() {
     echo "timelimit: 15" >> $config
 }
 
-if [ "$2" = "all" ]; then
-    prepareLocalJudge $1
-    (cd "$judge" && python judge.py)
-elif [ "$1" = "semantic" ]; then
-    cp "$dataset"/sema/"$2"-package/"$2"-"$3".mx "$testtool"/test.mx
-    cat --number "$testtool"/test.mx
-    echo
-    time mxc --semantic "$testtool"/test.mx
-elif [ "$1" = "llvm" ]; then
-    cp "$built" "$testtool/builtin.s"
-    diff "$dataset"/codegen/"$2".mx "$testcase.mx" > /dev/null || (rm -f "$testcase.in" && vim -o "$testcase.in" "$dataset/codegen/$2.mx")
-    cp "$dataset"/codegen/"$2".mx "$testcase.mx"
-    echo $blue"mxc --llvm"$default
-    typeset TIMEFMT="compile time: %*E"
-    time (mxc --llvm --steps "$testcase.mx" && echo -n $cyan) && echo -n $default
-    echo $blue"llc --march=riscv32 --mattr=+m"$default
-    llc --march=riscv32 --mattr=+m "$testcase.ll"
-    echo $blue"simulation"$default
-    cd "$testtool" && ravel --oj-mode
-    vimdiff "$testcase.out" "$testcase.mx"
-fi
+prepareLocalJudge $1
+(cd "$judge" && python judge.py)
 
 rm -f build.sh semantic.sh codegen.sh optimize.sh

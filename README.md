@@ -1,6 +1,6 @@
 # Rogue-Mx
 
-_Rogue-Mx_ is a compiler from _Mx**_ to _RISC-V, 32 bit, integer Extended_,
+_Rogue-Mx_ is a compiler from _Mx**_ to _RISC-V, 32-bit, integer Extended_,
 the project for _Compiler Design and Implementation_ at SJTU.
 It's implemented mainly in _Kotlin/JVM_,
 with the exception that the lexer and parser part contains _Java_,
@@ -31,7 +31,7 @@ They should be executed with _Z Shell_ in the project root folder.
 
 Single-case custom test may fail if `\ ` in output,
 no plan to fix this issue as it is rarely met.
-Using debug mode can avoid this issue.
+Using the debugging mode can avoid this issue.
 
 ### Semantic Test
 
@@ -43,30 +43,9 @@ Status|Notes
 ---|---
 187 / 187|__All Passed__
 
-### LLVM Test
+### Codegen Test
 
-##### Custom Test
-
-run with `custom.sh llvm all` or `custom.sh llvm <case> [debug]`
-
-Status|Notes
----|---
-all cases|__All Passed__
-
-#### Given Test Suite
-
-run with `zsh assigned.sh llvm all` or `zsh assigned.sh llvm <name>`
-
-Test Case|Status|Description
----|---|---
-t64|should pass|python's subprocess pipe is too slow
-t21|should pass|wrong standard output
-t2|should pass|wrong standard output
-t55|should pass|python's subprocess pipe is too slow
-t65|should pass|escape character unsupported by ravel
-t4|should pass|wrong standard output
-e1|should pass|wrong standard output
-t12|should pass|wrong standard exit code
+pending test
 
 ## Optimize
 
@@ -95,7 +74,7 @@ This section keeps track of implemented optimizations
 + 2020.02.24 Optimize project structure
 + 2020.02.25 Use different exit codes for different stages
 + 2020.02.25 Trivial fix
-+ 2020.02.26 Fix with latest test cases
++ 2020.02.26 Fix with the latest test cases
 + 2020.03.01 Fix known issue
 + 2020.03.01 Optimize semantic part for IR translation
 + 2020.03.02 __Complete preliminary part of LLVM IR__
@@ -117,13 +96,15 @@ This section keeps track of implemented optimizations
 + 2020.03.16 Change implementation of string literal
 + 2020.03.18 Test LLVM IR with given test suite
 + 2020.03.25 Reconstruct LLVM type and name system
-+ 2020.03.25 __LLVM IR (should) pass assigned test suite__ o(\*￣▽￣\*)ブ
++ 2020.03.25 __LLVM IR (should) pass the assigned test suite__ o(\*￣▽￣\*)ブ
 + 2020.03.26 Fix unicode character and unicode escape (but what is the use?)
 + 2020.03.26 Fix behavior when exception met
 + 2020.03.28 Implement a dominator tree for future use
 + 2020.03.29 __Force SSA form for all local variable__
 + 2020.03.30 Use kotlin script for gradle build script (Groovy really sucks!)
 + 2020.03.31 Fix a (terrible) issue about escape character (so poisonous)
++ 2020.04.11 Greatly change IR
++ 2020.04.20 Write a naive codegen for IR test
 
 ## How to build the compiler
 
@@ -134,14 +115,14 @@ sh gradlew installDist
 or, on windows,
 ```shell script
 gradlew.bat installDist
-```
-and the result will be installed in `build/install/Rogue-Mx`.
+``` 
+The result will be installed in `build/install/Rogue-Mx`.
 
 _JDK 11_ are used for development. _JDK >= 1.8_ should be okay for build.
 
 There is also another version in submodule _submit_,
 which can be built offline with local resources in the judge docker.
-To build it offline, just execute
+To build it offline, just execute:
 ```shell script
 sh gradlew installDist --offline
 ```
@@ -152,7 +133,7 @@ sh gradlew generateBuiltin
 ```
 with
 [riscv-gnu-toolchain](https://github.com/riscv/riscv-gnu-toolchain)
-configured with
+configured with:
 
 ```shell script
 ./configure --prefix=/opt/riscv --with-arch=rv32ima --with-abi=ilp32
@@ -170,6 +151,19 @@ Exit code|description
 4|AST builder does not accept the code
 5|Semantic does not accept the code
 
+### Discard of LLVM IR
+
+The type system of LLVM IR is somehow annoying,
+so it is deprecated.
+A new IR is designed, which is also in CFG + SSA form,
+just because SSA has already been implemented
+when the decision is made.
+
+It's also tried very hard to keep the compatibility to
+output IR in LLVM IR form,
+but it's not easy to add a fake type system,
+and it's not worth it.
+
 ### Info about implementation
 
 This part contains notes for future development.
@@ -178,7 +172,7 @@ This part contains notes for future development.
 
 + only one `Variable` constructed for each declaration,
 so unnecessary to override `equals()` and `hashCode()`
-+ currently do not keep init info, access it using `Variable.def.init`
++ do not currently keep init info, access it using `Variable.def.init`
 
 #### `semantic.SemanticMain`
 
@@ -191,16 +185,3 @@ as it is needed by llvm `Translator`
 + `ASTNode` cannot be separated due to the limitation of `sealed class`
 + `ASTType` is separated from `ASTNode`
 to prevent an extremely large source file
-
-#### `llvm.Translator`
-
-+ currently initialize global variables before the `entry.entry`
-in `main` function,
-maybe to add an extra `main` function to initialize global variables
-and call the actual `main` function
-+ this file is somehow large,
-but currently no plan to separate it
-
-#### Built-in functions
-
-+ several implementation of built-in functions may be simplified

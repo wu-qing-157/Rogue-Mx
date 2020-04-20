@@ -50,6 +50,7 @@ tasks.register<Exec>("generateBuiltin") {
         "riscv32-unknown-linux-gnu-gcc",
         "-S", "-std=c99", "-fno-section-anchors",
         "builtin.c",
-        "-o", "builtin.s"
+        "-o", "builtin.s",
+        "-O3"
     )
 }

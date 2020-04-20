@@ -2,12 +2,11 @@ package personal.wuqing.rogue.ir.grammar
 
 import personal.wuqing.rogue.grammar.MxType
 import personal.wuqing.rogue.grammar.MxVariable
-import personal.wuqing.rogue.ir.map.TypeMap
 
 class MemberArrangement private constructor(
-    val size: Int, val members: List<MxVariable>, val index: Map<MxVariable, Int>, val types: List<IRType>
+    val size: Int, val members: List<MxVariable>, val index: Map<MxVariable, Int>
 ) {
-    private constructor(builder: Builder) : this(builder.size, builder.variables, builder.index, builder.types)
+    private constructor(builder: Builder) : this(builder.size, builder.variables, builder.index)
 
     constructor(clazz: MxType.Class) : this(Builder(clazz))
 
@@ -15,6 +14,5 @@ class MemberArrangement private constructor(
         val variables = clazz.variables.values.sortedByDescending { it.type.size }
         val size = (variables.sumBy { it.type.size } + 7) / 8 * 8
         val index = variables.zip(Array(variables.size) { it }).toMap()
-        val types = variables.map { TypeMap[it.type] }
     }
 }

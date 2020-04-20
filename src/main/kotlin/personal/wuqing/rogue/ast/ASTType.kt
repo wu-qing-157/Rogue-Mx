@@ -1,6 +1,7 @@
 package personal.wuqing.rogue.ast
 
 import personal.wuqing.rogue.grammar.MxType
+import personal.wuqing.rogue.grammar.MxVariable
 import personal.wuqing.rogue.semantic.table.ClassTable
 import personal.wuqing.rogue.semantic.table.FunctionTable
 import personal.wuqing.rogue.semantic.table.SymbolTable
@@ -145,21 +146,26 @@ fun ASTNode.Expression.Ternary.type() = lazy(LazyThreadSafetyMode.NONE) {
     }
 }
 
-enum class ReferenceType { Variable, Member }
+sealed class IdentifierReference {
+    abstract val v: MxVariable
+
+    data class Variable(override val v: MxVariable) : IdentifierReference()
+    data class Member(val parent: MxType.Class, override val v: MxVariable) : IdentifierReference()
+}
 
 fun ASTNode.Expression.Identifier.resolve() = lazy(LazyThreadSafetyMode.NONE) {
     try {
         val table = VariableTable[name]
         val member = SymbolTable.thisType?.variables?.get(name)
-        if (table == member) ReferenceType.Member to member
-        else ReferenceType.Variable to table
+        if (table == member) IdentifierReference.Member(SymbolTable.thisType!!, table)
+        else IdentifierReference.Variable(table)
     } catch (e: SymbolTableException) {
         null
     }
 }
 
 fun ASTNode.Expression.Identifier.type() = lazy(LazyThreadSafetyMode.NONE) {
-    resolved?.second?.type ?: MxType.Unknown.also {
+    resolved?.v?.type ?: MxType.Unknown.also {
         SemanticErrorRecorder.error(location, "cannot resolve \"$name\" as a variable")
     }
 }

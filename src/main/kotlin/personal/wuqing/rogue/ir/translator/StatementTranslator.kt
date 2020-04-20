@@ -4,10 +4,10 @@ import personal.wuqing.rogue.ast.ASTNode
 import personal.wuqing.rogue.ir.grammar.IRBlock
 import personal.wuqing.rogue.ir.grammar.IRItem
 import personal.wuqing.rogue.ir.grammar.IRStatement
-import personal.wuqing.rogue.ir.grammar.IRType
-import personal.wuqing.rogue.ir.map.TypeMap
 
 object StatementTranslator {
+    private fun next() = IRItem.Local()
+
     operator fun invoke(ast: ASTNode.Statement) {
         if (terminating) return
         when (ast) {
@@ -30,37 +30,19 @@ object StatementTranslator {
             )
             is ASTNode.Statement.Return -> statement(
                 if (ast.expression == null) IRStatement.Terminate.Ret(null)
-                else IRStatement.Terminate.Ret(
-                    ExpressionTranslator(ast.expression).value.nullable(returnType ?: error("unspecified return type"))
-                )
+                else IRStatement.Terminate.Ret(ExpressionTranslator(ast.expression).value)
             )
         }
     }
 
     private operator fun invoke(ast: ASTNode.Statement.Variable) {
         ast.variables.forEach { variable ->
-            val type = TypeMap[variable.type.type]
-            next(IRType.Address(type)).also {
+            next().also {
                 statement(IRStatement.Normal.Alloca(it))
                 local[variable.actual] = it
                 variable.init?.let { init ->
-                    statement(
-                        IRStatement.Normal.Store(
-                            ExpressionTranslator(init).value.nullable(TypeMap[variable.type.type]), it
-                        )
-                    )
-                } ?: run {
-                    statement(
-                        IRStatement.Normal.Store(
-                            when (type) {
-                                IRType.I32 -> IRType.I32 const 0
-                                IRType.I1 -> IRType.I1 const 0
-                                is IRType.Class -> IRItem.Null(type)
-                                else -> error("variable pointing to illegal type")
-                            }, it
-                        )
-                    )
-                }
+                    statement(IRStatement.Normal.Store(ExpressionTranslator(init).value, it))
+                } ?: statement(IRStatement.Normal.Store(IRItem.Const(0), it))
             }
         }
     }
@@ -69,9 +51,9 @@ object StatementTranslator {
 
     private operator fun invoke(ast: ASTNode.Statement.If) {
         val id = ifCount++
-        val then = IRBlock(".if.$id.then")
-        val els = IRBlock(".if.$id.else")
-        val end = IRBlock(".if.$id.end")
+        val then = IRBlock("if.$id.then")
+        val els = IRBlock("if.$id.else")
+        val end = IRBlock("if.$id.end")
         val condition = ExpressionTranslator(ast.condition).value
         statement(IRStatement.Terminate.Branch(condition, then, if (ast.els == null) end else els))
         enterNewBlock(then)
@@ -89,9 +71,9 @@ object StatementTranslator {
 
     private operator fun invoke(ast: ASTNode.Statement.Loop.While) {
         val id = whileCount++
-        val cond = IRBlock(".$id.while.condition")
-        val body = IRBlock(".$id.while.body")
-        val end = IRBlock(".$id.while.end")
+        val cond = IRBlock("while.$id.condition")
+        val body = IRBlock("while.$id.body")
+        val end = IRBlock("while.$id.end")
         loopTarget[ast] = cond to end
         statement(IRStatement.Terminate.Jump(cond))
         enterNewBlock(cond)
@@ -108,10 +90,10 @@ object StatementTranslator {
     private operator fun invoke(ast: ASTNode.Statement.Loop.For) {
         if (ast.init != null) this(ast.init)
         val id = forCount++
-        val cond = IRBlock(".$id.for.cond")
-        val body = IRBlock(".$id.for.body")
-        val end = IRBlock(".$id.for.end")
-        val step = IRBlock(".$id.for.step")
+        val cond = IRBlock("for.$id.cond")
+        val body = IRBlock("for.$id.body")
+        val end = IRBlock("for.$id.end")
+        val step = IRBlock("for.$id.step")
         loopTarget[ast] = step to end
         statement(IRStatement.Terminate.Jump(cond))
         enterNewBlock(cond)

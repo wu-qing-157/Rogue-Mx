@@ -1,7 +1,7 @@
 package personal.wuqing.rogue.ir.translator
 
 import personal.wuqing.rogue.ast.ASTNode
-import personal.wuqing.rogue.ast.ReferenceType
+import personal.wuqing.rogue.ast.IdentifierReference
 import personal.wuqing.rogue.grammar.MxFunction
 import personal.wuqing.rogue.grammar.MxType
 import personal.wuqing.rogue.grammar.operator.MxPrefix
@@ -13,20 +13,21 @@ import personal.wuqing.rogue.ir.grammar.IRCmpOp
 import personal.wuqing.rogue.ir.grammar.IRFunction
 import personal.wuqing.rogue.ir.grammar.IRItem
 import personal.wuqing.rogue.ir.grammar.IRStatement
-import personal.wuqing.rogue.ir.grammar.IRType
 import personal.wuqing.rogue.ir.map.FunctionMap
 import personal.wuqing.rogue.ir.map.GlobalMap
 import personal.wuqing.rogue.ir.map.LiteralMap
-import personal.wuqing.rogue.ir.map.TypeMap
+import personal.wuqing.rogue.ir.map.MemberMap
 
 object ExpressionTranslator {
+    private fun next() = IRItem.Local()
+
     sealed class ExprResult(val raw: IRItem) {
         abstract val value: IRItem
 
         class Value(override val value: IRItem) : ExprResult(value)
         class Address(private val addr: IRItem) : ExprResult(addr) {
             override val value
-                get() = next((addr.type as IRType.Address).type).also {
+                get() = next().also {
                     statement(IRStatement.Normal.Load(dest = it, src = addr))
                 }
         }
@@ -48,35 +49,34 @@ object ExpressionTranslator {
         is ASTNode.Expression.Ternary -> this(ast)
         is ASTNode.Expression.Identifier -> this(ast)
         is ASTNode.Expression.This -> thi?.asValue ?: error("unresolved this after semantic")
-        is ASTNode.Expression.Constant.Int -> (IRType.I32 const ast.value).asValue
-        is ASTNode.Expression.Constant.String -> this(ast)
-        is ASTNode.Expression.Constant.True -> (IRType.I1 const 1).asValue
-        is ASTNode.Expression.Constant.False -> (IRType.I1 const 0).asValue
-        is ASTNode.Expression.Constant.Null -> IRItem.Null(IRType.Null).asValue
+        is ASTNode.Expression.Constant.Int -> IRItem.Const(ast.value).asValue
+        is ASTNode.Expression.Constant.String -> LiteralMap[ast.value].asValue
+        is ASTNode.Expression.Constant.True -> IRItem.Const(1).asValue
+        is ASTNode.Expression.Constant.False -> IRItem.Const(0).asValue
+        is ASTNode.Expression.Constant.Null -> IRItem.Const(0).asValue
     }
 
     private operator fun invoke(ast: ASTNode.Expression.NewObject): ExprResult {
         val mxType = ast.baseType.type as? MxType.Class ?: error("new non-class type found after semantic")
-        val irType = TypeMap[mxType] as? IRType.Class ?: error("invalid class type status")
-        val ret = next(irType).also {
-            statement(IRStatement.Normal.MallocObject(it))
+        val ret = next().also {
+            statement(
+                IRStatement.Normal.Call(it, IRFunction.Builtin.MallocObject, listOf(IRItem.Const(MemberMap[mxType])))
+            )
         }
-        for (variable in irType.members.members) if (variable.declaration.init != null) {
+        for (variable in mxType.variables.values) if (variable.declaration.init != null) {
             val value = this(variable.declaration.init).value
-            val memberType = TypeMap[variable.type]
-            val member = next(memberType).also { statement(IRStatement.Normal.Member(it, ret, variable)) }
+            val member = next().also {
+                statement(
+                    IRStatement.Normal.ICalc(it, IRCalcOp.ADD, ret, IRItem.Const(MemberMap[mxType to variable] shl 2))
+                )
+            }
             statement(IRStatement.Normal.Store(src = value, dest = member))
         }
-        val constructor =
-            ast.baseType.type.functions["__constructor__"] ?: error("constructor not found after semantic")
+        val constructor = ast.baseType.type.functions["__constructor__"] ?: error("constructor not found")
         if (constructor !is MxFunction.Builtin.DefaultConstructor) {
-            statement(
-                IRStatement.Normal.Call(
-                    result = next(IRType.Void),
-                    function = FunctionMap[constructor],
-                    args = listOf(ret) + FunctionMap[constructor].args.run { subList(1, size) }.zip(ast.parameters)
-                        .map { (t, a) -> this(a).value.nullable(t) }
-                ))
+            statement(IRStatement.Normal.Call(
+                null, FunctionMap[constructor], listOf(ret) + ast.parameters.map { this(it).value }
+            ))
         }
         return ret.asValue
     }
@@ -85,34 +85,32 @@ object ExpressionTranslator {
 
     private fun arraySugar(length: List<IRItem>, parent: IRItem, current: Int) {
         if (current == length.size) return
-        val type = (parent.type as? IRType.Array)?.base ?: error("unexpected non-array type")
         val id = arrayBlockCount++
         val cond = IRBlock("array.$id.cond")
         val body = IRBlock("array.$id.body")
         val end = IRBlock("array.$id.end")
-        val total = next(IRType.I32).also {
-            statement(IRStatement.Normal.ICalc(it, IRCalcOp.SUB, length[current - 1], IRType.I32 const 0))
+        val total = next().also {
+            statement(IRStatement.Normal.ICalc(it, IRCalcOp.SUB, length[current - 1], IRItem.Const(1)))
         }
-        val loop = next(IRType.Address(IRType.I32)).also {
+        val loop = next().also {
             statement(IRStatement.Normal.Alloca(it))
             statement(IRStatement.Normal.Store(src = total, dest = it))
         }
         statement(IRStatement.Terminate.Jump(cond))
         enterNewBlock(cond)
-        val index = next(IRType.I32).also { statement(IRStatement.Normal.Load(dest = it, src = loop)) }
-        val location = next(IRType.Address(type)).also { statement(IRStatement.Normal.Index(it, parent, index)) }
-        val condition = next(IRType.I1).also {
-            statement(IRStatement.Normal.ICmp(it, IRCmpOp.SGE, index, IRType.I32 const 0))
-        }
+        val index = next().also { statement(IRStatement.Normal.Load(dest = it, src = loop)) }
+        val delta = next().also { statement(IRStatement.Normal.ICalc(it, IRCalcOp.SHL, index, IRItem.Const(2))) }
+        val location = next().also { statement(IRStatement.Normal.ICalc(it, IRCalcOp.ADD, parent, delta)) }
+        val condition = next().also { statement(IRStatement.Normal.ICmp(it, IRCmpOp.SGE, index, IRItem.Const(0))) }
         statement(IRStatement.Terminate.Branch(cond = condition, then = body, els = end))
         enterNewBlock(body)
-        val cur = next(type).also {
-            statement(IRStatement.Normal.MallocArray(it, length[current]))
+        val cur = next().also {
+            statement(IRStatement.Normal.Call(it, IRFunction.Builtin.MallocArray, listOf(length[current])))
         }
         statement(IRStatement.Normal.Store(src = cur, dest = location))
         arraySugar(length, cur, current + 1)
-        val next = next(IRType.I32).also {
-            statement(IRStatement.Normal.ICalc(it, IRCalcOp.SUB, index, IRType.I32 const 1))
+        val next = next().also {
+            statement(IRStatement.Normal.ICalc(it, IRCalcOp.SUB, index, IRItem.Const(1)))
         }
         statement(IRStatement.Normal.Store(src = next, dest = loop))
         statement(IRStatement.Terminate.Jump(cond))
@@ -120,10 +118,9 @@ object ExpressionTranslator {
     }
 
     private operator fun invoke(ast: ASTNode.Expression.NewArray): ExprResult {
-        val type = TypeMap[ast.type] as? IRType.Array ?: error("unexpected non-array type")
         val length = ast.length.map { this(it).value }
-        val ret = next(type).also {
-            statement(IRStatement.Normal.MallocArray(it, length[0]))
+        val ret = next().also {
+            statement(IRStatement.Normal.Call(it, IRFunction.Builtin.MallocArray, listOf(length[0])))
         }
         arraySugar(length, ret, 1)
         return ret.asValue
@@ -131,38 +128,61 @@ object ExpressionTranslator {
 
     private operator fun invoke(ast: ASTNode.Expression.MemberAccess): ExprResult {
         val parent = this(ast.parent).value
+        val parentType = ast.parent.type as? MxType.Class ?: error("unexpected non-class")
         val variable = ast.reference
-        val resultType = IRType.Address(TypeMap[variable.type])
-        return next(resultType).also { statement(IRStatement.Normal.Member(it, parent, variable)) }.asAddress
+        return next().also {
+            statement(
+                IRStatement.Normal.ICalc(
+                    it, IRCalcOp.ADD, parent, IRItem.Const(MemberMap[parentType to variable] shl 2)
+                )
+            )
+        }.asAddress
     }
 
-    private operator fun invoke(ast: ASTNode.Expression.MemberFunction): ExprResult {
-        val parent = this(ast.base).value
-        return next(TypeMap[ast.type]).also {
-            statement(
-                IRStatement.Normal.Call(
-                    result = it, function = FunctionMap[ast.reference],
-                    args = listOf(parent) + FunctionMap[ast.reference].args.run { subList(1, size) }.zip(ast.parameters)
-                        .map { (t, a) -> this(a).value.nullable(t) }
-                ))
-        }.asValue
-    }
+    private operator fun invoke(ast: ASTNode.Expression.MemberFunction): ExprResult =
+        when (ast.reference) {
+            is MxFunction.Builtin.ArraySize -> {
+                val address = next().also {
+                    statement(IRStatement.Normal.ICalc(it, IRCalcOp.SUB, this(ast.base).value, IRItem.Const(4)))
+                }
+                next().also {
+                    statement(IRStatement.Normal.Load(dest = it, src = address))
+                }.asValue
+            }
+            is MxFunction.Builtin.StringLength -> {
+                next().also {
+                    statement(IRStatement.Normal.Load(dest = it, src = this(ast.base).value))
+                }.asValue
+            }
+            else -> {
+                val parent = this(ast.base).value
+                next().also {
+                    statement(
+                        IRStatement.Normal.Call(
+                            result = it, function = FunctionMap[ast.reference],
+                            args = listOf(parent) + ast.parameters.map { p -> this(p).value }
+                        ))
+                }.asValue
+            }
+        }
 
     private operator fun invoke(ast: ASTNode.Expression.Index): ExprResult {
         val parent = this(ast.parent).value
         val index = this(ast.child).value
-        val llvmType = IRType.Address(TypeMap[ast.type])
-        return next(llvmType).also { statement(IRStatement.Normal.Index(it, parent, index)) }.asAddress
+        val delta = next().also {
+            statement(IRStatement.Normal.ICalc(it, IRCalcOp.SHL, index, IRItem.Const(2)))
+        }
+        return next().also {
+            statement(IRStatement.Normal.ICalc(it, IRCalcOp.ADD, parent, delta))
+        }.asAddress
     }
 
     private operator fun invoke(ast: ASTNode.Expression.Function): ExprResult {
         val args = if (ast.reference.base == null)
-            FunctionMap[ast.reference].args.zip(ast.parameters).map { (t, a) -> this(a).value.nullable(t) }
+            ast.parameters.map { this(it).value }
         else
-            listOf(thi ?: error("this unresolved unexpectedly")) +
-                    FunctionMap[ast.reference].args.apply { subList(1, size) }.zip(ast.parameters)
-                        .map { (t, a) -> this(a).value.nullable(t) }
-        return next(TypeMap[ast.type]).also {
+            listOf(thi ?: error("this unresolved unexpectedly")) + ast.parameters.map { this(it).value }
+        return next().also {
             statement(IRStatement.Normal.Call(it, FunctionMap[ast.reference], args))
         }.asValue
     }
@@ -170,13 +190,13 @@ object ExpressionTranslator {
     private operator fun invoke(ast: ASTNode.Expression.Suffix): ExprResult {
         val operand = this(ast.operand)
         val result = operand.value
-        val after = next(IRType.I32).also {
+        val after = next().also {
             statement(
                 IRStatement.Normal.ICalc(
                     it, when (ast.operator) {
                         MxSuffix.INC -> IRCalcOp.ADD
                         MxSuffix.DEC -> IRCalcOp.SUB
-                    }, result, IRType.I32 const 1
+                    }, result, IRItem.Const(1)
                 )
             )
         }
@@ -189,27 +209,27 @@ object ExpressionTranslator {
         val lvalue = operand.raw
         val rvalue = operand.value
         return when (ast.operator) {
-            MxPrefix.INC, MxPrefix.DEC -> next(IRType.I32).also {
+            MxPrefix.INC, MxPrefix.DEC -> next().also {
                 statement(
                     IRStatement.Normal.ICalc(
                         it, when (ast.operator) {
                             MxPrefix.INC -> IRCalcOp.ADD
                             MxPrefix.DEC -> IRCalcOp.SUB
                             else -> error("")
-                        }, rvalue, IRType.I32 const 1
+                        }, rvalue, IRItem.Const(1)
                     )
                 )
                 statement(IRStatement.Normal.Store(src = it, dest = lvalue))
             }
-            MxPrefix.L_NEG -> next(IRType.I1).also {
-                statement(IRStatement.Normal.ICmp(it, IRCmpOp.EQ, rvalue, IRType.I32 const 0))
+            MxPrefix.L_NEG -> next().also {
+                statement(IRStatement.Normal.ICmp(it, IRCmpOp.EQ, rvalue, IRItem.Const(0)))
             }
-            MxPrefix.INV -> next(IRType.I32).also {
-                statement(IRStatement.Normal.ICalc(it, IRCalcOp.XOR, rvalue, IRType.I32 const -1))
+            MxPrefix.INV -> next().also {
+                statement(IRStatement.Normal.ICalc(it, IRCalcOp.XOR, rvalue, IRItem.Const(-1)))
             }
             MxPrefix.POS -> rvalue
-            MxPrefix.NEG -> next(IRType.I32).also {
-                statement(IRStatement.Normal.ICalc(it, IRCalcOp.SUB, IRType.I32 const 0, rvalue))
+            MxPrefix.NEG -> next().also {
+                statement(IRStatement.Normal.ICalc(it, IRCalcOp.SUB, IRItem.Const(0), rvalue))
             }
         }.asValue
     }
@@ -235,11 +255,11 @@ object ExpressionTranslator {
             val rr = this(ast.rhs).value
             statement(IRStatement.Terminate.Jump(result))
             enterNewBlock(result)
-            val ret = next(IRType.I1).also {
+            val ret = next().also {
                 statement(
                     IRStatement.Phi(
                         it,
-                        listOf((IRType.I32 const if (operation == Operation.BAnd) 0 else 1) to current, rr to second)
+                        listOf(current to IRItem.Const(if (operation == Operation.BAnd) 0 else 1), second to rr).toMap()
                     )
                 )
             }
@@ -254,7 +274,7 @@ object ExpressionTranslator {
             Operation.BAnd, Operation.BOr -> error("should already handled")
             Operation.Plus, Operation.Minus, Operation.Times, Operation.Div, Operation.Rem,
             Operation.IAnd, Operation.IOr, Operation.Xor, Operation.Shl, Operation.Shr, Operation.UShr ->
-                next(IRType.I32).also {
+                next().also {
                     statement(
                         IRStatement.Normal.ICalc(
                             it, when (operation) {
@@ -276,7 +296,7 @@ object ExpressionTranslator {
                 }
             Operation.PlusI, Operation.MinusI, Operation.TimesI, Operation.DivI, Operation.RemI,
             Operation.AndI, Operation.OrI, Operation.XorI, Operation.ShlI, Operation.ShrI, Operation.UShrI ->
-                next(IRType.I32).also {
+                next().also {
                     statement(
                         IRStatement.Normal.ICalc(
                             it, when (operation) {
@@ -298,7 +318,7 @@ object ExpressionTranslator {
                     statement(IRStatement.Normal.Store(src = it, dest = ll))
                 }
             Operation.Less, Operation.Leq, Operation.Greater, Operation.Geq, Operation.IEqual, Operation.INeq ->
-                next(IRType.I1).also {
+                next().also {
                     statement(
                         IRStatement.Normal.ICmp(
                             it, when (operation) {
@@ -313,7 +333,7 @@ object ExpressionTranslator {
                         )
                     )
                 }
-            Operation.BEqual, Operation.BNeq -> next(IRType.I1).also {
+            Operation.BEqual, Operation.BNeq -> next().also {
                 statement(
                     IRStatement.Normal.ICmp(
                         it, when (operation) {
@@ -324,48 +344,34 @@ object ExpressionTranslator {
                     )
                 )
             }
-            Operation.SPlus -> next(IRType.String).also {
-                statement(IRStatement.Normal.Call(it, IRFunction.External.StringConcatenate, listOf(lr, rr)))
+            Operation.SPlus -> next().also {
+                statement(IRStatement.Normal.Call(it, IRFunction.Builtin.StringConcatenate, listOf(lr, rr)))
             }
-            Operation.SPlusI -> next(IRType.String).also {
-                statement(IRStatement.Normal.Call(it, IRFunction.External.StringConcatenate, listOf(lr, rr)))
+            Operation.SPlusI -> next().also {
+                statement(IRStatement.Normal.Call(it, IRFunction.Builtin.StringConcatenate, listOf(lr, rr)))
                 statement(IRStatement.Normal.Store(src = it, dest = ll))
             }
             Operation.SLess, Operation.SLeq, Operation.SGreater, Operation.SGeq, Operation.SEqual, Operation.SNeq ->
-                next(IRType.I1).also {
-                    val raw = next(IRType.I1)
+                next().also {
+                    val raw = next()
                     statement(
                         IRStatement.Normal.Call(
                             raw, when (operation) {
-                                Operation.SLess -> IRFunction.External.StringLess
-                                Operation.SLeq -> IRFunction.External.StringLeq
-                                Operation.SGreater -> IRFunction.External.StringGreater
-                                Operation.SGeq -> IRFunction.External.StringGeq
-                                Operation.SEqual -> IRFunction.External.StringEqual
-                                Operation.SNeq -> IRFunction.External.StringNeq
+                                Operation.SLess -> IRFunction.Builtin.StringLess
+                                Operation.SLeq -> IRFunction.Builtin.StringLeq
+                                Operation.SGreater -> IRFunction.Builtin.StringGreater
+                                Operation.SGeq -> IRFunction.Builtin.StringGeq
+                                Operation.SEqual -> IRFunction.Builtin.StringEqual
+                                Operation.SNeq -> IRFunction.Builtin.StringNeq
                                 else -> error("")
                             }, listOf(lr, rr)
                         )
                     )
-                    statement(IRStatement.Normal.ICmp(it, IRCmpOp.NE, raw, IRType.I32 const 0))
+                    statement(IRStatement.Normal.ICmp(it, IRCmpOp.NE, raw, IRItem.Const(0)))
                 }
-            is Operation.PEqual -> next(IRType.I1).also {
-                statement(
-                    IRStatement.Normal.ICmp(
-                        it, IRCmpOp.EQ, lr.nullable(TypeMap[operation.clazz]), rr.nullable(TypeMap[operation.clazz])
-                    )
-                )
-            }
-            is Operation.PNeq -> next(IRType.I1).also {
-                statement(
-                    IRStatement.Normal.ICmp(
-                        it, IRCmpOp.NE, lr.nullable(TypeMap[operation.clazz]), rr.nullable(TypeMap[operation.clazz])
-                    )
-                )
-            }
-            is Operation.PAssign -> ll.also {
-                statement(IRStatement.Normal.Store(src = rr.nullable(TypeMap[operation.clazz]), dest = ll))
-            }
+            is Operation.PEqual -> next().also { statement(IRStatement.Normal.ICmp(it, IRCmpOp.EQ, lr, rr)) }
+            is Operation.PNeq -> next().also { statement(IRStatement.Normal.ICmp(it, IRCmpOp.NE, lr, rr)) }
+            is Operation.PAssign -> ll.also { statement(IRStatement.Normal.Store(src = rr, dest = ll)) }
         }.asValue
     }
 
@@ -385,21 +391,22 @@ object ExpressionTranslator {
         val elsValue = this(ast.els).value
         statement(IRStatement.Terminate.Jump(end))
         enterNewBlock(end)
-        return next(TypeMap[ast.type]).also {
-            statement(IRStatement.Phi(it, listOf(thenValue to then, elsValue to els)))
+        return next().also {
+            statement(IRStatement.Phi(it, listOf(then to thenValue, els to elsValue).toMap()))
         }.asValue
     }
 
-    private operator fun invoke(ast: ASTNode.Expression.Identifier): ExprResult {
-        val (type, variable) = ast.reference
-        return when (type) {
-            ReferenceType.Variable -> (local[variable] ?: GlobalMap[variable]).asAddress
-            ReferenceType.Member -> {
-                thi ?: error("unresolved identifier after semantic")
-                val resultType = IRType.Address(TypeMap[variable.type])
-                return next(resultType).also { statement(IRStatement.Normal.Member(it, thi!!, variable)) }.asAddress
-            }
-        }
+    private operator fun invoke(ast: ASTNode.Expression.Identifier): ExprResult = when (val ref = ast.reference) {
+        is IdentifierReference.Variable -> (local[ref.v] ?: GlobalMap[ref.v]).asAddress
+        is IdentifierReference.Member ->
+            next().also {
+                statement(
+                    IRStatement.Normal.ICalc(
+                        it, IRCalcOp.ADD, thi ?: error("unresolved identifier after semantic"),
+                        IRItem.Const(MemberMap[ref.parent to ref.v] shl 2)
+                    )
+                )
+            }.asAddress
     }
 
     private operator fun invoke(ast: ASTNode.Expression.Constant.String): ExprResult {
