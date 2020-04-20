@@ -33,7 +33,7 @@ fun main(arguments: Array<String>) {
     when (val result = OptionMain(arguments)) {
         is OptionMain.Result.Exit -> exitProcess(result.exit)
         is OptionMain.Result.FromSource -> {
-            val (input, output, source, target) = result.apply { DEBUG = true }
+            val (input, output, source, target) = result.apply { DEBUG = debug }
             fromSource(input, output, source, target)
         }
     }
