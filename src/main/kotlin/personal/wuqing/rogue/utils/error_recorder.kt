@@ -1,6 +1,6 @@
 package personal.wuqing.rogue.utils
 
-import personal.wuqing.rogue.INFO
+import personal.wuqing.rogue.DEBUG
 
 open class ErrorRecorderException(val exit: Int) : Exception()
 
@@ -42,7 +42,7 @@ object ASTErrorRecorder {
 
 object LogRecorder {
     operator fun invoke(log: String) {
-        if (INFO) LogPrinter.println("${ErrorType.Info} $log")
+        if (DEBUG) LogPrinter.println("${ErrorType.Info} $log")
     }
 }
 
@@ -63,7 +63,6 @@ object InternalExceptionRecorder {
     const val exit = 1
 
     operator fun invoke(e: Throwable) =
-        LogPrinter.println("${ErrorType.Fatal} compiler internal error, use --info to see more information").also {
-            if (INFO) e.printStackTrace()
-        }
+        if (DEBUG) e.printStackTrace()
+        else LogPrinter.println("${ErrorType.Fatal} compiler internal error, use --debug to see more information")
 }

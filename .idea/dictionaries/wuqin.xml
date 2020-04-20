@@ -12,23 +12,36 @@
       <w>gradlew</w>
       <w>icmp</w>
       <w>idom</w>
+      <w>inttoptr</w>
       <w>lshr</w>
       <w>mxcompiler</w>
       <w>printf</w>
       <w>putchar</w>
       <w>risc</w>
       <w>riscv</w>
+      <w>rodata</w>
       <w>scanf</w>
       <w>sdiv</w>
+      <w>seqz</w>
+      <w>sgtz</w>
       <w>sjtu</w>
+      <w>slli</w>
+      <w>slti</w>
+      <w>sltz</w>
+      <w>snez</w>
       <w>sourcefiles</w>
       <w>sprintf</w>
+      <w>srai</w>
       <w>srem</w>
+      <w>srli</w>
       <w>sscanf</w>
       <w>strcpy</w>
       <w>strlen</w>
+      <w>subi</w>
       <w>subprocess</w>
+      <w>ushr</w>
       <w>wuqing</w>
+      <w>xori</w>
     </words>
   </dictionary>
 </component>

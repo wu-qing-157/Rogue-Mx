@@ -7,7 +7,6 @@ import personal.wuqing.rogue.utils.SemanticErrorRecorder
 private typealias Void_ = MxType.Void
 private typealias Int_ = MxType.Primitive.Int
 private typealias String_ = MxType.Primitive.String
-private typealias Bool_ = MxType.Primitive.Bool
 
 sealed class MxFunction(val result: MxType, open val base: MxType?, val name: String, val parameters: List<MxType>) {
     fun match(location: Location, call: List<MxType>) =
@@ -57,17 +56,7 @@ sealed class MxFunction(val result: MxType, open val base: MxType?, val name: St
         }
 
         class DefaultConstructor(type: MxType.Class) : Builtin(type, type, "__constructor__", listOf())
-        object StringLiteral : Builtin(String_, null, "__string__literal__", listOf(String_, Int_))
         object StringOrd : Builtin(Int_, String_, "ord", listOf(Int_))
         object StringSubstring : Builtin(String_, String_, "substring", listOf(Int_, Int_))
-        object Malloc : Builtin(String_, null, "__malloc__", listOf(Int_))
-        object MallocArray : Builtin(String_, null, "__malloc__array__", listOf(Int_, Int_))
-        object StringConcatenate : Builtin(String_, null, "__string__concatenate__", listOf(String_, String_))
-        object StringEqual : Builtin(Bool_, null, "__string__equal__", listOf(String_, String_))
-        object StringNeq : Builtin(Bool_, null, "__string__neq__", listOf(String_, String_))
-        object StringLess : Builtin(Bool_, null, "__string__less__", listOf(String_, String_))
-        object StringLeq : Builtin(Bool_, null, "__string__leq__", listOf(String_, String_))
-        object StringGreater : Builtin(Bool_, null, "__string__greater__", listOf(String_, String_))
-        object StringGeq : Builtin(Bool_, null, "__string__geq__", listOf(String_, String_))
     }
 }

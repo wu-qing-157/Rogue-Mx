@@ -12,6 +12,8 @@ import personal.wuqing.rogue.VERSION
 import personal.wuqing.rogue.io.OutputMethod
 import personal.wuqing.rogue.utils.OptionErrorRecorder
 import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.FileWriter
 import java.io.IOException
 import java.io.InputStream
 
@@ -19,8 +21,7 @@ object OptionMain {
     sealed class Result {
         class Exit(val exit: Int) : Result()
         data class FromSource(
-            val input: InputStream, val output: OutputMethod, val source: String, val target: Target,
-            val a64: Boolean, val info: Boolean, val steps: Boolean
+            val input: InputStream, val output: OutputMethod, val source: String, val target: Target, val debug: Boolean
         ) : Result()
     }
 
@@ -36,7 +37,6 @@ object OptionMain {
                     Result.Exit(0)
                 }
                 else -> {
-                    var a64 = false
                     val source = when {
                         hasOption("stdin") -> {
                             if (args.isNotEmpty())
@@ -58,12 +58,13 @@ object OptionMain {
                             else OptionErrorRecorder.unsupported("multiple input files")
                         }
                     }
-                    val input =
-                        if (hasOption("stdin")) System.`in`
-                        else FileInputStream(source)
+                    val input = (if (hasOption("stdin")) System.`in` else FileInputStream(source)).let { input ->
+                        if (hasOption("debug")) {
+                            FileOutputStream("debug/source.mx").use { it.write(input.readAllBytes()) }
+                            FileInputStream("debug/source.mx")
+                        } else input
+                    }
                     val target = when {
-                        hasOption("llvm") -> Target.LLVM
-                        hasOption("llvm64") -> Target.LLVM.also { a64 = true }
                         hasOption("semantic") -> Target.SEMANTIC
                         else -> Target.ALL
                     }
@@ -72,7 +73,7 @@ object OptionMain {
                         hasOption("output") -> OutputMethod.File(getOptionValue("output"))
                         else -> OutputMethod.File(source.replace(Regex("\\..*?$"), "") + "." + target.ext)
                     }
-                    Result.FromSource(input, output, source, target, a64, hasOption("info"), hasOption("steps"))
+                    Result.FromSource(input, output, source, target, hasOption("debug"))
                 }
             }
         }
@@ -99,11 +100,8 @@ object OptionMain {
             addOption(Option(null, "stdout", false, "Output the result to stdout"))
         })
         addOptionGroup(OptionGroup().apply {
-            addOption(Option(null, "llvm", false, "Generate LLVM Result Only"))
-            addOption(Option(null, "llvm64", false, "Generate LLVM IR for 64-bit Only"))
             addOption(Option(null, "semantic", false, "Run Semantic"))
         })
-        addOption(Option(null, "info", false, "Display more info when executing"))
-        addOption(Option(null, "steps", false, "Output all available LLVM versions during optimization"))
+        addOption(Option(null, "debug", false, "Output much intermediate result for debugging"))
     }
 }

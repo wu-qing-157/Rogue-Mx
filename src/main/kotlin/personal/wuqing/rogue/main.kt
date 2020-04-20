@@ -3,12 +3,14 @@ package personal.wuqing.rogue
 import personal.wuqing.rogue.ast.ASTBuilder
 import personal.wuqing.rogue.ast.ASTMain
 import personal.wuqing.rogue.io.OutputMethod
-import personal.wuqing.rogue.llvm.IRPrinter
-import personal.wuqing.rogue.llvm.IRTranslator
+import personal.wuqing.rogue.ir.IRPrinter
+import personal.wuqing.rogue.ir.translator.TopLevelTranslator
 import personal.wuqing.rogue.optimize.Mem2Reg
 import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
 import personal.wuqing.rogue.parser.ParserMain
+import personal.wuqing.rogue.riscv.RVPrinter
+import personal.wuqing.rogue.riscv.naive.NaiveTranslator
 import personal.wuqing.rogue.semantic.SemanticMain
 import personal.wuqing.rogue.utils.ANSI
 import personal.wuqing.rogue.utils.ASTErrorRecorder
@@ -25,15 +27,13 @@ import kotlin.system.exitProcess
 const val PROJECT_NAME = "Rogue-Mx"
 val USAGE = ANSI.bold("mxc <sourcefiles> [options]")
 const val VERSION = "0.9"
-var A64 = false; private set
-var INFO = false; private set
-private var STEPS = false
+var DEBUG = false; private set
 
 fun main(arguments: Array<String>) {
     when (val result = OptionMain(arguments)) {
         is OptionMain.Result.Exit -> exitProcess(result.exit)
         is OptionMain.Result.FromSource -> {
-            val (input, output, source, target) = result.apply { A64 = a64; INFO = info; STEPS = steps }
+            val (input, output, source, target) = result.apply { DEBUG = true }
             fromSource(input, output, source, target)
         }
     }
@@ -47,30 +47,31 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
         SemanticMain(root)
         ASTErrorRecorder.report()
         SemanticErrorRecorder.report()
-        LogRecorder("semantic passed successful")
+        LogRecorder("semantic passed successfully")
 
         if (target == Target.SEMANTIC) return
 
-        val llvm = IRTranslator(root, SemanticMain.getMain())
+        val ir = TopLevelTranslator(root, SemanticMain.getMain())
 
-        if (STEPS) FileWriter("steps/o0.ll").use {
-            it.write("// Current Step: Generate IR\n")
-            it.write(IRPrinter(llvm))
+        if (DEBUG) FileWriter("debug/IR0.rogue").use {
+            it.write("; Current Step: Generate IR\n")
+            it.write(IRPrinter(ir))
         }
 
-        Mem2Reg(llvm, "o1")
+        Mem2Reg(ir)
 
-        if (STEPS) FileWriter("steps/o1.ll").use {
-            it.write("// Current Step: SSA\n")
-            it.write(IRPrinter(llvm))
+        if (DEBUG) FileWriter("debug/IR1.rogue").use {
+            it.write("; Current Step: SSA\n")
+            it.write(IRPrinter(ir))
         }
 
-        if (target == Target.LLVM) {
-            output(IRPrinter(llvm))
-            return
+        val rv = NaiveTranslator(ir)
+
+        if (DEBUG) FileWriter("debug/naive.s").use {
+            it.write(RVPrinter(rv))
         }
 
-        TODO("after generating LLVM")
+        output(RVPrinter(rv))
     } catch (ast: ASTBuilder.Exception) {
         try {
             ParserErrorRecorder.report()
