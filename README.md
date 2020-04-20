@@ -107,6 +107,7 @@ This section keeps track of implemented optimizations
 + 2020.04.07 Fix escape character (again and again, even more poisonous)
 + 2020.04.11 Greatly change IR
 + 2020.04.20 Write a naive codegen for IR test
++ 2020.04.21 Fix naive codegen
 
 ## How to build the compiler
 

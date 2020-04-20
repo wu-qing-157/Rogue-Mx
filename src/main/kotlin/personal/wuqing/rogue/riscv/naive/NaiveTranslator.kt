@@ -30,8 +30,8 @@ object NaiveTranslator {
     private val localMap = mutableMapOf<IRItem.Local, RVAddress>()
     private val phiMap = mutableMapOf<IRStatement.Phi, RVAddress>()
 
-    private fun load(item: IRItem, reg: RVRegister) = when (item) {
-        is IRItem.Local -> RVInstruction.Load(reg, localMap[item]!!)
+    private fun RVFunction.load(item: IRItem, reg: RVRegister) = when (item) {
+        is IRItem.Local -> RVInstruction.Load(reg, localMap.computeIfAbsent(item) { nextStack() })
         is IRItem.Global -> error("load global directory")
         is IRItem.Const -> RVInstruction.LI(reg, item.value)
         is IRItem.Literal -> RVInstruction.LA(reg, literalMap[item]!!)

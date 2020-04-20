@@ -42,7 +42,16 @@ prepareLocalJudge() {
     echo "timelimit: 15" >> $config
 }
 
-prepareLocalJudge $1
-(cd "$judge" && python judge.py)
+if [ "$1" = "semantic" ]; then
+    prepareLocalJudge $1
+    (cd "$judge" && python judge.py)
+elif [ "$1" = "codegen" ]; then
+    prepareLocalJudge $1
+    (cd "$judge" && python judge.py)
+else
+    cp "$dataset/codegen/$1.mx" "$testtool/test.mx"
+    vim -O "$testtool/test.mx" "$testtool/test.in"
+    vim -O "$testtool/test.mx" "$testtool/test.ans"
+fi
 
 rm -f build.sh semantic.sh codegen.sh optimize.sh

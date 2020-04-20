@@ -2,7 +2,6 @@ package personal.wuqing.rogue.ir.translator
 
 import personal.wuqing.rogue.ast.ASTNode
 import personal.wuqing.rogue.grammar.MxFunction
-import personal.wuqing.rogue.grammar.MxType
 import personal.wuqing.rogue.grammar.MxVariable
 import personal.wuqing.rogue.ir.grammar.IRBlock
 import personal.wuqing.rogue.ir.grammar.IRFunction
@@ -43,7 +42,6 @@ object TopLevelTranslator {
     val local = mutableMapOf<MxVariable, IRItem>()
     val loopTarget = mutableMapOf<ASTNode.Statement.Loop, Pair<IRBlock, IRBlock>>()
     var terminating = true
-    var thisType: MxType? = null
     var thi: IRItem? = null
 
     val toProcess = LinkedList<IRFunction.Declared>()
@@ -72,7 +70,7 @@ object TopLevelTranslator {
                 }
             }
         for (statement in function.ast.body.statements) StatementTranslator(statement)
-        if (!terminating) statement(IRStatement.Terminate.Ret(null))
+        if (!terminating) statement(IRStatement.Terminate.Ret(IRItem.Const(0)))
         return blocks.toMutableList()
     }
 

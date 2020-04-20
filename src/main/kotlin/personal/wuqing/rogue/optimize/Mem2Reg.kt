@@ -5,6 +5,7 @@ import personal.wuqing.rogue.ir.grammar.IRFunction
 import personal.wuqing.rogue.ir.grammar.IRItem
 import personal.wuqing.rogue.ir.grammar.IRProgram
 import personal.wuqing.rogue.ir.grammar.IRStatement
+import personal.wuqing.rogue.riscv.RVInstruction
 import personal.wuqing.rogue.utils.DomTree
 import java.util.LinkedList
 
@@ -108,7 +109,8 @@ object Mem2Reg {
         n.phi.replaceAll { IRStatement.Phi(it.result, it.list.mapValues { (_, i) -> newName(i) }) }
         n.normal.replaceAll {
             when (it) {
-                is IRStatement.Normal.Load -> it
+                is IRStatement.Normal.Load ->
+                    IRStatement.Normal.Load(it.dest, src = newName(it.src))
                 is IRStatement.Normal.Store ->
                     IRStatement.Normal.Store(dest = newName(it.dest), src = newName(it.src))
                 is IRStatement.Normal.Alloca -> IRStatement.Normal.NOP

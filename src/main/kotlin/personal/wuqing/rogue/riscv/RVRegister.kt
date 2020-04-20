@@ -26,8 +26,8 @@ sealed class RVRegister {
     }
 
     companion object {
-        val arg = Array(7) { ARG(it) }
-        val saved = Array(11) { SAVED(it) }
-        val temp = Array(6) { TEMP(it) }
+        val arg = Array(8) { ARG(it) }
+        val saved = Array(12) { SAVED(it) }
+        val temp = Array(7) { TEMP(it) }
     }
 }
