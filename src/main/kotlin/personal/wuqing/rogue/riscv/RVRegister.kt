@@ -2,7 +2,7 @@ package personal.wuqing.rogue.riscv
 
 sealed class RVRegister {
     object ZERO : RVRegister() {
-        override fun toString() = "x0"
+        override fun toString() = "zero"
     }
 
     object SP : RVRegister() {
@@ -29,5 +29,23 @@ sealed class RVRegister {
         val arg = Array(8) { ARG(it) }
         val saved = Array(12) { SAVED(it) }
         val temp = Array(7) { TEMP(it) }
+    }
+
+    class Virtual : RVRegister() {
+        companion object {
+            private var count = 0
+        }
+
+        val name = "?${count++}"
+        override fun toString() = name
+    }
+
+    class Spilled(address: RVAddress) : RVRegister() {
+        companion object {
+            private var count = 0
+        }
+
+        val name = "!${count++}"
+        override fun toString() = name
     }
 }

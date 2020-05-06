@@ -10,7 +10,7 @@ import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
 import personal.wuqing.rogue.parser.ParserMain
 import personal.wuqing.rogue.riscv.RVPrinter
-import personal.wuqing.rogue.riscv.naive.NaiveTranslator
+import personal.wuqing.rogue.riscv.translator.RVTranslator
 import personal.wuqing.rogue.semantic.SemanticMain
 import personal.wuqing.rogue.utils.ANSI
 import personal.wuqing.rogue.utils.ASTErrorRecorder
@@ -47,7 +47,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
         SemanticMain(root)
         ASTErrorRecorder.report()
         SemanticErrorRecorder.report()
-        LogRecorder("semantic passed successfully")
+        if (DEBUG) LogRecorder("semantic passed successfully")
 
         if (target == Target.SEMANTIC) return
 
@@ -65,7 +65,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             it.write(IRPrinter(ir))
         }
 
-        val rv = NaiveTranslator(ir)
+        val rv = RVTranslator(ir)
 
         if (DEBUG) FileWriter("debug/naive.s").use {
             it.write(RVPrinter(rv))

@@ -25,6 +25,10 @@ sealed class RVInstruction {
         override fun toString() = "\tsw\t$reg, $global, $assist"
     }
 
+    class Move(val dest: RVRegister, val src: RVRegister) : RVInstruction() {
+        override fun toString() = "\tmv\t$dest, $src"
+    }
+
     class Calc(val op: RVCalcOp, val lhs: RVRegister, val rhs: RVRegister, val result: RVRegister) : RVInstruction() {
         override fun toString() = "\t${op.binary}\t$result, $lhs, $rhs"
     }
@@ -61,7 +65,11 @@ sealed class RVInstruction {
         override fun toString() = "\tcall\t$symbol"
     }
 
-    class Label(val name: String) : RVInstruction() {
-        override fun toString() = "$name:"
+    class SPGrow(val function: RVFunction) : RVInstruction() {
+        override fun toString() = "\taddi\t${RVRegister.SP}, ${RVRegister.SP}, -${function.size}"
+    }
+
+    class SPRecover(val function: RVFunction) : RVInstruction() {
+        override fun toString() = "\taddi\t${RVRegister.SP}, ${RVRegister.SP}, ${function.size}"
     }
 }

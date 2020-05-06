@@ -9,10 +9,12 @@
       <w>fgets</w>
       <w>getchar</w>
       <w>getelementptr</w>
+      <w>globl</w>
       <w>gradlew</w>
       <w>icmp</w>
       <w>idom</w>
       <w>inttoptr</w>
+      <w>liveness</w>
       <w>lshr</w>
       <w>mxcompiler</w>
       <w>printf</w>

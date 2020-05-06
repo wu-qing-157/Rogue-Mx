@@ -16,9 +16,10 @@ Description|Status
 ANTLR4|Completed
 AST|Completed
 Semantic|Completed, __pass__ given test suite
-LLVM IR|Almost completed, __pass custom tests__, __pending given tests__
+IR|Completed, __pass__ given test suite using naive codegen
+Codegen|Minor progress only, pending liveness analysis and register allocation
 Optimize|Much to do, refer to _Optimize_ section
-...|Not planned yet
+GC|I'm thinking peach, it will not be implemented unless I'm spare enough to plant some peaches
 
 ## Known Issues
 
@@ -31,27 +32,52 @@ They should be executed with _Z Shell_ in the project root folder.
 
 Single-case custom test may fail if `\ ` in output,
 no plan to fix this issue as it is rarely met.
-Using the debugging mode can avoid this issue.
 
 ### Semantic Test
 
-#### Given Test Suite
-
-run with `assigned.sh semantic all` or `assigned.sh semantic <package> <number>`
+`test-tool` no longer supports this test (sad)
 
 Status|Notes
 ---|---
 187 / 187|__All Passed__
 
+### IR Test
+
+`test-tool` will not support this test until codegen is implemented completely
+
+Status|Notes
+---|---
+Some TLE happened|That's because codegen is too naive
+
 ### Codegen Test
 
-pending test
+TODO: not completed, so what to test?
 
 ## Optimize
 
 This section keeps track of implemented optimizations
 
-### TODO
+### SSA
+
+`Mem2Reg` was originally implemented for LLVM IR,
+and started from the workaround `alloca`-`load`-`store` in LLVM IR format.
+Current IR form differs from LLVM IR only in the discard of type system,
+so it also starts from `alloca`-`load`-`store` format.
+
+SSA is performed for all and only for all local variables,
+thus `load`-`store` of anything like global variables, class members, etc.
+is not optimized in this step.
+
+Also, note that `alloca` is not supported in `RVTranslator`,
+and any other optimization is based on SSA form,
+so this step __must__ be executed.
+
+This implementation uses the algorithm from
+_Chapter 19_ of _Modern Compiler Implementation in C_.
+
+### Aggressive Dead Code Elimination
+
+TODO: next optimization to implement, but maybe after codegen :(
 
 ## Timeline
 
@@ -108,6 +134,7 @@ This section keeps track of implemented optimizations
 + 2020.04.11 Greatly change IR
 + 2020.04.20 Write a naive codegen for IR test
 + 2020.04.21 Fix naive codegen
++ 2020.05.06 Complete codegen with virtual registers (untested)
 
 ## How to build the compiler
 
@@ -121,7 +148,7 @@ gradlew.bat installDist
 ``` 
 The result will be installed in `build/install/Rogue-Mx`.
 
-_JDK 11_ are used for development. _JDK >= 1.8_ should be okay for build.
+_JDK 11_ is used for development. _JDK >= 1.8_ should be okay for build.
 
 There is also another version in submodule _submit_,
 which can be built offline with local resources in the judge docker.
@@ -181,10 +208,20 @@ so unnecessary to override `equals()` and `hashCode()`
 
 + maybe to `return` the `main` function in
 `operator fun invoke(ASTNode.Program)` in the future,
-as it is needed by llvm `Translator`
+as it is needed by `TopLevelTranslator`
 
 #### `ast.ASTNode` `ast.ASTType`
 
 + `ASTNode` cannot be separated due to the limitation of `sealed class`
 + `ASTType` is separated from `ASTNode`
 to prevent an extremely large source file
+
+#### `ir.translator.ExpressionTranslator`
+
++ an unnecessary `load` is added for every assignment,
+no plan to fix it, as it will be fixed naturally by dead code elimination
+
+#### `riscv.RVInstruction`
+
++ maybe to keep reference to `RVBlock` rather than only the name
+in `J` and `Branch` in the future

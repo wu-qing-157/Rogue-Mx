@@ -5,7 +5,6 @@ import personal.wuqing.rogue.ir.grammar.IRFunction
 import personal.wuqing.rogue.ir.grammar.IRItem
 import personal.wuqing.rogue.ir.grammar.IRProgram
 import personal.wuqing.rogue.ir.grammar.IRStatement
-import personal.wuqing.rogue.riscv.RVInstruction
 import personal.wuqing.rogue.utils.DomTree
 import java.util.LinkedList
 

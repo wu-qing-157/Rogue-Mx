@@ -23,7 +23,7 @@ sealed class IRItem {
 
     class Literal(val value: String) : IRItem() {
         val length = value.length
-        val name = "s${literalCount++}"
+        val name = "str${literalCount++}"
         override fun toString() = name
         val irDisplay = "\"${value.replace(Regex("[\\n\\r\\t\\e\\\\]")) {
             when (it.value) {

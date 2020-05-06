@@ -245,8 +245,8 @@ object ExpressionTranslator {
         if (operation == Operation.BAnd || operation == Operation.BOr) {
             val current = block
             val id = shortCount++
-            val second = IRBlock(".short.$id.second")
-            val result = IRBlock(".short.$id.end")
+            val second = IRBlock("short.$id.second")
+            val result = IRBlock("short.$id.end")
             statement(
                 if (operation == Operation.BAnd) IRStatement.Terminate.Branch(lr, second, result)
                 else IRStatement.Terminate.Branch(lr, result, second)
