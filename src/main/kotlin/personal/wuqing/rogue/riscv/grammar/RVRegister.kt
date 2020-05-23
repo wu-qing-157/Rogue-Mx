@@ -1,4 +1,4 @@
-package personal.wuqing.rogue.riscv
+package personal.wuqing.rogue.riscv.grammar
 
 sealed class RVRegister {
     object ZERO : RVRegister() {
@@ -29,6 +29,7 @@ sealed class RVRegister {
         val arg = Array(8) { ARG(it) }
         val saved = Array(12) { SAVED(it) }
         val temp = Array(7) { TEMP(it) }
+        val all = listOf<RVRegister>() + arg + saved + temp
     }
 
     class Virtual : RVRegister() {
@@ -40,12 +41,12 @@ sealed class RVRegister {
         override fun toString() = name
     }
 
-    class Spilled(address: RVAddress) : RVRegister() {
+    class Spilled(val address: RVAddress) : RVRegister() {
         companion object {
             private var count = 0
         }
 
-        val name = "!${count++}"
+        val name get() = "!$address"
         override fun toString() = name
     }
 }

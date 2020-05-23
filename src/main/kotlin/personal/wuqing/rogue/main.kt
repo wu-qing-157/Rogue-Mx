@@ -67,7 +67,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
 
         val rv = RVTranslator(ir)
 
-        if (DEBUG) FileWriter("debug/naive.s").use {
+        if (DEBUG) FileWriter("debug/result.s").use {
             it.write(RVPrinter(rv))
         }
 

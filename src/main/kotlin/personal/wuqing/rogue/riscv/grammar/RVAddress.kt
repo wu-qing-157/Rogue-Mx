@@ -1,4 +1,4 @@
-package personal.wuqing.rogue.riscv
+package personal.wuqing.rogue.riscv.grammar
 
 open class RVAddress(val base: RVRegister, open val delta: Int = 0) {
     override fun toString() = "$delta($base)"

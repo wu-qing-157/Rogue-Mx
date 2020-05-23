@@ -1,5 +1,7 @@
 package personal.wuqing.rogue.riscv
 
+import personal.wuqing.rogue.riscv.grammar.RVProgram
+
 object RVPrinter {
     operator fun invoke(program: RVProgram): String {
         val builder = StringBuilder()

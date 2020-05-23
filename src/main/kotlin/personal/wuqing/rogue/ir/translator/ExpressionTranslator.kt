@@ -258,8 +258,7 @@ object ExpressionTranslator {
             val ret = next().also {
                 statement(
                     IRStatement.Phi(
-                        it,
-                        listOf(current to IRItem.Const(if (operation == Operation.BAnd) 0 else 1), second to rr).toMap()
+                        it, mapOf(current to IRItem.Const(if (operation == Operation.BAnd) 0 else 1), second to rr)
                     )
                 )
             }

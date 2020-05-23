@@ -1,4 +1,4 @@
-package personal.wuqing.rogue.riscv
+package personal.wuqing.rogue.riscv.grammar
 
 enum class RVCalcOp(val binary: String, val imm: String?) {
     PLUS("add", "addi"), MINUS("sub", null), TIMES("mul", null), DIV("div", null), REM("rem", null),

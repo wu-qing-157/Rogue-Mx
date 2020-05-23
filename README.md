@@ -17,7 +17,7 @@ ANTLR4|Completed
 AST|Completed
 Semantic|Completed, __pass__ given test suite
 IR|Completed, __pass__ given test suite using naive codegen
-Codegen|Minor progress only, pending liveness analysis and register allocation
+Codegen|Pending test
 Optimize|Much to do, refer to _Optimize_ section
 GC|I'm thinking peach, it will not be implemented unless I'm spare enough to plant some peaches
 
@@ -135,6 +135,7 @@ TODO: next optimization to implement, but maybe after codegen :(
 + 2020.04.20 Write a naive codegen for IR test
 + 2020.04.21 Fix naive codegen
 + 2020.05.06 Complete codegen with virtual registers (untested)
++ 2020.05.24 __Finish Register Allocation__ (passing simple tests)
 
 ## How to build the compiler
 

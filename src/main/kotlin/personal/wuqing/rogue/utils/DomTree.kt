@@ -92,7 +92,7 @@ class DomTree<T : DirectionalNodeWithPrev<T>> private constructor(val root: T, b
 
         init {
             dominators()
-            child = (vertex zip vertex.map { mutableListOf<T>() }).toMap()
+            child = vertex.associateWith { mutableListOf<T>() }
             idom.forEach { (t, u) -> child[u] ?: error("cannot find vertex dominator tree") += t }
         }
     }

@@ -17,6 +17,8 @@
       <w>liveness</w>
       <w>lshr</w>
       <w>mxcompiler</w>
+      <w>prec</w>
+      <w>precolored</w>
       <w>printf</w>
       <w>putchar</w>
       <w>risc</w>
@@ -41,6 +43,7 @@
       <w>strlen</w>
       <w>subi</w>
       <w>subprocess</w>
+      <w>succ</w>
       <w>ushr</w>
       <w>wuqing</w>
       <w>xori</w>

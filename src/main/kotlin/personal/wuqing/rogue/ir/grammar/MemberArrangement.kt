@@ -13,6 +13,6 @@ class MemberArrangement private constructor(
     private class Builder(clazz: MxType.Class) {
         val variables = clazz.variables.values.sortedByDescending { it.type.size }
         val size = (variables.sumBy { it.type.size } + 7) / 8 * 8
-        val index = variables.zip(Array(variables.size) { it }).toMap()
+        val index = variables.withIndex().associate { (index, value) -> value to index }
     }
 }
