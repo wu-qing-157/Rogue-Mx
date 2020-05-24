@@ -12,6 +12,7 @@
 /test-tool/cases/*.bin
 /test-tool/cases/*.out
 /test-tool/cases/zky.*
+/test-tool/optim/
 /test-tool/test.*
 /test-tool/builtin.s
 

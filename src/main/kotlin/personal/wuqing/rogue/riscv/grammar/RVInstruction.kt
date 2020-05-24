@@ -10,7 +10,12 @@ sealed class RVInstruction {
     abstract fun transform(map: Map<out RVRegister, RVRegister>): RVInstruction
 
     class LI(val reg: RVRegister, val imm: Int) : RVInstruction() {
-        override fun toString() = "\tli\t$reg, $imm"
+        override fun toString() = when {
+            imm in -2048..2047 -> "\taddi\t$reg, ${RVRegister.ZERO}, $imm"
+            imm % 4096 == 0 -> "\tlui\t$reg, ${imm / 4096}"
+            else -> "\tli\t$reg, $imm"
+        }
+
         override val use = listOf<RVRegister>()
         override val def = listOf(reg)
         override fun transform(map: Map<out RVRegister, RVRegister>) = LI(map[reg] ?: reg, imm)

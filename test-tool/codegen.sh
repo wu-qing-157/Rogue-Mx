@@ -20,15 +20,7 @@ typeset testcase="$testtool/test"
 prepareLocalJudge() {
     echo "sh gradlew installDist" > build.sh
     typeset stage=$1
-    if [ "$1" = "semantic" ]; then
-        typeset run=semantic
-        echo "build/install/Rogue-Mx/bin/mxc --stdin --semantic" > semantic.sh
-    elif [ "$1" = "codegen" ]; then
-        typeset run=codegen
-        echo "mxc --stdin --stdout" > codegen.sh
-    else
-        exit 1
-    fi
+    echo "mxc --stdin --stdout" > codegen.sh
     echo "buildlimit: 120" > $config
     echo "instlimit: -1" >> $config
     echo "memlimit: 512" >> $config
@@ -38,20 +30,11 @@ prepareLocalJudge() {
     echo "  simulator: $testtool" >> $config
     echo "  simulator-executable: $simulator" >> $config
     echo "  built-in: $built" >> $config
-    echo "stage: $run" >> $config
+    echo "stage: codegen" >> $config
     echo "timelimit: 15" >> $config
 }
 
-if [ "$1" = "semantic" ]; then
-    prepareLocalJudge $1
-    (cd "$judge" && python judge.py)
-elif [ "$1" = "codegen" ]; then
-    prepareLocalJudge $1
-    (cd "$judge" && python judge.py)
-else
-    cp "$dataset/codegen/$1.mx" "$testtool/test.mx"
-    vim -O "$testtool/test.mx" "$testtool/test.in"
-    vim -O "$testtool/test.mx" "$testtool/test.ans"
-fi
+prepareLocalJudge $1
+(cd "$judge" && python judge.py)
 
 rm -f build.sh semantic.sh codegen.sh optimize.sh

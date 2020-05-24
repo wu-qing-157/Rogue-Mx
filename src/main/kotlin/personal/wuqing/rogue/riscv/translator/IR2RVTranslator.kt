@@ -145,12 +145,15 @@ object IR2RVTranslator {
                         else -> error("something cannot be loaded found")
                     }
                     is IRStatement.Normal.Store -> ret.instructions += when (it.dest) {
-                        is IRItem.Local -> addiDef[it.dest]?.let { addi ->
-                            RVInstruction.Save(
-                                asRegister(it.src),
-                                RVAddress(localMap.virtual(addi.op1 as IRItem.Local), (addi.op2 as IRItem.Const).value)
-                            )
-                        } ?: RVInstruction.Save(asRegister(it.src), RVAddress(localMap.virtual(it.dest)))
+                        is IRItem.Local -> addiDef[it.dest]
+                            ?.takeIf { addi -> (addi.op2 as IRItem.Const).value in -2048..2047 }
+                            ?.let { addi ->
+                                RVInstruction.Save(
+                                    asRegister(it.src), RVAddress(
+                                        localMap.virtual(addi.op1 as IRItem.Local), (addi.op2 as IRItem.Const).value
+                                    )
+                                )
+                            } ?: RVInstruction.Save(asRegister(it.src), RVAddress(localMap.virtual(it.dest)))
                         is IRItem.Global -> RVInstruction.SG(
                             asRegister(it.src), RVRegister.Virtual(), globalMap[it.dest] ?: error("no global def")
                         )
@@ -158,9 +161,11 @@ object IR2RVTranslator {
                     }
                     is IRStatement.Normal.Alloca -> error("codegen without SSA")
                     is IRStatement.Normal.ICalc -> if (it.result !in addiDef) ret.instructions +=
-                        if (operator(it.operator).imm != null && it.op2 is IRItem.Const) RVInstruction.CalcI(
-                            operator(it.operator), asRegister(it.op1), it.op2.value, localMap.virtual(it.result)
-                        ) else RVInstruction.Calc(
+                        if (operator(it.operator).imm != null && it.op2 is IRItem.Const && it.op2.value in -2048..2047)
+                            RVInstruction.CalcI(
+                                operator(it.operator), asRegister(it.op1), it.op2.value, localMap.virtual(it.result)
+                            )
+                        else RVInstruction.Calc(
                             operator(it.operator), asRegister(it.op1), asRegister(it.op2), localMap.virtual(it.result)
                         )
                     is IRStatement.Normal.ICmp -> if (it.result !in boolDef) {
