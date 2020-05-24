@@ -4,7 +4,9 @@ import personal.wuqing.rogue.ast.ASTBuilder
 import personal.wuqing.rogue.ast.ASTMain
 import personal.wuqing.rogue.io.OutputMethod
 import personal.wuqing.rogue.ir.IRPrinter
+import personal.wuqing.rogue.ir.grammar.IRProgram
 import personal.wuqing.rogue.ir.translator.TopLevelTranslator
+import personal.wuqing.rogue.optimize.DeadCodeElimination
 import personal.wuqing.rogue.optimize.Mem2Reg
 import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
@@ -39,6 +41,14 @@ fun main(arguments: Array<String>) {
     }
 }
 
+var debugIRCount = 0
+fun debugIR(ir: IRProgram, description: String) {
+    if (DEBUG) FileWriter("debug/IR${debugIRCount++}.rogue").use {
+        it.write("; Current Step: $description\n")
+        it.write(IRPrinter(ir))
+    }
+}
+
 fun fromSource(input: InputStream, output: OutputMethod, source: String, target: Target) {
     try {
         val parser = ParserMain(input, source)
@@ -52,18 +62,13 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
         if (target == Target.SEMANTIC) return
 
         val ir = TopLevelTranslator(root, SemanticMain.getMain())
-
-        if (DEBUG) FileWriter("debug/IR0.rogue").use {
-            it.write("; Current Step: Generate IR\n")
-            it.write(IRPrinter(ir))
-        }
+        debugIR(ir, "IR Gen")
 
         Mem2Reg(ir)
+        debugIR(ir, "SSA")
 
-        if (DEBUG) FileWriter("debug/IR1.rogue").use {
-            it.write("; Current Step: SSA\n")
-            it.write(IRPrinter(ir))
-        }
+        DeadCodeElimination(ir)
+        debugIR(ir, "Dead Code Elimination")
 
         val rv = RVTranslator(ir)
 

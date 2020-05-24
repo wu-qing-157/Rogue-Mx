@@ -17,7 +17,7 @@ ANTLR4|Completed
 AST|Completed
 Semantic|Completed, __pass__ given test suite
 IR|Completed, __pass__ given test suite using naive codegen
-Codegen|Pending test
+Codegen|Completed, __pass__ given test suite
 Optimize|Much to do, refer to _Optimize_ section
 GC|I'm thinking peach, it will not be implemented unless I'm spare enough to plant some peaches
 
@@ -77,7 +77,7 @@ _Chapter 19_ of _Modern Compiler Implementation in C_.
 
 ### Aggressive Dead Code Elimination
 
-TODO: next optimization to implement, but maybe after codegen :(
+Current implementation never eliminates control statements.
 
 ## Timeline
 
@@ -139,6 +139,7 @@ TODO: next optimization to implement, but maybe after codegen :(
 + 2020.05.24 __Codegen (should) pass the assigned test suite__ φ(゜▽゜*)♪
 + 2020.05.24 Using MutableSet in register allocation rather than MutableList
 + 2020.05.24 Fix an issue about immediate
++ 2020.05.24 __Add Dead Code Elimination__
 
 ## How to build the compiler
 

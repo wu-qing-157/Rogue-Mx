@@ -4,6 +4,7 @@ import personal.wuqing.rogue.riscv.grammar.RVFunction
 import personal.wuqing.rogue.riscv.grammar.RVInstruction
 import personal.wuqing.rogue.riscv.grammar.RVRegister
 import personal.wuqing.rogue.utils.BidirectionalEdge
+import java.util.TreeSet
 
 object RegisterAllocation {
     private val k = RVRegister.all.size
@@ -214,7 +215,7 @@ object RegisterAllocation {
     }
 
     private fun spill() {
-        val m = spillQueue.first()
+        val m = spillQueue.maxBy { it.degree } ?: error("queue is empty")
         spillQueue -= m
         simplifyQueue += m
         freezeMoves(m)
