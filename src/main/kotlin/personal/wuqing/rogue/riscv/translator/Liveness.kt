@@ -17,12 +17,14 @@ class Liveness private constructor(builder: Builder) {
         for ((block, out) in builder.liveOut) {
             val live = out.toMutableSet()
             block.instructions.asReversed().forEach { inst ->
+                if (inst is RVInstruction.Move) {
+                    live -= inst.use
+                    coalesce += inst
+                }
+                live += inst.def
+                for (d in inst.def) for (l in live) conflict += RegisterEdge(d, l)
                 live -= inst.def
-                if (inst is RVInstruction.Move) live -= inst.use
-                for (a in live) for (b in inst.def) conflict += RegisterEdge(a, b)
-                if (inst is RVInstruction.Move) live += inst.use
                 live += inst.use
-                if (inst is RVInstruction.Move) coalesce += inst
             }
         }
         conflict.removeIf { RVRegister.ZERO in it || RVRegister.SP in it }

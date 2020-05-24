@@ -16,7 +16,7 @@ object RegisterAllocation {
         fun adjacent() = adjacent - select - coalescedNode
         var degree = 0
         fun decDegree() {
-            if (degree-- == k) {
+            if (degree-- == k && !precolored) {
                 enableMoves(adjacent() + this)
                 spillQueue -= this
                 if (moveRelated()) freezeQueue += this
@@ -78,11 +78,13 @@ object RegisterAllocation {
     }
 
     private fun addEdge(u: Node, v: Node) {
-        conflict += Edge(u, v)
-        u.adjacent += v
-        u.degree++
-        v.adjacent += u
-        v.degree++
+        if (Edge(u, v) !in conflict) {
+            conflict += Edge(u, v)
+            u.adjacent += v
+            u.degree++
+            v.adjacent += u
+            v.degree++
+        }
     }
 
     private fun build(func: RVFunction) {

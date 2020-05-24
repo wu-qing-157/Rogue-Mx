@@ -124,10 +124,10 @@ sealed class RVInstruction {
             Branch(op, map[lhs] ?: lhs, map[rhs] ?: rhs, dest)
     }
 
-    class Call(val symbol: String) : RVInstruction() {
+    class Call(val symbol: String, val cnt: Int) : RVInstruction() {
         override fun toString() = "\tcall\t$symbol"
-        override val use = listOf<RVRegister>() + arg + temp
-        override val def = listOf<RVRegister>() + RVRegister.RA
+        override val use = listOf<RVRegister>() + arg.toList().subList(0, cnt)
+        override val def = listOf<RVRegister>() + arg + temp + RVRegister.RA
         override fun transform(map: Map<out RVRegister, RVRegister>) = this
     }
 

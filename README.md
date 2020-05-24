@@ -136,6 +136,7 @@ TODO: next optimization to implement, but maybe after codegen :(
 + 2020.04.21 Fix naive codegen
 + 2020.05.06 Complete codegen with virtual registers (untested)
 + 2020.05.24 __Finish Register Allocation__ (passing simple tests)
++ 2020.05.24 __Codegen (should) pass the assigned test suite__ φ(゜▽゜*)♪
 
 ## How to build the compiler
 

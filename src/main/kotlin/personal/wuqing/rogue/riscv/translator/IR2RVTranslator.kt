@@ -19,6 +19,7 @@ import personal.wuqing.rogue.riscv.grammar.RVProgram
 import personal.wuqing.rogue.riscv.grammar.RVRegister
 import personal.wuqing.rogue.riscv.grammar.RVRegister.Companion.arg
 import personal.wuqing.rogue.riscv.grammar.RVRegister.Companion.saved
+import kotlin.math.min
 
 object IR2RVTranslator {
     operator fun invoke(program: IRProgram) = RVProgram(
@@ -196,7 +197,7 @@ object IR2RVTranslator {
                             if (index < 8) ret.instructions += RVInstruction.Move(arg[index], asRegister(value))
                             else ret.instructions += RVInstruction.Save(asRegister(value), getPass(index))
                         }
-                        ret.instructions += RVInstruction.Call(it.function.name)
+                        ret.instructions += RVInstruction.Call(it.function.name, min(it.args.size, 8))
                         it.result?.let { result ->
                             ret.instructions += RVInstruction.Move(localMap.virtual(result), arg[0])
                         }
