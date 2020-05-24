@@ -42,10 +42,6 @@ sealed class RVRegister {
     }
 
     class Spilled(val address: RVAddress) : RVRegister() {
-        companion object {
-            private var count = 0
-        }
-
         val name get() = "!$address"
         override fun toString() = name
     }

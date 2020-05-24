@@ -137,6 +137,7 @@ TODO: next optimization to implement, but maybe after codegen :(
 + 2020.05.06 Complete codegen with virtual registers (untested)
 + 2020.05.24 __Finish Register Allocation__ (passing simple tests)
 + 2020.05.24 __Codegen (should) pass the assigned test suite__ φ(゜▽゜*)♪
++ 2020.05.24 Using MutableSet in register allocation rather than MutableList
 
 ## How to build the compiler
 

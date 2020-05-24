@@ -13,7 +13,6 @@ import personal.wuqing.rogue.io.OutputMethod
 import personal.wuqing.rogue.utils.OptionErrorRecorder
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.FileWriter
 import java.io.IOException
 import java.io.InputStream
 

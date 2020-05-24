@@ -7,7 +7,7 @@ import personal.wuqing.rogue.riscv.grammar.RVProgram
 import java.io.FileWriter
 
 object RVTranslator {
-    var outputCount = 0
+    private var outputCount = 0
 
     private fun debug(rv: RVProgram, description: String) {
         if (DEBUG) FileWriter("debug/ASM${outputCount++}.s").use {

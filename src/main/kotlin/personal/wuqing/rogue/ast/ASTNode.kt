@@ -27,7 +27,7 @@ sealed class ASTNode {
         ) : Declaration() {
             override val summary get() = "$name (Function)"
             open val returnType by lazy(LazyThreadSafetyMode.NONE) { result.type }
-            lateinit var actual: Function_ private set
+            private lateinit var actual: Function_
             fun init(function: Function_) {
                 actual = function
             }

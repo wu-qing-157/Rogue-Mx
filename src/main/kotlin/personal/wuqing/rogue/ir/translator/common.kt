@@ -1,7 +1,6 @@
 package personal.wuqing.rogue.ir.translator
 
 import personal.wuqing.rogue.ir.grammar.IRBlock
-import personal.wuqing.rogue.ir.grammar.IRItem
 import personal.wuqing.rogue.ir.grammar.IRStatement
 
 fun statement(statement: IRStatement.Phi) = TopLevelTranslator.statement(statement)

@@ -3,13 +3,10 @@ package personal.wuqing.rogue.riscv.translator
 import personal.wuqing.rogue.riscv.grammar.RVFunction
 import personal.wuqing.rogue.riscv.grammar.RVInstruction
 import personal.wuqing.rogue.riscv.grammar.RVRegister
-import personal.wuqing.rogue.riscv.grammar.RVRegister.Companion.arg
-import personal.wuqing.rogue.riscv.grammar.RVRegister.Companion.saved
-import personal.wuqing.rogue.riscv.grammar.RVRegister.Companion.temp
 import personal.wuqing.rogue.utils.BidirectionalEdge
 
 object RegisterAllocation {
-    private val k = arg.size + saved.size + temp.size + 1
+    private val k = RVRegister.all.size
 
     private class Node(val register: RVRegister, val precolored: Boolean) {
         val adjacent = mutableSetOf<Node>()
@@ -42,22 +39,22 @@ object RegisterAllocation {
         if (f == null) n else alias(f).also { alias[n] = it }
     }
 
-    private val conflict = mutableListOf<Edge>()
+    private val conflict = mutableSetOf<Edge>()
 
-    private val initial = mutableListOf<Node>()
-    private val spilled = mutableListOf<Node>()
-    private val coalescedNode = mutableListOf<Node>()
+    private val initial = mutableSetOf<Node>()
+    private val spilled = mutableSetOf<Node>()
+    private val coalescedNode = mutableSetOf<Node>()
     private val select = mutableSetOf<Node>()
 
-    private val simplifyQueue = mutableListOf<Node>()
-    private val freezeQueue = mutableListOf<Node>()
-    private val spillQueue = mutableListOf<Node>()
+    private val simplifyQueue = mutableSetOf<Node>()
+    private val freezeQueue = mutableSetOf<Node>()
+    private val spillQueue = mutableSetOf<Node>()
 
-    private val moveQueue = mutableListOf<RVInstruction.Move>()
-    private val coalesced = mutableListOf<RVInstruction.Move>()
-    private val constrained = mutableListOf<RVInstruction.Move>()
-    private val frozen = mutableListOf<RVInstruction.Move>()
-    private val active = mutableListOf<RVInstruction.Move>()
+    private val moveQueue = mutableSetOf<RVInstruction.Move>()
+    private val coalesced = mutableSetOf<RVInstruction.Move>()
+    private val constrained = mutableSetOf<RVInstruction.Move>()
+    private val frozen = mutableSetOf<RVInstruction.Move>()
+    private val active = mutableSetOf<RVInstruction.Move>()
 
     private fun clear() {
         regMap.clear()
@@ -225,12 +222,7 @@ object RegisterAllocation {
 
     private fun assignColors() {
         for (n in select.reversed()) {
-            val ok = mutableSetOf<RVRegister>().apply {
-                addAll(arg)
-                addAll(temp)
-                addAll(saved)
-                add(RVRegister.RA)
-            }
+            val ok = RVRegister.all.toMutableList()
             for (w in n.adjacent) alias(w).let { if (it.colored) ok -= it.color }
             if (ok.isEmpty()) spilled += n
             else n.color = ok.first()

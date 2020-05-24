@@ -71,6 +71,7 @@ object SemanticMain {
                         }
                         is ASTNode.Declaration.Variable ->
                             clazz.actual[it.name] = MxVariable(it.type.type, it.name, it)
+                        else -> Unit
                     }
                 } catch (e: MxType.Class.DuplicatedException) {
                     SemanticErrorRecorder.error(it.location, e.message!!)
@@ -187,6 +188,7 @@ object SemanticMain {
                                 "but \"${SymbolTable.returnType}\" expected"
                     )
             }
+            else -> Unit
         }
     }
 
