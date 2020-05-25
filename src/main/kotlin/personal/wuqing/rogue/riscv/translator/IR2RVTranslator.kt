@@ -210,10 +210,6 @@ object IR2RVTranslator {
                     IRStatement.Normal.NOP -> Unit
                 }
             }
-            for (next in block.next) for (phi in next.phi)
-                ret.instructions += RVInstruction.Move(
-                    phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
-                )
             when (val it = block.terminate) {
                 is IRStatement.Terminate.Ret -> {
                     it.item?.let { ret.instructions += RVInstruction.Move(arg[0], asRegister(it)) }
@@ -225,15 +221,24 @@ object IR2RVTranslator {
                 is IRStatement.Terminate.Branch -> {
                     val then = blockMap[it.then] ?: error("cannot find block")
                     val els = blockMap[it.els] ?: error("cannot find block")
+                    for (phi in it.then.phi) ret.instructions += RVInstruction.Move(
+                        phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                    )
                     ret.instructions += boolDef[it.cond]?.let { bool ->
                         RVInstruction.Branch(operator(bool.operator), asRegister(bool.op1), asRegister(bool.op2), then)
                     } ?: RVInstruction.Branch(RVCmpOp.NE, asRegister(it.cond), RVRegister.ZERO, then)
+                    for (phi in it.els.phi) ret.instructions += RVInstruction.Move(
+                        phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                    )
                     ret.instructions += RVInstruction.J(els)
                     ret.next += listOf(then, els)
                     then.prev += ret
                     els.prev += ret
                 }
                 is IRStatement.Terminate.Jump -> {
+                    for (phi in it.dest.phi) ret.instructions += RVInstruction.Move(
+                        phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                    )
                     val dest = blockMap[it.dest] ?: error("cannot find block")
                     ret.instructions += RVInstruction.J(dest)
                     ret.next += dest

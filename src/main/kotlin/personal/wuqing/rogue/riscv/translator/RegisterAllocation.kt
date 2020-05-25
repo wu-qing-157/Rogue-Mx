@@ -226,7 +226,7 @@ object RegisterAllocation {
             val ok = RVRegister.all.toMutableList()
             for (w in n.adjacent) alias(w).let { if (it.colored) ok -= it.color }
             if (ok.isEmpty()) spilled += n
-            else n.color = ok.first()
+            else n.color = ok.last()
         }
         for (n in coalescedNode) n.color = alias(n).color
     }

@@ -26,6 +26,9 @@ object RVTranslator {
         rv.function.forEach { RegisterAllocation(it) }
         debug(rv, "Register Allocation")
 
+        FinalFix(rv)
+        debug(rv, "Final Fix")
+
         return rv
     }
 }

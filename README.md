@@ -140,6 +140,7 @@ Current implementation never eliminates control statements.
 + 2020.05.24 Using MutableSet in register allocation rather than MutableList
 + 2020.05.24 Fix an issue about immediate
 + 2020.05.24 __Add Dead Code Elimination__
++ 2020.05.24 Add final optimizations on assembly
 
 ## How to build the compiler
 

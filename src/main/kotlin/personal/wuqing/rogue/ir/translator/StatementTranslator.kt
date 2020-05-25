@@ -56,14 +56,14 @@ object StatementTranslator {
         val end = IRBlock("if.$id.end")
         val condition = ExpressionTranslator(ast.condition).value
         statement(IRStatement.Terminate.Branch(condition, then, if (ast.els == null) end else els))
-        enterNewBlock(then)
-        this(ast.then)
-        statement(IRStatement.Terminate.Jump(end))
         if (ast.els != null) {
             enterNewBlock(els)
             this(ast.els)
             statement(IRStatement.Terminate.Jump(end))
         }
+        enterNewBlock(then)
+        this(ast.then)
+        statement(IRStatement.Terminate.Jump(end))
         enterNewBlock(end)
     }
 

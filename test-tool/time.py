@@ -28,4 +28,6 @@ time = int(time)
 k = time / std[sys.argv[1]]
 print(str(k).ljust(20), end='')
 score = 10 - k * 6
-print(score, end='')
+print(str(score).ljust(25), end='')
+with open('test.score', 'a') as f:
+    f.write('{}\n'.format(min(max(score, 0), 5)))
