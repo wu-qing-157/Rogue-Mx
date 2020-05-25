@@ -89,7 +89,7 @@ object ConstantPropagation {
                             }
                             IRFunction.Builtin.StringSubstring -> {
                                 constant[st.result!!] =
-                                    IRItem.Literal(st.args[0].literal.substring(st.args[1].value..st.args[2].value))
+                                    IRItem.Literal(st.args[0].literal.substring(st.args[1].value, st.args[2].value))
                                 queue += st.result!!
                             }
                             IRFunction.Builtin.StringConcatenate -> {

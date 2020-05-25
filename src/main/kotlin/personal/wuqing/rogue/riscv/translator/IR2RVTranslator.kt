@@ -165,9 +165,11 @@ object IR2RVTranslator {
                     is IRStatement.Normal.Alloca -> error("codegen without SSA")
                     is IRStatement.Normal.ICalc -> if (it.result !in addiDef) ret.instructions +=
                         if (operator(it.operator).imm != null && it.op2 is IRItem.Const && it.op2.value in -2048..2047)
-                            if (it.op2.value != 0) RVInstruction.CalcI(
+                            if (it.operator == IRCalcOp.ADD && it.op2.value == 0)
+                                RVInstruction.Move(localMap.virtual(it.result), asRegister(it.op1))
+                            else RVInstruction.CalcI(
                                 operator(it.operator), asRegister(it.op1), it.op2.value, localMap.virtual(it.result)
-                            ) else RVInstruction.Move(asRegister(it.op1), localMap.virtual(it.result))
+                            )
                         else RVInstruction.Calc(
                             operator(it.operator), asRegister(it.op1), asRegister(it.op2), localMap.virtual(it.result)
                         )

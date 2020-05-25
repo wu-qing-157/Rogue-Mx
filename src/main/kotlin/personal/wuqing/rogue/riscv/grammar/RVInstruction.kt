@@ -12,7 +12,7 @@ sealed class RVInstruction {
     class LI(val reg: RVRegister, val imm: Int) : RVInstruction() {
         override fun toString() = when {
             imm in -2048..2047 -> "\taddi\t$reg, ${RVRegister.ZERO}, $imm"
-            imm % 4096 == 0 -> "\tlui\t$reg, ${imm / 4096}"
+            imm % 4096 == 0 -> "\tlui\t$reg, ${if (imm < 0) imm / 4096 + 1048576 else imm / 4096}"
             else -> "\tli\t$reg, $imm"
         }
 
