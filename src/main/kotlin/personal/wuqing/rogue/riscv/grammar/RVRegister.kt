@@ -29,7 +29,7 @@ sealed class RVRegister {
         val arg = Array(8) { ARG(it) }
         val saved = Array(12) { SAVED(it) }
         val temp = Array(7) { TEMP(it) }
-        val all = listOf<RVRegister>() + arg + saved + temp + RA
+        val all = listOf<RVRegister>() + RA + arg + saved + temp
     }
 
     class Virtual : RVRegister() {
