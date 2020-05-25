@@ -61,12 +61,12 @@ object DeadCodeElimination {
             }
             live += block.terminate
         }
-        val used = live.map { it.using }.flatten().toMutableSet()
+        val used = live.map { it.use }.flatten().toMutableSet()
         val useQueue = LinkedList(used)
         while (useQueue.isNotEmpty()) useQueue.poll()?.let { def[it] }?.let {
             live += it
-            useQueue += it.using - used
-            used += it.using
+            useQueue += it.use - used
+            used += it.use
         }
         for (block in function.body) {
             block.phi.removeAll { it !in live }

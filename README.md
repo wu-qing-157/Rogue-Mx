@@ -79,6 +79,19 @@ _Chapter 19_ of _Modern Compiler Implementation in C_.
 
 Current implementation never eliminates control statements.
 
+### Function Inline
+
+Force small function to be inline.
+
+_Small_ means that the number of instruction the result function contains
+is no more than a specified figure, roughly several thousand.
+
+Non-recursive calls are processed by their instruction number
+from smaller to bigger, before recursive ones.
+
+Recursive calls are processed in random order,
+which may be optimized in the future.
+
 ## Timeline
 
 + 2020.01.14 __Add a lexer & parser full of bugs__
@@ -140,7 +153,8 @@ Current implementation never eliminates control statements.
 + 2020.05.24 Using MutableSet in register allocation rather than MutableList
 + 2020.05.24 Fix an issue about immediate
 + 2020.05.24 __Add Dead Code Elimination__
-+ 2020.05.24 Add final optimizations on assembly
++ 2020.05.25 Add final optimizations on assembly
++ 2020.05.25 __Add Function Inline__
 
 ## How to build the compiler
 

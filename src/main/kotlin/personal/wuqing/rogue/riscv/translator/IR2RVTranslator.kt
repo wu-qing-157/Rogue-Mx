@@ -55,18 +55,18 @@ object IR2RVTranslator {
             }
         }
         for (block in function.body) {
-            for (phi in block.phi) phi.using.forEach {
+            for (phi in block.phi) phi.use.forEach {
                 if (it in boolDef) boolDef.remove(it)
                 if (it in addiDef) addiDef.remove(it)
             }
-            for (normal in block.normal) normal.using.forEach {
+            for (normal in block.normal) normal.use.forEach {
                 if (it in boolDef) boolDef.remove(it)
                 if (normal !is IRStatement.Normal.Load
                     && (normal !is IRStatement.Normal.Store || it != normal.dest)
                     && it in addiDef
                 ) addiDef.remove(it)
             }
-            block.terminate.using.forEach {
+            block.terminate.use.forEach {
                 if (block.terminate !is IRStatement.Terminate.Branch && it in boolDef) boolDef.remove(it)
                 if (it in addiDef) addiDef.remove(it)
             }

@@ -70,7 +70,7 @@ object TopLevelTranslator {
                 }
             }
         for (statement in function.ast.body.statements) StatementTranslator(statement)
-        if (!terminating) statement(IRStatement.Terminate.Ret(IRItem.Const(0)))
+        if (!terminating) statement(IRStatement.Terminate.Ret(IRItem.Const(0).takeIf { function.name == "main" }))
         return blocks.toMutableList()
     }
 
@@ -83,7 +83,8 @@ object TopLevelTranslator {
         return IRProgram(
             literal = LiteralMap.all().toMutableSet(),
             global = GlobalMap.all().toMutableSet(),
-            function = FunctionMap.all().toMutableSet()
+            function = FunctionMap.all().toMutableSet(),
+            main = FunctionMap[main] as IRFunction.Declared
         )
     }
 }

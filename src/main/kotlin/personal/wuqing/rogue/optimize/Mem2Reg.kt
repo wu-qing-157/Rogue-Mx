@@ -139,6 +139,7 @@ object Mem2Reg {
 
     private operator fun invoke(function: IRFunction.Declared) {
         clear()
+        function.updatePrev()
         val tree = DomTree(function.body.first())
         val blocks = tree.child.keys
         function.body.removeIf { it !in blocks }

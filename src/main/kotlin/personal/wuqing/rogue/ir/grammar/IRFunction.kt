@@ -10,6 +10,21 @@ sealed class IRFunction(val name: String) {
         val args: List<IRItem.Local>, name: String, val ast: ASTNode.Declaration.Function, val member: Boolean
     ) : IRFunction(name) {
         val body by lazy(LazyThreadSafetyMode.NONE) { TopLevelTranslator(this) }
+
+        fun updatePrev() {
+            body.forEach { it.prev.clear() }
+            val visited = mutableSetOf<IRBlock>()
+            fun visit(block: IRBlock) {
+                if (block in visited) return
+                visited += block
+                for (n in block.next) {
+                    n.prev += block
+                    visit(n)
+                }
+            }
+            visit(body[0])
+            body.removeAll { it !in visited }
+        }
     }
 
     sealed class Builtin(name: String) : IRFunction(name) {

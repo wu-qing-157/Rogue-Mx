@@ -7,6 +7,8 @@ import personal.wuqing.rogue.ir.IRPrinter
 import personal.wuqing.rogue.ir.grammar.IRProgram
 import personal.wuqing.rogue.ir.translator.TopLevelTranslator
 import personal.wuqing.rogue.optimize.DeadCodeElimination
+import personal.wuqing.rogue.optimize.FunctionElimination
+import personal.wuqing.rogue.optimize.FunctionInline
 import personal.wuqing.rogue.optimize.Mem2Reg
 import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
@@ -69,6 +71,10 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
 
         DeadCodeElimination(ir)
         debugIR(ir, "Dead Code Elimination")
+
+        FunctionInline(ir)
+        FunctionElimination(ir)
+        debugIR(ir, "Function Inline")
 
         val rv = RVTranslator(ir)
 
