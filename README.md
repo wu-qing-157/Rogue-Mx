@@ -92,6 +92,12 @@ from smaller to bigger, before recursive ones.
 Recursive calls are processed in random order,
 which may be optimized in the future.
 
+### Constant Propagation
+
+Only performed on local variables.
+
+Including operations on string literals.
+
 ## Timeline
 
 + 2020.01.14 __Add a lexer & parser full of bugs__
@@ -155,6 +161,7 @@ which may be optimized in the future.
 + 2020.05.24 __Add Dead Code Elimination__
 + 2020.05.25 Add final optimizations on assembly
 + 2020.05.25 __Add Function Inline__
++ 2020.05.25 __Add Constant Propagation__
 
 ## How to build the compiler
 

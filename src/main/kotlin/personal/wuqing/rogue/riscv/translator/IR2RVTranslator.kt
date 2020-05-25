@@ -49,8 +49,9 @@ object IR2RVTranslator {
             when (it) {
                 is IRStatement.Normal.ICmp -> boolDef[it.result] = it
                 is IRStatement.Normal.ICalc ->
-                    if (it.operator == IRCalcOp.ADD && it.op1 is IRItem.Local && it.op2 is IRItem.Const)
-                        addiDef[it.result] = it
+                    if (it.operator == IRCalcOp.ADD && it.op1 is IRItem.Local && it.op2 is IRItem.Const &&
+                        it.op2.value in -2048..2047
+                    ) addiDef[it.result] = it
                 else -> Unit
             }
         }
@@ -142,6 +143,8 @@ object IR2RVTranslator {
                         } ?: RVInstruction.Load(localMap.virtual(it.dest), RVAddress(localMap.virtual(it.src)))
                         is IRItem.Global ->
                             RVInstruction.LG(localMap.virtual(it.dest), globalMap[it.src] ?: error("no global def"))
+                        is IRItem.Const ->
+                            RVInstruction.Move(RVRegister.ZERO, RVRegister.ZERO)
                         else -> error("something cannot be loaded found")
                     }
                     is IRStatement.Normal.Store -> ret.instructions += when (it.dest) {
@@ -162,9 +165,9 @@ object IR2RVTranslator {
                     is IRStatement.Normal.Alloca -> error("codegen without SSA")
                     is IRStatement.Normal.ICalc -> if (it.result !in addiDef) ret.instructions +=
                         if (operator(it.operator).imm != null && it.op2 is IRItem.Const && it.op2.value in -2048..2047)
-                            RVInstruction.CalcI(
+                            if (it.op2.value != 0) RVInstruction.CalcI(
                                 operator(it.operator), asRegister(it.op1), it.op2.value, localMap.virtual(it.result)
-                            )
+                            ) else RVInstruction.Move(asRegister(it.op1), localMap.virtual(it.result))
                         else RVInstruction.Calc(
                             operator(it.operator), asRegister(it.op1), asRegister(it.op2), localMap.virtual(it.result)
                         )
