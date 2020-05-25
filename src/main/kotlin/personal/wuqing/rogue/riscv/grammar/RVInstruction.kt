@@ -63,8 +63,8 @@ sealed class RVInstruction {
 
     class SG(val reg: RVRegister, val assist: RVRegister, val global: RVGlobal) : RVInstruction() {
         override fun toString() = "\tsw\t$reg, $global, $assist"
-        override val use = listOf(reg, assist)
-        override val def = listOf<RVRegister>()
+        override val use = listOf(reg)
+        override val def = listOf(assist)
         override fun transform(map: Map<out RVRegister, RVRegister>) =
             SG(map[reg] ?: reg, map[assist] ?: assist, global)
     }

@@ -25,6 +25,7 @@ class Liveness private constructor(builder: Builder) {
                 for (d in inst.def) for (l in live) conflict += RegisterEdge(d, l)
                 live -= inst.def
                 live += inst.use
+                if (inst is RVInstruction.SG) conflict += RegisterEdge(inst.reg, inst.assist)
             }
         }
         conflict.removeIf { RVRegister.ZERO in it || RVRegister.SP in it }

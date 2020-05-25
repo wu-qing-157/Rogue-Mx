@@ -51,6 +51,6 @@ tasks.register<Exec>("generateBuiltin") {
         "-S", "-std=c99", "-fno-section-anchors",
         "builtin.c",
         "-o", "builtin.s",
-        "-O3"
+        "-Ofast"
     )
 }

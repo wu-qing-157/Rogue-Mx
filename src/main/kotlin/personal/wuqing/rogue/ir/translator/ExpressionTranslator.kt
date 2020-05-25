@@ -239,10 +239,9 @@ object ExpressionTranslator {
     private operator fun invoke(ast: ASTNode.Expression.Binary): ExprResult {
         val operation = ast.operator.operation(ast.lhs.type, ast.rhs.type)
             ?: error("unknown operation of binary operator after semantic")
-        val lhs = this(ast.lhs)
-        val ll = lhs.raw
-        val lr = lhs.value
         if (operation == Operation.BAnd || operation == Operation.BOr) {
+            val lhs = this(ast.lhs)
+            val lr = lhs.value
             val current = block
             val id = shortCount++
             val second = IRBlock("short.$id.second")
@@ -266,6 +265,9 @@ object ExpressionTranslator {
         }
         val rhs = this(ast.rhs)
         val rr = rhs.value
+        val lhs = this(ast.lhs)
+        val ll = lhs.raw
+        val lr = lhs.value
         return when (operation) {
             Operation.BAssign, Operation.IAssign, Operation.SAssign -> ll.also {
                 statement(IRStatement.Normal.Store(rr, ll))

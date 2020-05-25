@@ -9,19 +9,33 @@ object Spiller {
         for (block in function.body) {
             val result = block.instructions.map {
                 val map = mutableMapOf<RVRegister.Spilled, RVRegister>()
-                val prec = it.use.filterIsInstance<RVRegister.Spilled>().map {
-                    RVRegister.Virtual().let { reg ->
-                        map[it] = reg
-                        RVInstruction.Load(reg, it.address)
+                if (it is RVInstruction.Move) {
+                    when {
+                        it.dest is RVRegister.Spilled && it.src is RVRegister.Spilled ->
+                            RVRegister.Virtual().let { reg ->
+                                listOf(
+                                    RVInstruction.Load(reg, it.src.address), RVInstruction.Save(reg, it.dest.address)
+                                )
+                            }
+                        it.dest is RVRegister.Spilled -> listOf(RVInstruction.Save(it.src, it.dest.address))
+                        it.src is RVRegister.Spilled -> listOf(RVInstruction.Load(it.dest, it.src.address))
+                        else -> listOf(it)
                     }
-                }
-                val succ = it.def.filterIsInstance<RVRegister.Spilled>().map {
-                    RVRegister.Virtual().let { reg ->
-                        map[it] = reg
-                        RVInstruction.Save(reg, it.address)
+                } else {
+                    val prec = it.use.filterIsInstance<RVRegister.Spilled>().map {
+                        RVRegister.Virtual().let { reg ->
+                            map[it] = reg
+                            RVInstruction.Load(reg, it.address)
+                        }
                     }
+                    val succ = it.def.filterIsInstance<RVRegister.Spilled>().map {
+                        RVRegister.Virtual().let { reg ->
+                            map[it] = reg
+                            RVInstruction.Save(reg, it.address)
+                        }
+                    }
+                    prec + it.transform(map) + succ
                 }
-                prec + it.transform(map) + succ
             }.flatten()
             block.instructions.clear()
             block.instructions.addAll(result)
