@@ -108,6 +108,18 @@ Requiring Mem2Reg again after this.
 
 TODO: load with DomTree, store with liveness analysis
 
+### Loop Invariant Code Motion
+
+Only performed on `ICalc`.
+
+TODO: try to perform on `Load`, alias analysis needed
+
+### Common Subexpression Elimination
+
+Performed on `Phi`, `ICalc` and `Call`
+
+TODO: try to perform on `Load`, alias analysis needed
+
 ## Timeline
 
 + 2020.01.14 __Add a lexer & parser full of bugs__
@@ -173,7 +185,9 @@ TODO: load with DomTree, store with liveness analysis
 + 2020.05.25 __Add Function Inline__
 + 2020.05.25 __Add Constant Propagation__
 + 2020.05.26 __Add Global Localization__
-+ 2020.05.28 Add some simple optimizations
++ 2020.05.26 Add some simple optimizations
++ 2020.05.26 __Add Loop Invariant Code Motion__
++ 2020.05.27 __Add Common Subexpression Elimination__
 
 ## How to build the compiler
 

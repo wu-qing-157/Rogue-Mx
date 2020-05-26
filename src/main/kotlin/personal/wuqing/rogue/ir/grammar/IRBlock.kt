@@ -7,7 +7,7 @@ class IRBlock constructor(val name: String) : DirectionalNodeWithPrev<IRBlock> {
     val normal = mutableListOf<IRStatement.Normal>()
     lateinit var terminate: IRStatement.Terminate
 
-    override val prev = mutableListOf<IRBlock>()
+    override val prev = mutableSetOf<IRBlock>()
     override val next
         get() = when (terminate) {
             is IRStatement.Terminate.Ret -> listOf()

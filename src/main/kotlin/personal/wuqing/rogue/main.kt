@@ -7,11 +7,13 @@ import personal.wuqing.rogue.ir.IRPrinter
 import personal.wuqing.rogue.ir.grammar.IRProgram
 import personal.wuqing.rogue.ir.translator.TopLevelTranslator
 import personal.wuqing.rogue.optimize.ArithmeticOptimization
+import personal.wuqing.rogue.optimize.CommonSubexpressionElimination
 import personal.wuqing.rogue.optimize.ConstantBranchElimination
 import personal.wuqing.rogue.optimize.ConstantPropagation
 import personal.wuqing.rogue.optimize.DeadCodeElimination
 import personal.wuqing.rogue.optimize.FunctionInline
 import personal.wuqing.rogue.optimize.GlobalLocalization
+import personal.wuqing.rogue.optimize.LoopOptimization
 import personal.wuqing.rogue.optimize.Mem2Reg
 import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
@@ -96,6 +98,13 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
         ConstantBranchElimination(ir)
         DeadCodeElimination(ir)
         debugIR(ir, "Constant Propagation (again)")
+
+        LoopOptimization(ir)
+        ConstantPropagation(ir)
+        debugIR(ir, "Loop Optimization")
+
+        CommonSubexpressionElimination(ir)
+        debugIR(ir, "Common Subexpression Elimination")
 
         val rv = RVTranslator(ir)
 
