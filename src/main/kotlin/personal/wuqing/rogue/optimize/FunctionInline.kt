@@ -30,7 +30,6 @@ object FunctionInline {
     private var count = 0
 
     private fun trySimplifyFunctionPair(p: Node, n: Node) {
-        //if (p == n) return
         val limit = (LIMIT - p.size) / n.size
         var times = 0
         val target = mutableMapOf<IRBlock, IRBlock>()

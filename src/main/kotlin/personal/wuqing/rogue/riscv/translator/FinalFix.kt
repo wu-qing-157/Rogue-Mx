@@ -64,6 +64,12 @@ object FinalFix {
                     saveGlobal[inst.global]?.let { if (it !in loaded) covered += it }
                     saveGlobal[inst.global] = inst
                 }
+                is RVInstruction.Call -> {
+                    address.clear()
+                    global.clear()
+                    saveGlobal.values.forEach { loaded += it }
+                    saveAddress.values.forEach { loaded += it }
+                }
                 else -> Unit
             }
             address -= inst.def

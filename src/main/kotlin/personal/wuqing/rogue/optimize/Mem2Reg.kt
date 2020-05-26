@@ -109,7 +109,7 @@ object Mem2Reg {
         n.normal.replaceAll {
             when (it) {
                 is IRStatement.Normal.Load ->
-                    IRStatement.Normal.Load(it.dest, src = newName(it.src))
+                    IRStatement.Normal.Load(dest = it.dest, src = newName(it.src))
                 is IRStatement.Normal.Store ->
                     IRStatement.Normal.Store(dest = newName(it.dest), src = newName(it.src))
                 is IRStatement.Normal.Alloca -> IRStatement.Normal.NOP

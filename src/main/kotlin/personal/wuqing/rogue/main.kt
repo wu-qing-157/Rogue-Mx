@@ -10,6 +10,7 @@ import personal.wuqing.rogue.optimize.ConstantPropagation
 import personal.wuqing.rogue.optimize.DeadCodeElimination
 import personal.wuqing.rogue.optimize.FunctionElimination
 import personal.wuqing.rogue.optimize.FunctionInline
+import personal.wuqing.rogue.optimize.GlobalLocalization
 import personal.wuqing.rogue.optimize.Mem2Reg
 import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
@@ -85,6 +86,10 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
         FunctionElimination(ir)
         DeadCodeElimination(ir)
         debugIR(ir, "DEC, Inline, Constant (again)")
+
+        GlobalLocalization(ir)
+        Mem2Reg(ir)
+        debugIR(ir, "Global Localization")
 
         val rv = RVTranslator(ir)
 

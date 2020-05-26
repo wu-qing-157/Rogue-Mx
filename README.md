@@ -98,6 +98,16 @@ Only performed on local variables.
 
 Including operations on string literals.
 
+Requiring DCE after this.
+
+### Global Localization
+
+Localize global variables so that other optimizations can have effect on them.
+
+Requiring Mem2Reg again after this.
+
+TODO: load with DomTree, store with liveness analysis
+
 ## Timeline
 
 + 2020.01.14 __Add a lexer & parser full of bugs__
@@ -162,6 +172,7 @@ Including operations on string literals.
 + 2020.05.25 Add final optimizations on assembly
 + 2020.05.25 __Add Function Inline__
 + 2020.05.25 __Add Constant Propagation__
++ 2020.05.26 __Add Global Localization__
 
 ## How to build the compiler
 
