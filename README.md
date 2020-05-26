@@ -173,6 +173,7 @@ TODO: load with DomTree, store with liveness analysis
 + 2020.05.25 __Add Function Inline__
 + 2020.05.25 __Add Constant Propagation__
 + 2020.05.26 __Add Global Localization__
++ 2020.05.28 Add some simple optimizations
 
 ## How to build the compiler
 

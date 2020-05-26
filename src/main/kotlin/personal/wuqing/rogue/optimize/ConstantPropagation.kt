@@ -135,6 +135,10 @@ object ConstantPropagation {
                         constant[st.dest] = IRItem.Const(st.src.literal.length)
                         queue += st.result
                     }
+                is IRStatement.Phi -> if (st.list.values.all { it.constant && it == st.list.values.first() }) {
+                    constant[st.result] = constant[st.list.values.first()] ?: st.list.values.first()
+                    queue += st.result
+                }
             }
         } catch (e: ArithmeticException) {
         } catch (e: NumberFormatException) {

@@ -17,7 +17,7 @@ sealed class IRItem {
         override fun toString() = name
     }
 
-    class Const(val value: Int) : IRItem() {
+    data class Const(val value: Int) : IRItem() {
         override fun toString() = "$value"
     }
 
