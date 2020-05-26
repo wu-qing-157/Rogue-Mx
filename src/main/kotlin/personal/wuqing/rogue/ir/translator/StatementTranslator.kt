@@ -76,12 +76,12 @@ object StatementTranslator {
         val end = IRBlock("while.$id.end")
         loopTarget[ast] = cond to end
         statement(IRStatement.Terminate.Jump(cond))
-        enterNewBlock(cond)
-        val condition = ExpressionTranslator(ast.condition).value
-        statement(IRStatement.Terminate.Branch(condition, body, end))
         enterNewBlock(body)
         this(ast.statement)
         statement(IRStatement.Terminate.Jump(cond))
+        enterNewBlock(cond)
+        val condition = ExpressionTranslator(ast.condition).value
+        statement(IRStatement.Terminate.Branch(condition, body, end))
         enterNewBlock(end)
     }
 
@@ -96,15 +96,15 @@ object StatementTranslator {
         val step = IRBlock("for.$id.step")
         loopTarget[ast] = step to end
         statement(IRStatement.Terminate.Jump(cond))
-        enterNewBlock(cond)
-        val condition = ExpressionTranslator(ast.condition).value
-        statement(IRStatement.Terminate.Branch(condition, body, end))
         enterNewBlock(body)
         this(ast.statement)
         statement(IRStatement.Terminate.Jump(step))
         enterNewBlock(step)
         ast.step?.let { ExpressionTranslator(it) }
         statement(IRStatement.Terminate.Jump(cond))
+        enterNewBlock(cond)
+        val condition = ExpressionTranslator(ast.condition).value
+        statement(IRStatement.Terminate.Branch(condition, body, end))
         enterNewBlock(end)
     }
 }
