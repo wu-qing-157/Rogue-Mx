@@ -26,7 +26,7 @@ object DeadCodeElimination {
         val live = mutableSetOf<IRStatement>()
         for (block in function.body) {
             block.normal.forEach {
-                if ((it is IRStatement.Normal.Call && it.function in analysis.sideEffect) ||
+                if ((it is IRStatement.Normal.Call && analysis.sideEffect(it.function)) ||
                     it is IRStatement.Normal.Store
                 ) live += it
             }

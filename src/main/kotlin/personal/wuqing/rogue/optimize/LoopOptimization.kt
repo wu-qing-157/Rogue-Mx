@@ -55,7 +55,7 @@ object LoopOptimization {
     private fun invariant(loop: Loop, andersen: Andersen, analysis: FunctionCallAnalysis) {
         val stored = loop.component.map { b ->
             b.normal.filterIsInstance<IRStatement.Normal.Store>().map { andersen[it.dest] }.flatten() +
-                    b.normal.filterIsInstance<IRStatement.Normal.Call>().map { analysis[it.function] }.flatten()
+                    b.normal.filterIsInstance<IRStatement.Normal.Call>().map { analysis.stored(it.function) }.flatten()
         }.flatten().toSet()
         related.clear()
         queue.clear()

@@ -196,6 +196,7 @@ TODO: try to perform on `Load`
 + 2020.05.27 Using Andersen to optimize load in LICM
 + 2020.05.27 Change inline policy
 + 2020.05.27 Fix Global Localization
++ 2020.05.27 Move global use-def analysis into Function Call Analysis
 
 ## How to build the compiler
 

@@ -4,83 +4,21 @@ import personal.wuqing.rogue.ir.grammar.IRFunction
 import personal.wuqing.rogue.ir.grammar.IRItem
 import personal.wuqing.rogue.ir.grammar.IRProgram
 import personal.wuqing.rogue.ir.grammar.IRStatement
-import java.util.LinkedList
 
 object GlobalLocalization {
-    private val next = mutableMapOf<IRFunction.Declared, MutableSet<IRFunction.Declared>>()
-    private val prev = mutableMapOf<IRFunction.Declared, MutableSet<IRFunction.Declared>>()
-    private val use = mutableMapOf<IRFunction.Declared, MutableSet<IRItem.Global>>()
-    private val def = mutableMapOf<IRFunction.Declared, MutableSet<IRItem.Global>>()
-    private val defRec = mutableMapOf<IRFunction.Declared, MutableSet<IRItem.Global>>()
-    private val useRec = mutableMapOf<IRFunction.Declared, MutableSet<IRItem.Global>>()
-
-    private val IRFunction.Declared.next get() = GlobalLocalization.next.computeIfAbsent(this) { mutableSetOf() }
-    private val IRFunction.Declared.prev get() = GlobalLocalization.prev.computeIfAbsent(this) { mutableSetOf() }
-    private val IRFunction.Declared.use get() = GlobalLocalization.use.computeIfAbsent(this) { mutableSetOf() }
-    private val IRFunction.Declared.def get() = GlobalLocalization.def.computeIfAbsent(this) { mutableSetOf() }
-    private val IRFunction.Declared.defRec get() = GlobalLocalization.defRec.computeIfAbsent(this) { mutableSetOf() }
-    private val IRFunction.Declared.useRec get() = GlobalLocalization.useRec.computeIfAbsent(this) { mutableSetOf() }
-
-    private val useQueue = LinkedList<IRFunction.Declared>()
-    private val defQueue = LinkedList<IRFunction.Declared>()
-
-    private fun clear() {
-        next.clear()
-        prev.clear()
-        use.clear()
-        def.clear()
-        defRec.clear()
-        useRec.clear()
-        useQueue.clear()
-        defQueue.clear()
-    }
-
-    private fun analyzeUseDef(program: IRProgram) {
-        for (func in program.function) {
-            for (block in func.body) for (st in block.normal) {
-                if (st is IRStatement.Normal.Call && st.function is IRFunction.Declared) {
-                    func.next += st.function
-                    st.function.prev += func
-                }
-                if (st is IRStatement.Normal.Store && st.dest is IRItem.Global) func.def += st.dest
-                if (st is IRStatement.Normal.Load && st.src is IRItem.Global) func.use += st.src
-            }
-            func.defRec += func.def
-            func.useRec += func.use
-        }
-        defQueue += program.function
-        useQueue += program.function
-        while (defQueue.isNotEmpty()) defQueue.poll()?.let { n ->
-            n.prev.forEach { p ->
-                if (n.defRec.any { it !in p.defRec }) {
-                    p.defRec += n.defRec
-                    defQueue += p
-                }
-            }
-        }
-        while (useQueue.isNotEmpty()) useQueue.poll()?.let { n ->
-            n.prev.forEach { p ->
-                if (n.useRec.any { it !in p.useRec }) {
-                    p.useRec += n.useRec
-                    useQueue += p
-                }
-            }
-        }
-    }
-
-    private fun localize(func: IRFunction.Declared) {
-        val items = (func.use + func.def).associateWith { IRItem.Local() }
+    private fun localize(func: IRFunction.Declared, analysis: FunctionCallAnalysis) {
+        val items = (analysis.use(func) + analysis.def(func)).associateWith { IRItem.Local() }
         for (block in func.body) {
             val newNormal = mutableListOf<IRStatement.Normal>()
             for (st in block.normal) when (st) {
                 is IRStatement.Normal.Call -> if (st.function is IRFunction.Declared) {
-                    st.function.useRec.filter { it in items }.forEach {
+                    analysis.useRec(st.function).filter { it in items }.forEach {
                         val local = IRItem.Local()
                         newNormal += IRStatement.Normal.Load(local, items[it] ?: error("cannot find global"))
                         newNormal += IRStatement.Normal.Store(local, it)
                     }
                     newNormal += st
-                    st.function.defRec.filter { it in items }.forEach {
+                    analysis.defRec(st.function).filter { it in items }.forEach {
                         val local = IRItem.Local()
                         newNormal += IRStatement.Normal.Load(local, it)
                         newNormal += IRStatement.Normal.Store(local, items[it] ?: error("cannot find global"))
@@ -118,8 +56,7 @@ object GlobalLocalization {
     }
 
     operator fun invoke(program: IRProgram) {
-        clear()
-        analyzeUseDef(program)
-        program.function.forEach(::localize)
+        val analysis = FunctionCallAnalysis(program)
+        program.function.forEach { localize(it, analysis) }
     }
 }
