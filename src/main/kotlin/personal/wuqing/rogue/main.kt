@@ -86,6 +86,17 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
         DeadCodeElimination(ir)
         debugIR(ir, "Constant Propagation")
 
+        GlobalLocalization(ir)
+        Mem2Reg(ir)
+        debugIR(ir, "Global Localization")
+
+        LoopOptimization(ir)
+        ConstantPropagation(ir)
+        debugIR(ir, "Loop Optimization")
+
+        CommonSubexpressionElimination(ir)
+        debugIR(ir, "Common Subexpression Elimination")
+
         FunctionInline(ir)
         debugIR(ir, "Function Inline (again)")
 
@@ -98,13 +109,6 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
         ConstantBranchElimination(ir)
         DeadCodeElimination(ir)
         debugIR(ir, "Constant Propagation (again)")
-
-        LoopOptimization(ir)
-        ConstantPropagation(ir)
-        debugIR(ir, "Loop Optimization")
-
-        CommonSubexpressionElimination(ir)
-        debugIR(ir, "Common Subexpression Elimination")
 
         val rv = RVTranslator(ir)
 

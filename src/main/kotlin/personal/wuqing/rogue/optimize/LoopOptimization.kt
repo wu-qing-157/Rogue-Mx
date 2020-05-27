@@ -40,6 +40,7 @@ object LoopOptimization {
     }
 
     private fun calcDom(func: IRFunction.Declared) {
+        func.updatePrev()
         val tree = DomTree(func.body[0])
         fun visit(cur: IRBlock) {
             for (child in tree.child[cur] ?: listOf()) {
@@ -93,7 +94,6 @@ object LoopOptimization {
 
     private fun process(func: IRFunction.Declared, andersen: Andersen, analysis: FunctionCallAnalysis) {
         clear()
-        func.updatePrev()
         calcDom(func)
         for (block in func.body) for (next in block.next) if (next in block.dom) {
             assert(next !in loops)

@@ -33,7 +33,7 @@ class Andersen private constructor(builder: Builder) {
                 queue += it
             }
             for (func in program.function) for (block in func.body) {
-                for (st in block.phi) for (src in st.list.values) st.result.inclusive += src
+                for (st in block.phi) for (src in st.list.values) src.inclusive += st.result
                 for (st in block.normal) when (st) {
                     is IRStatement.Normal.Load -> st.src.deLhs += st.dest
                     is IRStatement.Normal.Store -> st.dest.deRhs += st.src

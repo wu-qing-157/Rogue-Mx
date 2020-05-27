@@ -120,9 +120,7 @@ but it seems non-trivial, so it is not currently implemented.
 
 ### Common Subexpression Elimination
 
-Performed on `Phi`, `ICalc` and `Call`
-
-TODO: try to perform on `Load`
+Performed on `Phi`, `ICalc`, `Call` and `Load`.
 
 ## Timeline
 
@@ -197,6 +195,7 @@ TODO: try to perform on `Load`
 + 2020.05.27 Change inline policy
 + 2020.05.27 Fix Global Localization
 + 2020.05.27 Move global use-def analysis into Function Call Analysis
++ 2020.05.27 Using Andersen to optimize load in CSE
 
 ## How to build the compiler
 
