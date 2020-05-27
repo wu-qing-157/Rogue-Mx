@@ -13,17 +13,15 @@ object FunctionInline {
     private class Node(val function: IRFunction.Declared) : DirectionalNodeWithPrev<Node> {
         override val next = mutableSetOf<Node>()
         override val prev = mutableSetOf<Node>()
-        val size get() = function.body.sumBy { it.phi.size + it.normal.size }
+        val size get() = function.body.sumBy { it.phi.size + it.normal.size + 1 }
     }
 
     private val nodeMap = mutableMapOf<IRFunction.Declared, Node>()
-    private val left = mutableSetOf<Node>()
 
     private val simpleQueue = mutableSetOf<Node>()
 
     private fun clear() {
         nodeMap.clear()
-        left.clear()
         simpleQueue.clear()
     }
 
@@ -92,7 +90,7 @@ object FunctionInline {
 
     operator fun invoke(program: IRProgram) {
         clear()
-        nodeMap += program.function.associateWith { Node(it).also { n -> left += n } }
+        nodeMap += program.function.associateWith { Node(it) }
         for (func in program.function) for (block in func.body) for (state in block.normal)
             if (state is IRStatement.Normal.Call && state.function is IRFunction.Declared) {
                 val a = nodeMap[func] ?: error("cannot find function")
@@ -101,23 +99,17 @@ object FunctionInline {
                 b.prev += a
             }
         for (n in nodeMap.values) if (n.next.isEmpty()) simpleQueue += n
-        while (left.isNotEmpty()) {
-            if (simpleQueue.isNotEmpty()) simpleQueue.minBy { it.size }?.let {
-                simpleQueue -= it
-                left -= it
-                trySimplifyCalleeFunction(it)
-                it.prev.forEach { p ->
-                    p.next -= it
-                    if (p.next.isEmpty()) simpleQueue += p
-                }
-                it.prev.clear()
-            } else {
-                val p = left.random()
-                val n = p.next.random()
-                p.next -= n
-                n.prev -= p
+        while (simpleQueue.isNotEmpty()) simpleQueue.minBy { it.size }?.let {
+            simpleQueue -= it
+            trySimplifyCalleeFunction(it)
+            it.prev.forEach { p ->
+                p.next -= it
                 if (p.next.isEmpty()) simpleQueue += p
             }
+            it.prev.clear()
+        }
+        for (node in nodeMap.values) repeat(3) {
+            trySimplifyFunctionPair(node, node)
         }
     }
 }

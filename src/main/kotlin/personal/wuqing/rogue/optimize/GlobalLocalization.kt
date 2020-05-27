@@ -21,8 +21,8 @@ object GlobalLocalization {
     private val IRFunction.Declared.defRec get() = GlobalLocalization.defRec.computeIfAbsent(this) { mutableSetOf() }
     private val IRFunction.Declared.useRec get() = GlobalLocalization.useRec.computeIfAbsent(this) { mutableSetOf() }
 
-    private val useQueue = LinkedList<Pair<IRFunction.Declared, Iterable<IRItem.Global>>>()
-    private val defQueue = LinkedList<Pair<IRFunction.Declared, Iterable<IRItem.Global>>>()
+    private val useQueue = LinkedList<IRFunction.Declared>()
+    private val defQueue = LinkedList<IRFunction.Declared>()
 
     private fun clear() {
         next.clear()
@@ -47,24 +47,22 @@ object GlobalLocalization {
             }
             func.defRec += func.def
             func.useRec += func.use
-            defQueue += func to func.def.toSet()
-            useQueue += func to func.use.toSet()
         }
-        while (defQueue.isNotEmpty()) defQueue.poll()?.let { (f, l) ->
-            f.prev.forEach {
-                val delta = it.defRec - l
-                if (delta.isNotEmpty()) {
-                    it.defRec += l
-                    defQueue += it to delta
+        defQueue += program.function
+        useQueue += program.function
+        while (defQueue.isNotEmpty()) defQueue.poll()?.let { n ->
+            n.prev.forEach { p ->
+                if (n.defRec.any { it !in p.defRec }) {
+                    p.defRec += n.defRec
+                    defQueue += p
                 }
             }
         }
-        while (useQueue.isNotEmpty()) useQueue.poll()?.let { (f, l) ->
-            f.prev.forEach {
-                val delta = it.useRec - l
-                if (delta.isNotEmpty()) {
-                    it.useRec += l
-                    useQueue += it to delta
+        while (useQueue.isNotEmpty()) useQueue.poll()?.let { n ->
+            n.prev.forEach { p ->
+                if (n.useRec.any { it !in p.useRec }) {
+                    p.useRec += n.useRec
+                    useQueue += p
                 }
             }
         }
@@ -76,13 +74,13 @@ object GlobalLocalization {
             val newNormal = mutableListOf<IRStatement.Normal>()
             for (st in block.normal) when (st) {
                 is IRStatement.Normal.Call -> if (st.function is IRFunction.Declared) {
-                    st.function.useRec.filter { it in func.def }.forEach {
+                    st.function.useRec.filter { it in items }.forEach {
                         val local = IRItem.Local()
                         newNormal += IRStatement.Normal.Load(local, items[it] ?: error("cannot find global"))
                         newNormal += IRStatement.Normal.Store(local, it)
                     }
                     newNormal += st
-                    st.function.defRec.filter { it in func.use }.forEach {
+                    st.function.defRec.filter { it in items }.forEach {
                         val local = IRItem.Local()
                         newNormal += IRStatement.Normal.Load(local, it)
                         newNormal += IRStatement.Normal.Store(local, items[it] ?: error("cannot find global"))
@@ -99,7 +97,7 @@ object GlobalLocalization {
                 else -> newNormal += st
             }
             if (block.terminate is IRStatement.Terminate.Ret) items.forEach { (k, v) ->
-                if (k in func.def) {
+                if (k in items) {
                     val local = IRItem.Local()
                     newNormal += IRStatement.Normal.Load(local, v)
                     newNormal += IRStatement.Normal.Store(local, k)

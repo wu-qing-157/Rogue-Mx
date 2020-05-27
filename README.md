@@ -87,10 +87,9 @@ _Small_ means that the number of instruction the result function contains
 is no more than a specified figure, roughly several thousand.
 
 Non-recursive calls are processed by their instruction number
-from smaller to bigger, before recursive ones.
-
-Recursive calls are processed in random order,
-which may be optimized in the future.
+from smaller to bigger.
+Self-recursive calls are then processed at most three times.
+Recurse involving multiple functions are not optimized.
 
 ### Constant Propagation
 
@@ -193,8 +192,10 @@ TODO: try to perform on `Load`
 + 2020.05.26 Add some simple optimizations
 + 2020.05.26 __Add Loop Invariant Code Motion__
 + 2020.05.27 __Add Common Subexpression Elimination__
-+ 2020.05.28 __Add Andersen Alias Analysis__
-+ 2020.05.28 Using Andersen to optimize load in LICM
++ 2020.05.27 __Add Andersen Alias Analysis__
++ 2020.05.27 Using Andersen to optimize load in LICM
++ 2020.05.27 Change inline policy
++ 2020.05.27 Fix Global Localization
 
 ## How to build the compiler
 
