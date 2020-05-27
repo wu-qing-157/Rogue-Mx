@@ -108,17 +108,22 @@ Requiring Mem2Reg again after this.
 
 TODO: load with DomTree, store with liveness analysis
 
+### Andersen Alias Analysis
+
+I finally decide to implement this.
+
 ### Loop Invariant Code Motion
 
-Only performed on `ICalc`.
+Only performed on `ICalc` and `Load`.
 
-TODO: try to perform on `Load`, alias analysis needed
+Actually, it seems to optimize `ICmp` and `Branch`, together with `Phi`,
+but it seems non-trivial, so it is not currently implemented.
 
 ### Common Subexpression Elimination
 
 Performed on `Phi`, `ICalc` and `Call`
 
-TODO: try to perform on `Load`, alias analysis needed
+TODO: try to perform on `Load`
 
 ## Timeline
 
@@ -188,6 +193,8 @@ TODO: try to perform on `Load`, alias analysis needed
 + 2020.05.26 Add some simple optimizations
 + 2020.05.26 __Add Loop Invariant Code Motion__
 + 2020.05.27 __Add Common Subexpression Elimination__
++ 2020.05.28 __Add Andersen Alias Analysis__
++ 2020.05.28 Using Andersen to optimize load in LICM
 
 ## How to build the compiler
 

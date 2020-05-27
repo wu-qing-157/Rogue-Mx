@@ -14,9 +14,11 @@
       <w>icmp</w>
       <w>idom</w>
       <w>inttoptr</w>
+      <w>licm</w>
       <w>liveness</w>
       <w>lshr</w>
       <w>mxcompiler</w>
+      <w>pointee</w>
       <w>prec</w>
       <w>precolored</w>
       <w>printf</w>

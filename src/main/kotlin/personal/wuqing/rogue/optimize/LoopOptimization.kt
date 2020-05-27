@@ -25,9 +25,9 @@ object LoopOptimization {
     private val dom = mutableMapOf<IRBlock, Set<IRBlock>>()
     private val IRBlock.dom get() = LoopOptimization.dom[this] ?: setOf()
 
-    private val related = mutableMapOf<IRItem.Local, MutableSet<IRStatement.Normal>>()
-    private val IRItem.Local.related get() = LoopOptimization.related.computeIfAbsent(this) { mutableSetOf() }
-    private val queue = LinkedList<IRItem.Local>()
+    private val related = mutableMapOf<IRItem, MutableSet<IRStatement.Normal>>()
+    private val IRItem.related get() = LoopOptimization.related.computeIfAbsent(this) { mutableSetOf() }
+    private val queue = LinkedList<IRItem>()
 
     private var count = 0
 
@@ -50,7 +50,13 @@ object LoopOptimization {
         visit(func.body[0])
     }
 
-    private fun invariant(loop: Loop) {
+    private fun <T> disjoint(a: Set<T>, b: Set<T>) = a.none { it in b } && b.none { it in a }
+
+    private fun invariant(loop: Loop, andersen: Andersen, analysis: FunctionCallAnalysis) {
+        val stored = loop.component.map { b ->
+            b.normal.filterIsInstance<IRStatement.Normal.Store>().map { andersen[it.dest] }.flatten() +
+                    b.normal.filterIsInstance<IRStatement.Normal.Call>().map { analysis[it.function] }.flatten()
+        }.flatten().toSet()
         related.clear()
         queue.clear()
         val inner = loop.component.map { b ->
@@ -58,15 +64,21 @@ object LoopOptimization {
         }.flatten().toMutableSet()
         val toDelete = mutableSetOf<IRStatement.Normal>()
         for (block in loop.component) {
-            for (st in block.normal) if (st is IRStatement.Normal.ICalc)
-                for (use in st.use) if (use is IRItem.Local) {
-                    use.related += st
-                    if (use !in inner) queue += use
+            for (st in block.normal) {
+                if (st is IRStatement.Normal.ICalc)
+                    for (use in st.use) {
+                        use.related += st
+                        if (use !is IRItem.Local || use !in inner) queue += use
+                    }
+                if (st is IRStatement.Normal.Load) if (disjoint(andersen[st.src], stored)) {
+                    st.src.related += st
+                    if (st.src !is IRItem.Local || st.src !in inner) queue += st.src
                 }
+            }
         }
         while (queue.isNotEmpty()) queue.poll()?.let {
             it.related.forEach { st ->
-                if (st !in toDelete && st.use.all { use -> use is IRItem.Const || use !in inner }) {
+                if (st !in toDelete && st.use.all { use -> use !is IRItem.Local || use !in inner }) {
                     loop.prev.normal += st
                     toDelete += st
                     if (st is IRStatement.WithResult) st.result?.let { result ->
@@ -79,7 +91,7 @@ object LoopOptimization {
         loop.component.forEach { it.normal.removeIf { st -> st in toDelete } }
     }
 
-    private fun process(func: IRFunction.Declared) {
+    private fun process(func: IRFunction.Declared, andersen: Andersen, analysis: FunctionCallAnalysis) {
         clear()
         func.updatePrev()
         calcDom(func)
@@ -124,8 +136,12 @@ object LoopOptimization {
         }
         func.body.clear()
         func.body += newBody
-        loops.values.forEach(::invariant)
+        loops.values.forEach { invariant(it, andersen, analysis) }
     }
 
-    operator fun invoke(program: IRProgram) = program.function.forEach(::process)
+    operator fun invoke(program: IRProgram) {
+        val andersen = Andersen(program)
+        val analysis = FunctionCallAnalysis(program, andersen)
+        program.function.forEach { process(it, andersen, analysis) }
+    }
 }
