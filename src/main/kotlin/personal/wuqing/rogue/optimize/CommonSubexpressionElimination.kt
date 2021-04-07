@@ -95,7 +95,8 @@ object CommonSubexpressionElimination {
         }
         func.updatePrev()
         val domTree = DomTree(func.body[0])
-        fun visit(block: IRBlock, expression: MutableSet<Expression>) {
+        fun visit(block: IRBlock, expression: MutableList<Expression>) {
+            val enterExpressionLength = expression.size
             val phiSubstitute = mutableMapOf<IRStatement.Phi, IRStatement.Normal>()
             val normalSubstitute = mutableMapOf<IRStatement.Normal, IRStatement.Normal>()
             val loads = mutableSetOf<IRStatement.Normal.Load>()
@@ -142,9 +143,10 @@ object CommonSubexpressionElimination {
                 block.normal.addAll(0, phiSubstitute.values)
             }
             block.normal.replaceAll { normalSubstitute[it] ?: it }
-            for (child in domTree.child[block] ?: listOf()) visit(child, expression.toMutableSet())
+            while (expression.size > enterExpressionLength) expression.removeAt(expression.size - 1)
+            for (child in domTree.child[block] ?: listOf()) visit(child, expression)
         }
-        visit(func.body[0], mutableSetOf())
+        visit(func.body[0], mutableListOf())
     }
 
     operator fun invoke(program: IRProgram) {

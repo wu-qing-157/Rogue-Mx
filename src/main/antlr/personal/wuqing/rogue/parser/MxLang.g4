@@ -58,8 +58,8 @@ expression: '('expression')' #Parentheses
     | expression op='&' expression #BinaryOperator
     | expression op='^' expression #BinaryOperator
     | expression op='|' expression #BinaryOperator
-    | expression op='&&' expression #BinaryOperator
-    | expression op='||' expression #BinaryOperator
+    | <assoc=right> expression op='&&' expression #BinaryOperator
+    | <assoc=right> expression op='||' expression #BinaryOperator
     | <assoc=right> expression '?' expression':' expression #TernaryOperator
     | <assoc=right> expression op=('='|'+='|'-='|'*='|'/='|'%='|'&='|'^='|'|='|'<<='|'>>='/*|'>>>='*/) expression
         #BinaryOperator

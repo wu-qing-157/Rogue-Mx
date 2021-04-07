@@ -13,6 +13,7 @@ import personal.wuqing.rogue.optimize.ConstantPropagation
 import personal.wuqing.rogue.optimize.DeadCodeElimination
 import personal.wuqing.rogue.optimize.FunctionInline
 import personal.wuqing.rogue.optimize.GlobalLocalization
+import personal.wuqing.rogue.optimize.JumpSimplifier
 import personal.wuqing.rogue.optimize.LoopOptimization
 import personal.wuqing.rogue.optimize.Mem2Reg
 import personal.wuqing.rogue.option.OptionMain
@@ -86,8 +87,10 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             debugIR(ir, "Function Inline")
 
             ConstantPropagation(ir)
-            ArithmeticOptimization(ir)
             ConstantBranchElimination(ir)
+            JumpSimplifier(ir)
+            ConstantPropagation(ir)
+            ArithmeticOptimization(ir)
             DeadCodeElimination(ir)
             debugIR(ir, "Constant Propagation")
 
@@ -110,8 +113,10 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             debugIR(ir, "Global Localization")
 
             ConstantPropagation(ir)
-            ArithmeticOptimization(ir)
             ConstantBranchElimination(ir)
+            JumpSimplifier(ir)
+            ConstantPropagation(ir)
+            ArithmeticOptimization(ir)
             DeadCodeElimination(ir)
             debugIR(ir, "Constant Propagation (again)")
         }
