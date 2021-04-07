@@ -108,10 +108,6 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             FunctionInline(ir)
             debugIR(ir, "Function Inline (again)")
 
-            GlobalLocalization(ir)
-            Mem2Reg(ir)
-            debugIR(ir, "Global Localization")
-
             ConstantPropagation(ir)
             ConstantBranchElimination(ir)
             JumpSimplifier(ir)

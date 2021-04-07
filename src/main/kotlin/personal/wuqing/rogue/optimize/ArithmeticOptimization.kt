@@ -87,6 +87,7 @@ object ArithmeticOptimization {
             for (block in func.body) {
                 block.phi.replaceAll { it.transUse(finalTrans) }
                 block.normal.replaceAll { it.transUse(finalTrans) }
+                block.terminate = block.terminate.transUse(finalTrans)
             }
         }
     }
