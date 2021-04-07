@@ -242,7 +242,8 @@ object IR2RVTranslator {
                 }
                 is IRStatement.Terminate.Jump -> {
                     for (phi in it.dest.phi) ret.instructions += RVInstruction.Move(
-                        phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                        phiMap.virtual(phi), asRegister(phi.list[block] ?:
+                        error("no current block in phi"))
                     )
                     val dest = blockMap[it.dest] ?: error("cannot find block")
                     ret.instructions += RVInstruction.J(dest)

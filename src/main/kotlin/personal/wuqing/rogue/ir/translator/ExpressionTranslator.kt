@@ -252,12 +252,13 @@ object ExpressionTranslator {
             )
             enterNewBlock(second)
             val rr = this(ast.rhs).value
+            val secondResult = block
             statement(IRStatement.Terminate.Jump(result))
             enterNewBlock(result)
             val ret = next().also {
                 statement(
                     IRStatement.Phi(
-                        it, mapOf(current to IRItem.Const(if (operation == Operation.BAnd) 0 else 1), second to rr)
+                        it, mapOf(current to IRItem.Const(if (operation == Operation.BAnd) 0 else 1), secondResult to rr)
                     )
                 )
             }
