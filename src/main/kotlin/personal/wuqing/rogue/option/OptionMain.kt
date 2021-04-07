@@ -20,7 +20,8 @@ object OptionMain {
     sealed class Result {
         class Exit(val exit: Int) : Result()
         data class FromSource(
-            val input: InputStream, val output: OutputMethod, val source: String, val target: Target, val debug: Boolean
+            val input: InputStream, val output: OutputMethod, val source: String, val target: Target,
+            val optimize: Boolean, val debug: Boolean
         ) : Result()
     }
 
@@ -72,7 +73,7 @@ object OptionMain {
                         hasOption("output") -> OutputMethod.File(getOptionValue("output"))
                         else -> OutputMethod.File(source.replace(Regex("\\..*?$"), "") + "." + target.ext)
                     }
-                    Result.FromSource(input, output, source, target, hasOption("debug"))
+                    Result.FromSource(input, output, source, target, !hasOption("no-optimize"), hasOption("debug"))
                 }
             }
         }
@@ -102,5 +103,6 @@ object OptionMain {
             addOption(Option(null, "semantic", false, "Run Semantic"))
         })
         addOption(Option(null, "debug", false, "Output much intermediate result for debugging"))
+        addOption(Option(null, "no-optimize", false, "Do not apply any optimize except SSA"))
     }
 }

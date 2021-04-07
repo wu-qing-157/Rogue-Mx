@@ -37,12 +37,16 @@ const val PROJECT_NAME = "Rogue-Mx"
 val USAGE = ANSI.bold("mxc <sourcefiles> [options]")
 const val VERSION = "0.9"
 var DEBUG = false; private set
+var OPTIMIZE = true; private set
 
 fun main(arguments: Array<String>) {
     when (val result = OptionMain(arguments)) {
         is OptionMain.Result.Exit -> exitProcess(result.exit)
         is OptionMain.Result.FromSource -> {
-            val (input, output, source, target) = result.apply { DEBUG = debug }
+            val (input, output, source, target) = result.apply {
+                OPTIMIZE = optimize
+                DEBUG = debug
+            }
             fromSource(input, output, source, target)
         }
     }
@@ -74,41 +78,43 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
         Mem2Reg(ir)
         debugIR(ir, "SSA")
 
-        DeadCodeElimination(ir)
-        debugIR(ir, "Dead Code Elimination")
+        if (OPTIMIZE) {
+            DeadCodeElimination(ir)
+            debugIR(ir, "Dead Code Elimination")
 
-        FunctionInline(ir)
-        debugIR(ir, "Function Inline")
+            FunctionInline(ir)
+            debugIR(ir, "Function Inline")
 
-        ConstantPropagation(ir)
-        ArithmeticOptimization(ir)
-        ConstantBranchElimination(ir)
-        DeadCodeElimination(ir)
-        debugIR(ir, "Constant Propagation")
+            ConstantPropagation(ir)
+            ArithmeticOptimization(ir)
+            ConstantBranchElimination(ir)
+            DeadCodeElimination(ir)
+            debugIR(ir, "Constant Propagation")
 
-        GlobalLocalization(ir)
-        Mem2Reg(ir)
-        debugIR(ir, "Global Localization")
+            GlobalLocalization(ir)
+            Mem2Reg(ir)
+            debugIR(ir, "Global Localization")
 
-        LoopOptimization(ir)
-        ConstantPropagation(ir)
-        debugIR(ir, "Loop Optimization")
+            LoopOptimization(ir)
+            ConstantPropagation(ir)
+            debugIR(ir, "Loop Optimization")
 
-        CommonSubexpressionElimination(ir)
-        debugIR(ir, "Common Subexpression Elimination")
+            CommonSubexpressionElimination(ir)
+            debugIR(ir, "Common Subexpression Elimination")
 
-        FunctionInline(ir)
-        debugIR(ir, "Function Inline (again)")
+            FunctionInline(ir)
+            debugIR(ir, "Function Inline (again)")
 
-        GlobalLocalization(ir)
-        Mem2Reg(ir)
-        debugIR(ir, "Global Localization")
+            GlobalLocalization(ir)
+            Mem2Reg(ir)
+            debugIR(ir, "Global Localization")
 
-        ConstantPropagation(ir)
-        ArithmeticOptimization(ir)
-        ConstantBranchElimination(ir)
-        DeadCodeElimination(ir)
-        debugIR(ir, "Constant Propagation (again)")
+            ConstantPropagation(ir)
+            ArithmeticOptimization(ir)
+            ConstantBranchElimination(ir)
+            DeadCodeElimination(ir)
+            debugIR(ir, "Constant Propagation (again)")
+        }
 
         val rv = RVTranslator(ir)
 

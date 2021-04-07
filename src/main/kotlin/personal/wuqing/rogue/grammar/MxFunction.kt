@@ -25,6 +25,8 @@ sealed class MxFunction(val result: MxType, open val base: MxType?, val name: St
         init {
             def.init(this)
         }
+
+        override fun toString() = "$name(${parameters.joinToString()})"
     }
 
     class Member(
@@ -34,6 +36,8 @@ sealed class MxFunction(val result: MxType, open val base: MxType?, val name: St
         init {
             def.init(this)
         }
+
+        override fun toString() = "$base $name(${parameters.joinToString()})"
     }
 
     sealed class Builtin(
@@ -59,4 +63,6 @@ sealed class MxFunction(val result: MxType, open val base: MxType?, val name: St
         object StringOrd : Builtin(Int_, String_, "ord", listOf(Int_))
         object StringSubstring : Builtin(String_, String_, "substring", listOf(Int_, Int_))
     }
+
+    override fun toString() = "$name(${parameters.joinToString()})"
 }
