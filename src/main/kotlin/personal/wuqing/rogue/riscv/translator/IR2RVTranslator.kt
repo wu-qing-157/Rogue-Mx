@@ -19,7 +19,6 @@ import personal.wuqing.rogue.riscv.grammar.RVProgram
 import personal.wuqing.rogue.riscv.grammar.RVRegister
 import personal.wuqing.rogue.riscv.grammar.RVRegister.Companion.arg
 import personal.wuqing.rogue.riscv.grammar.RVRegister.Companion.saved
-import java.util.LinkedList
 import kotlin.math.min
 
 object IR2RVTranslator {
@@ -32,6 +31,7 @@ object IR2RVTranslator {
     private val globalMap = mutableMapOf<IRItem.Global, RVGlobal>()
     private val literalMap = mutableMapOf<IRItem.Literal, RVLiteral>()
     private val localMap = mutableMapOf<IRItem.Local, RVRegister>()
+    private val phiMap = mutableMapOf<IRStatement.Phi, RVRegister>()
     private val blockMap = mutableMapOf<IRBlock, RVBlock>()
 
     private fun <K> MutableMap<K, RVRegister>.virtual(key: K) = computeIfAbsent(key) { RVRegister.Virtual() }
@@ -129,6 +129,9 @@ object IR2RVTranslator {
                 }
             }
 
+            block.phi.forEach {
+                ret.instructions += RVInstruction.Move(localMap.virtual(it.result), phiMap.virtual(it))
+            }
             block.normal.forEach {
                 when (it) {
                     is IRStatement.Normal.Load -> ret.instructions += when (it.src) {
@@ -212,40 +215,6 @@ object IR2RVTranslator {
                     IRStatement.Normal.NOP -> Unit
                 }
             }
-            fun addPhiInstructions(result: Map<RVRegister, RVRegister>) {
-                val queue = LinkedList<RVRegister>()
-                val count = mutableMapOf<RVRegister, Int>()
-                val map = result.toMutableMap()
-                for (f in result.values.filterIsInstance<RVRegister.Virtual>().filter { it in result })
-                    count[f] = (count[f] ?: 0) + 1
-                queue += result.keys - count.keys
-                while (true) {
-                    val cur = queue.poll()
-                    if (cur == null) count.keys.firstOrNull()?.let { from ->
-                        RVRegister.Virtual().let {
-                            count -= from
-                            queue += from
-                            val mapped = map[from]!!
-                            count[mapped]?.let { cnt ->
-                                if (cnt == 1) {
-                                    count -= mapped
-                                    queue += mapped
-                                } else count[mapped] = cnt - 1
-                            }
-                            ret.instructions += RVInstruction.Move(it, mapped)
-                            map[from] = RVRegister.Virtual()
-                        }
-                    } ?: break else map[cur]?.let { mapped ->
-                        ret.instructions += RVInstruction.Move(cur, mapped)
-                        count[mapped]?.let {
-                            if (it == 1) {
-                                count -= mapped
-                                queue += mapped
-                            } else count[mapped] = it - 1
-                        }
-                    }
-                }
-            }
             when (val it = block.terminate) {
                 is IRStatement.Terminate.Ret -> {
                     it.item?.let { ret.instructions += RVInstruction.Move(arg[0], asRegister(it)) }
@@ -257,24 +226,24 @@ object IR2RVTranslator {
                 is IRStatement.Terminate.Branch -> {
                     val then = blockMap[it.then] ?: error("cannot find block")
                     val els = blockMap[it.els] ?: error("cannot find block")
-                    addPhiInstructions(it.then.phi.map {
-                        asRegister(it.result) to asRegister(it.list[block] ?: error("no current block in phi"))
-                    }.toMap())
+                    for (phi in it.then.phi) ret.instructions += RVInstruction.Move(
+                        phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                    )
                     ret.instructions += boolDef[it.cond]?.let { bool ->
                         RVInstruction.Branch(operator(bool.operator), asRegister(bool.op1), asRegister(bool.op2), then)
                     } ?: RVInstruction.Branch(RVCmpOp.NE, asRegister(it.cond), RVRegister.ZERO, then)
-                    addPhiInstructions(it.els.phi.map {
-                        asRegister(it.result) to asRegister(it.list[block] ?: error("no current block in phi"))
-                    }.toMap())
+                    for (phi in it.els.phi) ret.instructions += RVInstruction.Move(
+                        phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                    )
                     ret.instructions += RVInstruction.J(els)
                     ret.next += listOf(then, els)
                     then.prev += ret
                     els.prev += ret
                 }
                 is IRStatement.Terminate.Jump -> {
-                    addPhiInstructions(it.dest.phi.map {
-                        asRegister(it.result) to asRegister(it.list[block] ?: error("no current block in phi"))
-                    }.toMap())
+                    for (phi in it.dest.phi) ret.instructions += RVInstruction.Move(
+                        phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                    )
                     val dest = blockMap[it.dest] ?: error("cannot find block")
                     ret.instructions += RVInstruction.J(dest)
                     ret.next += dest
