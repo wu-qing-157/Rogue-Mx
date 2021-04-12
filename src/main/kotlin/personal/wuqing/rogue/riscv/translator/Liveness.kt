@@ -14,8 +14,7 @@ class Liveness private constructor(builder: Builder) {
     init {
         val conflict = mutableSetOf<RegisterEdge>()
         val coalesce = mutableSetOf<RVInstruction.Move>()
-        for ((block, out) in builder.liveOut) {
-            val live = out.toMutableSet()
+        for ((block, live) in builder.liveOut) {
             block.instructions.asReversed().forEach { inst ->
                 if (inst is RVInstruction.Move) {
                     live -= inst.use
@@ -43,18 +42,24 @@ class Liveness private constructor(builder: Builder) {
                 val queue = function.body.toMutableSet()
                 liveIn += function.body.associateWith { mutableSetOf<RVRegister>() }
                 liveOut += function.body.associateWith { mutableSetOf<RVRegister>() }
+                val blockInOut = mutableMapOf<RVBlock, Pair<Set<RVRegister>, Set<RVRegister>>>()
                 while (queue.isNotEmpty()) {
                     val cur = queue.first()
                     queue.remove(cur)
                     val oldIn = liveIn[cur]!!
                     val newIn = mutableSetOf<RVRegister>()
                     val newOut = cur.next.map { liveIn[it]!! }.flatten().toMutableSet()
-                    val gen = mutableSetOf<RVRegister>()
-                    cur.instructions.forEach {
-                        newIn += it.use - gen
-                        gen += it.def
+                    val (use, def) = blockInOut.computeIfAbsent(cur) {
+                        val use = mutableSetOf<RVRegister>()
+                        val def = mutableSetOf<RVRegister>()
+                        cur.instructions.forEach {
+                            use += it.use - def
+                            def += it.def
+                        }
+                        use to def
                     }
-                    newIn += newOut - gen
+                    newIn += use
+                    newIn += newOut - def
                     newIn -= setOf(RVRegister.ZERO, RVRegister.SP)
                     liveIn[cur] = newIn
                     liveOut[cur] = newOut

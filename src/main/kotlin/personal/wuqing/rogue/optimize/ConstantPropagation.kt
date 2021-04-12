@@ -10,36 +10,37 @@ import java.util.LinkedList
 
 object ConstantPropagation {
     private val constant = mutableMapOf<IRItem, IRItem>()
+    private val count = mutableMapOf<IRStatement.WithResult, Int>()
     private val related = mutableMapOf<IRItem, MutableList<IRStatement.WithResult>>()
     private val queue = LinkedList<IRItem>()
-
-    private val IRItem.constant
-        get() = this is IRItem.Const || this is IRItem.Literal || this in ConstantPropagation.constant
 
     private val IRItem.value
         get() = when (this) {
             is IRItem.Const -> value
-            in ConstantPropagation.constant ->
-                (ConstantPropagation.constant[this] as? IRItem.Const ?: throw NonDeterminedException).value
+            in constant -> (constant[this] as? IRItem.Const ?: throw NonDeterminedException).value
             else -> throw NonDeterminedException
         }
 
     private val IRItem.literal
         get() = when (this) {
             is IRItem.Literal -> value
-            in ConstantPropagation.constant ->
-                (ConstantPropagation.constant[this] as? IRItem.Literal ?: throw NonDeterminedException).value
+            in constant -> (constant[this] as? IRItem.Literal ?: throw NonDeterminedException).value
             else -> throw NonDeterminedException
         }
 
     object NonDeterminedException : Exception()
+
+    private fun check(item: IRItem) {
+        for (func in related[item] ?: mutableListOf())
+            (count[func]!! - 1).also { count[func] = it }.takeIf { it == 0 }?.let { check(func) }
+    }
 
     private fun check(st: IRStatement.WithResult) {
         if (st.result as IRItem? in constant) return
 
         try {
             when (st) {
-                is IRStatement.Normal.ICalc -> if (st.op1.constant && st.op2.constant) {
+                is IRStatement.Normal.ICalc -> {
                     val op1 = st.op1.value
                     val op2 = st.op2.value
                     val result = when (st.operator) {
@@ -58,7 +59,7 @@ object ConstantPropagation {
                     constant[st.result] = IRItem.Const(result)
                     queue += st.result
                 }
-                is IRStatement.Normal.ICmp -> if (st.op1.constant && st.op2.constant) {
+                is IRStatement.Normal.ICmp -> {
                     val op1 = st.op1.value
                     val op2 = st.op2.value
                     val result = when (st.operator) {
@@ -72,71 +73,72 @@ object ConstantPropagation {
                     constant[st.result] = IRItem.Const(if (result) 1 else 0)
                     queue += st.result
                 }
-                is IRStatement.Normal.Call ->
-                    if (st.function is IRFunction.Builtin && st.args.all { it.constant } && st.result != null) {
-                        when (st.function) {
-                            IRFunction.Builtin.ToString -> {
-                                constant[st.result!!] = IRItem.Literal(st.args[0].value.toString())
-                                queue += st.result!!
-                            }
-                            IRFunction.Builtin.StringParse -> {
-                                constant[st.result!!] = IRItem.Const(st.args[0].literal.toInt())
-                                queue += st.result!!
-                            }
-                            IRFunction.Builtin.StringOrd -> {
-                                constant[st.result!!] = IRItem.Const(st.args[0].literal[st.args[1].value].toInt())
-                                queue += st.result!!
-                            }
-                            IRFunction.Builtin.StringSubstring -> {
-                                constant[st.result!!] =
-                                    IRItem.Literal(st.args[0].literal.substring(st.args[1].value, st.args[2].value))
-                                queue += st.result!!
-                            }
-                            IRFunction.Builtin.StringConcatenate -> {
-                                constant[st.result!!] = IRItem.Literal(st.args[0].literal + st.args[1].literal)
-                                queue += st.result!!
-                            }
-                            IRFunction.Builtin.StringEqual -> {
-                                val result = st.args[0].literal == st.args[1].literal
-                                constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
-                                queue += st.result!!
-                            }
-                            IRFunction.Builtin.StringNeq -> {
-                                val result = st.args[0].literal != st.args[1].literal
-                                constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
-                                queue += st.result!!
-                            }
-                            IRFunction.Builtin.StringLess -> {
-                                val result = st.args[0].literal < st.args[1].literal
-                                constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
-                                queue += st.result!!
-                            }
-                            IRFunction.Builtin.StringLeq -> {
-                                val result = st.args[0].literal <= st.args[1].literal
-                                constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
-                                queue += st.result!!
-                            }
-                            IRFunction.Builtin.StringGreater -> {
-                                val result = st.args[0].literal > st.args[1].literal
-                                constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
-                                queue += st.result!!
-                            }
-                            IRFunction.Builtin.StringGeq -> {
-                                val result = st.args[0].literal >= st.args[1].literal
-                                constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
-                                queue += st.result!!
-                            }
-                            else -> throw NonDeterminedException
+                is IRStatement.Normal.Call -> {
+                    when (st.function) {
+                        IRFunction.Builtin.ToString -> {
+                            constant[st.result!!] = IRItem.Literal(st.args[0].value.toString())
+                            queue += st.result!!
                         }
-                        queue += st.result!!
+                        IRFunction.Builtin.StringParse -> {
+                            constant[st.result!!] = IRItem.Const(st.args[0].literal.toInt())
+                            queue += st.result!!
+                        }
+                        IRFunction.Builtin.StringOrd -> {
+                            constant[st.result!!] = IRItem.Const(st.args[0].literal[st.args[1].value].toInt())
+                            queue += st.result!!
+                        }
+                        IRFunction.Builtin.StringSubstring -> {
+                            constant[st.result!!] =
+                                IRItem.Literal(st.args[0].literal.substring(st.args[1].value, st.args[2].value))
+                            queue += st.result!!
+                        }
+                        IRFunction.Builtin.StringConcatenate -> {
+                            constant[st.result!!] = IRItem.Literal(st.args[0].literal + st.args[1].literal)
+                            queue += st.result!!
+                        }
+                        IRFunction.Builtin.StringEqual -> {
+                            val result = st.args[0].literal == st.args[1].literal
+                            constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
+                            queue += st.result!!
+                        }
+                        IRFunction.Builtin.StringNeq -> {
+                            val result = st.args[0].literal != st.args[1].literal
+                            constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
+                            queue += st.result!!
+                        }
+                        IRFunction.Builtin.StringLess -> {
+                            val result = st.args[0].literal < st.args[1].literal
+                            constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
+                            queue += st.result!!
+                        }
+                        IRFunction.Builtin.StringLeq -> {
+                            val result = st.args[0].literal <= st.args[1].literal
+                            constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
+                            queue += st.result!!
+                        }
+                        IRFunction.Builtin.StringGreater -> {
+                            val result = st.args[0].literal > st.args[1].literal
+                            constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
+                            queue += st.result!!
+                        }
+                        IRFunction.Builtin.StringGeq -> {
+                            val result = st.args[0].literal >= st.args[1].literal
+                            constant[st.result!!] = IRItem.Const(if (result) 1 else 0)
+                            queue += st.result!!
+                        }
+                        else -> throw NonDeterminedException
                     }
-                is IRStatement.Normal.Load ->
-                    if (st.src.constant) {
-                        constant[st.dest] = IRItem.Const(st.src.literal.length)
-                        queue += st.result
-                    }
-                is IRStatement.Phi -> if (st.list.values.all { it.constant && it == st.list.values.first() }) {
-                    constant[st.result] = constant[st.list.values.first()] ?: st.list.values.first()
+                    queue += st.result!!
+                }
+                is IRStatement.Normal.Load -> {
+                    constant[st.dest] = IRItem.Const(st.src.literal.length)
+                    queue += st.result
+                }
+                is IRStatement.Phi -> {
+                    st.list.values.first().let { constant[it] ?: it }.takeIf {
+                        (it is IRItem.Literal && st.list.values.all { v -> v.literal == it.literal })
+                                || (it is IRItem.Const && st.list.values.all { v -> v.value == it.value })
+                    }?.let { constant[st.result] = it }
                     queue += st.result
                 }
             }
@@ -148,23 +150,25 @@ object ConstantPropagation {
     }
 
     operator fun invoke(program: IRProgram) {
+        val initialQueue = mutableSetOf<IRItem>()
         for (func in program.function) for (block in func.body) {
             block.phi.forEach { st ->
                 st.use.forEach {
                     related.computeIfAbsent(it) { mutableListOf() } += st
-                    if (it is IRItem.Literal || it is IRItem.Const) queue += it
+                    count[st] = (count[st] ?: 0) + 1
+                    if (it is IRItem.Literal || it is IRItem.Const) initialQueue += it
                 }
             }
             block.normal.forEach { st ->
-                if (st is IRStatement.Normal.ICalc || st is IRStatement.Normal.ICmp ||
-                    st is IRStatement.Normal.Call || st is IRStatement.Normal.Load
-                ) st.use.forEach {
+                if (st is IRStatement.WithResult && (st !is IRStatement.Normal.Call || st.function is IRFunction.Builtin || st.result != null)) st.use.forEach {
                     related.computeIfAbsent(it) { mutableListOf() } += st as IRStatement.WithResult
-                    if (it is IRItem.Literal || it is IRItem.Const) queue += it
+                    count[st] = (count[st] ?: 0) + 1
+                    if (it is IRItem.Literal || it is IRItem.Const) initialQueue += it
                 }
             }
         }
-        while (queue.isNotEmpty()) queue.poll()?.let { related[it] }?.forEach(::check)
+        queue += initialQueue
+        while (queue.isNotEmpty()) queue.poll()?.let { check(it) }
         program.literal += constant.values.filterIsInstance<IRItem.Literal>()
         for (func in program.function) for (block in func.body) {
             block.phi.replaceAll { it.transUse(constant) }

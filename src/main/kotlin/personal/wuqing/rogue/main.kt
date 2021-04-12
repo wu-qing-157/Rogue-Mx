@@ -12,7 +12,6 @@ import personal.wuqing.rogue.optimize.ConstantBranchElimination
 import personal.wuqing.rogue.optimize.ConstantPropagation
 import personal.wuqing.rogue.optimize.DeadCodeElimination
 import personal.wuqing.rogue.optimize.FunctionInline
-import personal.wuqing.rogue.optimize.GlobalLocalization
 import personal.wuqing.rogue.optimize.JumpSimplifier
 import personal.wuqing.rogue.optimize.LoopOptimization
 import personal.wuqing.rogue.optimize.Mem2Reg
@@ -94,19 +93,27 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             DeadCodeElimination(ir)
             debugIR(ir, "Constant Propagation")
 
-            GlobalLocalization(ir)
-            Mem2Reg(ir)
-            debugIR(ir, "Global Localization")
+            CommonSubexpressionElimination(ir)
+            DeadCodeElimination(ir)
+            debugIR(ir, "Common Subexpression Elimination")
+
+//            GlobalLocalization(ir)
+//            Mem2Reg(ir)
+//            debugIR(ir, "Global Localization")
 
             LoopOptimization(ir)
             ConstantPropagation(ir)
+            DeadCodeElimination(ir)
             debugIR(ir, "Loop Optimization")
 
-            CommonSubexpressionElimination(ir)
-            debugIR(ir, "Common Subexpression Elimination")
-
             FunctionInline(ir)
+            ConstantPropagation(ir)
+            DeadCodeElimination(ir)
             debugIR(ir, "Function Inline (again)")
+
+            CommonSubexpressionElimination(ir)
+            DeadCodeElimination(ir)
+            debugIR(ir, "Common Subexpression Elimination")
 
             ConstantPropagation(ir)
             ConstantBranchElimination(ir)

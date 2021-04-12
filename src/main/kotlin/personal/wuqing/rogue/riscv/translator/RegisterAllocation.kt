@@ -76,8 +76,7 @@ object RegisterAllocation {
     }
 
     private fun addEdge(u: Node, v: Node) {
-        if (Edge(u, v) !in conflict) {
-            conflict += Edge(u, v)
+        if (conflict.add(Edge(u, v))) {
             u.adjacent += v
             u.degree++
             v.adjacent += u
@@ -97,14 +96,14 @@ object RegisterAllocation {
                 else -> Node(it, true).also { n -> n.color = it }
             }
         }.also { regMap += it }
-        for (u in RVRegister.all) for (v in RVRegister.all) if (u != v) {
-            val aa = map[u] ?: error("cannot find register")
-            val bb = map[v] ?: error("cannot find register")
-            addEdge(aa, bb)
-        }
         liveness.conflict.forEach { (a, b) ->
             val aa = map[a] ?: error("cannot find register")
             val bb = map[b] ?: error("cannot find register")
+            addEdge(aa, bb)
+        }
+        for (u in RVRegister.all) for (v in RVRegister.all) if (u != v) {
+            val aa = map[u] ?: error("cannot find register")
+            val bb = map[v] ?: error("cannot find register")
             addEdge(aa, bb)
         }
         liveness.coalesce.forEach {
