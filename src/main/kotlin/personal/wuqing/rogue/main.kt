@@ -15,6 +15,7 @@ import personal.wuqing.rogue.optimize.FunctionInline
 import personal.wuqing.rogue.optimize.JumpSimplifier
 import personal.wuqing.rogue.optimize.LoopOptimization
 import personal.wuqing.rogue.optimize.Mem2Reg
+import personal.wuqing.rogue.optimize.UnusedFunctionElimination
 import personal.wuqing.rogue.option.OptionMain
 import personal.wuqing.rogue.option.Target
 import personal.wuqing.rogue.parser.ParserMain
@@ -83,6 +84,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             debugIR(ir, "Dead Code Elimination")
 
             FunctionInline(ir)
+            UnusedFunctionElimination(ir)
             debugIR(ir, "Function Inline")
 
             ConstantPropagation(ir)
@@ -107,11 +109,12 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             debugIR(ir, "Loop Optimization")
 
             FunctionInline(ir)
+            UnusedFunctionElimination(ir)
             ConstantPropagation(ir)
             DeadCodeElimination(ir)
             debugIR(ir, "Function Inline (again)")
 
-            CommonSubexpressionElimination(ir)
+            CommonSubexpressionElimination(ir, useAndersen = false)
             DeadCodeElimination(ir)
             debugIR(ir, "Common Subexpression Elimination")
 

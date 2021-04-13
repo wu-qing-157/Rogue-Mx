@@ -264,11 +264,11 @@ object ExpressionTranslator {
             }
             return ret.asValue
         }
-        val rhs = this(ast.rhs)
-        val rr = rhs.value
         val lhs = this(ast.lhs)
         val ll = lhs.raw
         val lr = lhs.value
+        val rhs = this(ast.rhs)
+        val rr = rhs.value
         return when (operation) {
             Operation.BAssign, Operation.IAssign, Operation.SAssign -> ll.also {
                 statement(IRStatement.Normal.Store(rr, ll))

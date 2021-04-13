@@ -29,7 +29,7 @@ object CommonSubexpressionElimination {
         else a == b
 
     private fun same(
-        s: Expression, t: Expression, andersen: Andersen, analysis: FunctionCallAnalysis, storeInBlock: Set<IRItem>
+        s: Expression, t: Expression, andersen: Andersen?, analysis: FunctionCallAnalysis, storeInBlock: Set<IRItem>
     ): Boolean {
         val a = s.st
         val b = t.st
@@ -42,7 +42,7 @@ object CommonSubexpressionElimination {
                 a.function == b.function && !analysis.sideEffect(a.function) &&
                         (a.args zip b.args).all { (u, v) -> same(u, v) }
             a is IRStatement.Normal.Load && b is IRStatement.Normal.Load ->
-                same(a.src, b.src) && check(s.block, t.block, andersen[a.src], storeInBlock)
+                andersen != null && same(a.src, b.src) && check(s.block, t.block, andersen[a.src], storeInBlock)
             else -> false
         }
     }
@@ -78,7 +78,7 @@ object CommonSubexpressionElimination {
         return IRStatement.Normal.ICalc(dest, IRCalcOp.ADD, src, IRItem.Const(0))
     }
 
-    private fun process(func: IRFunction.Declared, andersen: Andersen, analysis: FunctionCallAnalysis) {
+    private fun process(func: IRFunction.Declared, andersen: Andersen?, analysis: FunctionCallAnalysis) {
         alias.clear()
         stored.clear()
         for (block in func.body) {
@@ -89,7 +89,7 @@ object CommonSubexpressionElimination {
             for (st in block.normal) {
                 if (st is IRStatement.Normal.ICalc && st.operator == IRCalcOp.ADD && st.op2 == IRItem.Const(0))
                     alias(st.result, st.op1)
-                if (st is IRStatement.Normal.Store) block.stored += andersen[st.dest]
+                if (st is IRStatement.Normal.Store && andersen != null) block.stored += andersen[st.dest]
                 if (st is IRStatement.Normal.Call) block.stored += analysis.stored(st.function)
             }
         }
@@ -119,14 +119,14 @@ object CommonSubexpressionElimination {
                         if (st is IRStatement.Normal.Load) loads += st
                     }
                 }
-                if (st is IRStatement.Normal.Call) {
+                if (st is IRStatement.Normal.Call && andersen != null) {
                     for (load in loads.filter { !disjoint(andersen[it.src], analysis.stored(st.function)) }) {
                         expression -= Expression(load, block)
                         loads -= load
                     }
                     storeInBlock += analysis.stored(st.function)
                 }
-                if (st is IRStatement.Normal.Store) {
+                if (st is IRStatement.Normal.Store && andersen != null) {
                     for (load in loads.filter { !disjoint(andersen[it.src], andersen[st.dest]) }) {
                         expression -= Expression(load, block)
                         loads -= load
@@ -149,8 +149,8 @@ object CommonSubexpressionElimination {
         visit(func.body[0], mutableListOf())
     }
 
-    operator fun invoke(program: IRProgram) {
-        val andersen = Andersen(program)
+    operator fun invoke(program: IRProgram, useAndersen: Boolean = true) {
+        val andersen = if (useAndersen) Andersen(program) else null
         val analysis = FunctionCallAnalysis(program, andersen)
         program.function.forEach { process(it, andersen, analysis) }
     }
