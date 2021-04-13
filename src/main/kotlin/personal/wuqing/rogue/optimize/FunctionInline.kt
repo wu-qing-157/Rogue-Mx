@@ -88,7 +88,7 @@ object FunctionInline {
 
     private fun trySimplifyCalleeFunction(node: Node) = node.prev.forEach { trySimplifyFunctionPair(it, node) }
 
-    operator fun invoke(program: IRProgram) {
+    operator fun invoke(program: IRProgram, selfRecursiveLimit: Int = 2) {
         clear()
         nodeMap += program.function.associateWith { Node(it) }
         for (func in program.function) for (block in func.body) for (state in block.normal)
@@ -108,7 +108,7 @@ object FunctionInline {
             }
             it.prev.clear()
         }
-        for (node in nodeMap.values) repeat(3) {
+        for (node in nodeMap.values) repeat(selfRecursiveLimit) {
             trySimplifyFunctionPair(node, node)
         }
     }

@@ -108,7 +108,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             DeadCodeElimination(ir)
             debugIR(ir, "Loop Optimization")
 
-            FunctionInline(ir)
+            FunctionInline(ir, selfRecursiveLimit = 4)
             UnusedFunctionElimination(ir)
             ConstantPropagation(ir)
             DeadCodeElimination(ir)
