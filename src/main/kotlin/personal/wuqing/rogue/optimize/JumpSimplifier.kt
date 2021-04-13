@@ -54,11 +54,16 @@ object JumpSimplifier {
                 val terminate = block.terminate
                 if (terminate is IRStatement.Terminate.Jump && terminate.dest.prev.intersect(block.prev).isEmpty()) {
                     val phiMap = block.phi.associate { it.result to it.list }
+                    val used = mutableSetOf<IRItem.Local>()
                     terminate.dest.phi.replaceAll { phi ->
                         val mapped = phi.list[block]!!
                         phiMap[mapped]?.let {
+                            used += mapped as IRItem.Local
                             IRStatement.Phi(phi.result, phi.list - block + it)
                         } ?: IRStatement.Phi(phi.result, phi.list - block + block.prev.associateWith { mapped })
+                    }
+                    terminate.dest.phi += (phiMap - used).map { (r, list) ->
+                        IRStatement.Phi(r, terminate.dest.prev.associateWith { r } - block + list)
                     }
                     block.prev.forEach { it.terminate = it.terminate.translate(mapOf(block to terminate.dest)) }
                     terminate.dest.prev += block.prev
@@ -67,63 +72,55 @@ object JumpSimplifier {
                     eliminated += block
                 }
                 if (terminate is IRStatement.Terminate.Branch) {
-                    val skippedBlocks = mutableSetOf<IRBlock>()
-                    for ((prev, item) in block.phi.firstOrNull { it.result == terminate.cond }?.list ?: continue) when {
-                        item == IRItem.Const(1) && prev !in terminate.then.prev -> {
-                            val phiMap = block.phi.associate { it.result to it.list }
-                            terminate.then.phi.replaceAll { phi ->
-                                val mapped = phi.list[block]!!
-                                phiMap[mapped]?.let {
-                                    IRStatement.Phi(phi.result, phi.list + it)
-                                } ?: IRStatement.Phi(phi.result, phi.list + block.prev.associateWith { mapped })
+                    for ((prev, item) in block.phi.firstOrNull { it.result == terminate.cond }?.list?.takeIf {
+                        it.all { (prev, item) ->
+                            when (item) {
+                                IRItem.Const(1) -> prev !in terminate.then.prev
+                                IRItem.Const(0) -> prev !in terminate.els.prev
+                                else -> prev.terminate is IRStatement.Terminate.Jump && prev !in terminate.then.prev && prev !in terminate.els.prev
                             }
+                        }
+                    } ?: continue) when {
+                        item == IRItem.Const(1) && prev !in terminate.then.prev -> {
                             prev.terminate = prev.terminate.translate(mapOf(block to terminate.then))
                             terminate.then.prev += prev
-                            skippedBlocks += prev
-                            block.prev -= prev
                         }
                         item == IRItem.Const(0) && prev !in terminate.els.prev -> {
-                            val phiMap = block.phi.associate { it.result to it.list }
-                            terminate.els.phi.replaceAll { phi ->
-                                val mapped = phi.list[block]!!
-                                phiMap[mapped]?.let {
-                                    IRStatement.Phi(phi.result, phi.list + it)
-                                } ?: IRStatement.Phi(phi.result, phi.list + block.prev.associateWith { mapped })
-                            }
                             prev.terminate = prev.terminate.translate(mapOf(block to terminate.els))
                             terminate.els.prev += prev
-                            skippedBlocks += prev
-                            block.prev -= prev
                         }
                         prev.terminate is IRStatement.Terminate.Jump -> {
-                            val phiMap = block.phi.associate { it.result to it.list }
-                            terminate.then.phi.replaceAll { phi ->
-                                val mapped = phi.list[block]!!
-                                phiMap[mapped]?.let {
-                                    IRStatement.Phi(phi.result, phi.list + it)
-                                } ?: IRStatement.Phi(phi.result, phi.list + block.prev.associateWith { mapped })
-                            }
-                            terminate.els.phi.replaceAll { phi ->
-                                val mapped = phi.list[block]!!
-                                phiMap[mapped]?.let {
-                                    IRStatement.Phi(phi.result, phi.list + it)
-                                } ?: IRStatement.Phi(phi.result, phi.list + block.prev.associateWith { mapped })
-                            }
                             prev.terminate = IRStatement.Terminate.Branch(item, terminate.then, terminate.els)
                             terminate.then.prev += prev
                             terminate.els.prev += prev
-                            skippedBlocks += prev
-                            block.prev -= prev
                         }
                     }
-                    block.phi.replaceAll { IRStatement.Phi(it.result, it.list - skippedBlocks) }
-                    if (block.prev.isEmpty()) {
-                        eliminated += block
-                        block.next.forEach { n ->
-                            n.prev -= block
-                            n.phi.replaceAll { IRStatement.Phi(it.result, it.list - block) }
-                        }
+                    val phiMap = block.phi.associate { it.result to it.list }
+                    val used = mutableSetOf<IRItem.Local>()
+                    terminate.then.phi.replaceAll { phi ->
+                        val mapped = phi.list[block]!!
+                        phiMap[mapped]?.let {
+                            used += mapped as IRItem.Local
+                            IRStatement.Phi(phi.result, phi.list - block + it)
+                        } ?: IRStatement.Phi(phi.result, phi.list - block + block.prev.associateWith { mapped })
                     }
+                    terminate.then.phi += (phiMap - used).map { (r, list) ->
+                        IRStatement.Phi(r, terminate.then.prev.associateWith { r } - block + list)
+                    }
+                    used.clear()
+                    terminate.els.phi.replaceAll { phi ->
+                        val mapped = phi.list[block]!!
+                        phiMap[mapped]?.let {
+                            used += mapped as IRItem.Local
+                            IRStatement.Phi(phi.result, phi.list - block + it)
+                        } ?: IRStatement.Phi(phi.result, phi.list - block + block.prev.associateWith { mapped })
+                    }
+                    terminate.els.phi += (phiMap - used).map { (r, list) ->
+                        IRStatement.Phi(r, terminate.els.prev.associateWith { r } - block + list)
+                    }
+                    terminate.then.prev -= block
+                    terminate.els.prev -= block
+                    eliminated += block
                 }
             }
         function.body -= eliminated

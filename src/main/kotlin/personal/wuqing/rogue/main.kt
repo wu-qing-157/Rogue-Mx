@@ -95,10 +95,6 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             DeadCodeElimination(ir)
             debugIR(ir, "Constant Propagation")
 
-            CommonSubexpressionElimination(ir)
-            DeadCodeElimination(ir)
-            debugIR(ir, "Common Subexpression Elimination")
-
 //            GlobalLocalization(ir)
 //            Mem2Reg(ir)
 //            debugIR(ir, "Global Localization")
@@ -107,6 +103,10 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             ConstantPropagation(ir)
             DeadCodeElimination(ir)
             debugIR(ir, "Loop Optimization")
+
+            CommonSubexpressionElimination(ir)
+            DeadCodeElimination(ir)
+            debugIR(ir, "Common Subexpression Elimination")
 
             FunctionInline(ir, selfRecursiveLimit = 4)
             UnusedFunctionElimination(ir)

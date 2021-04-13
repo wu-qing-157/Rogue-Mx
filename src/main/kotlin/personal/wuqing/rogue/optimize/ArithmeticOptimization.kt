@@ -6,7 +6,7 @@ import personal.wuqing.rogue.ir.grammar.IRProgram
 import personal.wuqing.rogue.ir.grammar.IRStatement
 
 object ArithmeticOptimization {
-    private val powOf2 = (0..30).map { 1 shl it }
+    private val powOf2 = (0..31).map { 1 shl it }
     private fun Int.powOf2() = powOf2.binarySearch(this).takeIf { it >= 0 }
 
     operator fun invoke(program: IRProgram) {
