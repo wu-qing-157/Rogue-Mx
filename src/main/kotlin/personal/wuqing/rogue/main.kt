@@ -33,6 +33,7 @@ import java.io.FileWriter
 import java.io.IOException
 import java.io.InputStream
 import kotlin.system.exitProcess
+import kotlin.system.measureTimeMillis
 
 const val PROJECT_NAME = "Rogue-Mx"
 val USAGE = ANSI.bold("mxc <sourcefiles> [options]")
@@ -83,7 +84,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             DeadCodeElimination(ir)
             debugIR(ir, "Dead Code Elimination")
 
-            FunctionInline(ir)
+            FunctionInline(ir, selfRecursiveLimit = 512)
             UnusedFunctionElimination(ir)
             debugIR(ir, "Function Inline")
 
@@ -108,7 +109,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             DeadCodeElimination(ir)
             debugIR(ir, "Common Subexpression Elimination")
 
-            FunctionInline(ir, selfRecursiveLimit = 4)
+            FunctionInline(ir, selfRecursiveLimit = 512)
             UnusedFunctionElimination(ir)
             ConstantPropagation(ir)
             DeadCodeElimination(ir)

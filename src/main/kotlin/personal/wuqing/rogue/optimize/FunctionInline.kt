@@ -8,7 +8,7 @@ import personal.wuqing.rogue.ir.grammar.IRStatement
 import personal.wuqing.rogue.utils.DirectionalNodeWithPrev
 
 object FunctionInline {
-    private const val LIMIT = 2048
+    private const val GLOBAL_LIMIT = 2048
 
     private class Node(val function: IRFunction.Declared) : DirectionalNodeWithPrev<Node> {
         override val next = mutableSetOf<Node>()
@@ -27,7 +27,7 @@ object FunctionInline {
 
     private var count = 0
 
-    private fun trySimplifyFunctionPair(p: Node, n: Node) {
+    private fun trySimplifyFunctionPair(p: Node, n: Node, LIMIT: Int = GLOBAL_LIMIT) {
         val limit = (LIMIT - p.size) / n.size
         var times = 0
         val target = mutableMapOf<IRBlock, IRBlock>()
@@ -88,7 +88,7 @@ object FunctionInline {
 
     private fun trySimplifyCalleeFunction(node: Node) = node.prev.forEach { trySimplifyFunctionPair(it, node) }
 
-    operator fun invoke(program: IRProgram, selfRecursiveLimit: Int = 2) {
+    operator fun invoke(program: IRProgram, selfRecursiveLimit: Int = GLOBAL_LIMIT) {
         clear()
         nodeMap += program.function.associateWith { Node(it) }
         for (func in program.function) for (block in func.body) for (state in block.normal)
@@ -108,8 +108,10 @@ object FunctionInline {
             }
             it.prev.clear()
         }
-        for (node in nodeMap.values) repeat(selfRecursiveLimit) {
-            trySimplifyFunctionPair(node, node)
+        for (node in nodeMap.values) while (true) {
+            val oldSize = node.size
+            trySimplifyFunctionPair(node, node, selfRecursiveLimit)
+            if (node.size <= oldSize) break
         }
     }
 }
