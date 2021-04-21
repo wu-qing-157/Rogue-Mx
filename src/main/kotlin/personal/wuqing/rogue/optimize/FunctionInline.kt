@@ -88,7 +88,8 @@ object FunctionInline {
 
     private fun trySimplifyCalleeFunction(node: Node) = node.prev.forEach { trySimplifyFunctionPair(it, node) }
 
-    operator fun invoke(program: IRProgram, selfRecursiveLimit: Int = GLOBAL_LIMIT) {
+    // too small function are likely to use very few called-saved register, so prevent them to inline themselves
+    operator fun invoke(program: IRProgram, repeatForce: Int = 1, preventSmall: Int = 32) {
         clear()
         nodeMap += program.function.associateWith { Node(it) }
         for (func in program.function) for (block in func.body) for (state in block.normal)
@@ -108,10 +109,12 @@ object FunctionInline {
             }
             it.prev.clear()
         }
-        for (node in nodeMap.values) while (true) {
-            val oldSize = node.size
-            trySimplifyFunctionPair(node, node, selfRecursiveLimit)
-            if (node.size <= oldSize) break
+        repeat(repeatForce) {
+            nodeMap.values.sortedBy { it.size }.forEach { n ->
+                n.prev.forEach { p ->
+                    if (p != n || n.size >= preventSmall) trySimplifyFunctionPair(p, n)
+                }
+            }
         }
     }
 }

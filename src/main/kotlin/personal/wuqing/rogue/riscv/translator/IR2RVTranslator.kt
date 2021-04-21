@@ -97,6 +97,15 @@ object IR2RVTranslator {
         IRCmpOp.SGE -> RVCmpOp.GE
     }
 
+    private val RVCmpOp.reversed get() = when (this) {
+        RVCmpOp.LT -> RVCmpOp.GE
+        RVCmpOp.LE -> RVCmpOp.GT
+        RVCmpOp.GT -> RVCmpOp.LE
+        RVCmpOp.GE -> RVCmpOp.LT
+        RVCmpOp.EQ -> RVCmpOp.NE
+        RVCmpOp.NE -> RVCmpOp.EQ
+    }
+
     private operator fun invoke(function: IRFunction.Declared) = RVFunction(function.name).apply {
         scanUsage(function)
         val ra = RVRegister.Virtual()
@@ -112,6 +121,7 @@ object IR2RVTranslator {
             }
         }
         blockMap += function.body.associateWith { RVBlock("${function.name}...${it.name}") }
+        val next = (function.body zip function.body.subList(1, function.body.size)).toMap()
         body += function.body.map { block ->
             val ret = blockMap[block] ?: error("cannot find block")
 
@@ -226,16 +236,33 @@ object IR2RVTranslator {
                 is IRStatement.Terminate.Branch -> {
                     val then = blockMap[it.then] ?: error("cannot find block")
                     val els = blockMap[it.els] ?: error("cannot find block")
-                    for (phi in it.then.phi) ret.instructions += RVInstruction.Move(
-                        phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
-                    )
-                    ret.instructions += boolDef[it.cond]?.let { bool ->
-                        RVInstruction.Branch(operator(bool.operator), asRegister(bool.op1), asRegister(bool.op2), then)
-                    } ?: RVInstruction.Branch(RVCmpOp.NE, asRegister(it.cond), RVRegister.ZERO, then)
-                    for (phi in it.els.phi) ret.instructions += RVInstruction.Move(
-                        phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
-                    )
-                    ret.instructions += RVInstruction.J(els)
+                    if (next[block] == it.then) {
+                        for (phi in it.els.phi) ret.instructions += RVInstruction.Move(
+                            phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                        )
+                        ret.instructions += boolDef[it.cond]?.let { bool ->
+                            RVInstruction.Branch(
+                                operator(bool.operator).reversed, asRegister(bool.op1), asRegister(bool.op2), els
+                            )
+                        } ?: RVInstruction.Branch(RVCmpOp.EQ, asRegister(it.cond), RVRegister.ZERO, els)
+                        for (phi in it.then.phi) ret.instructions += RVInstruction.Move(
+                            phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                        )
+                        ret.instructions += RVInstruction.J(then)
+                    } else {
+                        for (phi in it.then.phi) ret.instructions += RVInstruction.Move(
+                            phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                        )
+                        ret.instructions += boolDef[it.cond]?.let { bool ->
+                            RVInstruction.Branch(
+                                operator(bool.operator), asRegister(bool.op1), asRegister(bool.op2), then
+                            )
+                        } ?: RVInstruction.Branch(RVCmpOp.NE, asRegister(it.cond), RVRegister.ZERO, then)
+                        for (phi in it.els.phi) ret.instructions += RVInstruction.Move(
+                            phiMap.virtual(phi), asRegister(phi.list[block] ?: error("no current block in phi"))
+                        )
+                        ret.instructions += RVInstruction.J(els)
+                    }
                     ret.next += listOf(then, els)
                     then.prev += ret
                     els.prev += ret

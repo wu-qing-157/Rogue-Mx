@@ -7,11 +7,13 @@ import personal.wuqing.rogue.ir.grammar.IRItem
 import personal.wuqing.rogue.ir.grammar.IRProgram
 import personal.wuqing.rogue.ir.grammar.IRStatement
 import personal.wuqing.rogue.utils.DomTree
+import kotlin.math.exp
 
 object CommonSubexpressionElimination {
     private class Expression(val st: IRStatement.WithResult, val block: IRBlock) {
         override fun equals(other: Any?) = other is Expression && st == other.st
         override fun hashCode() = st.hashCode()
+        override fun toString() = st.toString()
     }
 
     private val alias = mutableMapOf<IRItem, IRItem>()
@@ -56,6 +58,7 @@ object CommonSubexpressionElimination {
         val failed = mutableSetOf<IRBlock>()
         var gg = false
         fun visit(cur: IRBlock, fail: Boolean) {
+            if (cur == s) return
             if (cur == t && fail) gg = true
             if (fail) {
                 if (cur in failed) return
@@ -143,8 +146,8 @@ object CommonSubexpressionElimination {
                 block.normal.addAll(0, phiSubstitute.values)
             }
             block.normal.replaceAll { normalSubstitute[it] ?: it }
-            while (expression.size > enterExpressionLength) expression.removeAt(expression.size - 1)
             for (child in domTree.child[block] ?: listOf()) visit(child, expression)
+            while (expression.size > enterExpressionLength) expression.removeAt(expression.size - 1)
         }
         visit(func.body[0], mutableListOf())
     }

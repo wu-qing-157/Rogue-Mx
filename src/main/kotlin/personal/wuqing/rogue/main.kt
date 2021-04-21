@@ -84,7 +84,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             DeadCodeElimination(ir)
             debugIR(ir, "Dead Code Elimination")
 
-            FunctionInline(ir, selfRecursiveLimit = 512)
+            FunctionInline(ir, repeatForce = 2)
             UnusedFunctionElimination(ir)
             debugIR(ir, "Function Inline")
 
@@ -96,6 +96,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             DeadCodeElimination(ir)
             debugIR(ir, "Constant Propagation")
 
+            // I think it not appropriate to perform global localization in most cases, so it is deprecated.
 //            GlobalLocalization(ir)
 //            Mem2Reg(ir)
 //            debugIR(ir, "Global Localization")
@@ -109,7 +110,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             DeadCodeElimination(ir)
             debugIR(ir, "Common Subexpression Elimination")
 
-            FunctionInline(ir, selfRecursiveLimit = 512)
+            FunctionInline(ir, repeatForce = 3)
             UnusedFunctionElimination(ir)
             ConstantPropagation(ir)
             DeadCodeElimination(ir)
