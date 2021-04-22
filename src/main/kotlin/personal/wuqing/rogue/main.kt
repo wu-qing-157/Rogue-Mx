@@ -110,7 +110,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             DeadCodeElimination(ir)
             debugIR(ir, "Common Subexpression Elimination")
 
-            FunctionInline(ir, repeatForce = 3)
+            FunctionInline(ir, repeatForce = 12)
             UnusedFunctionElimination(ir)
             ConstantPropagation(ir)
             DeadCodeElimination(ir)
