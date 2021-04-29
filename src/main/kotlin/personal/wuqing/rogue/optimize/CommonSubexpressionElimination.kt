@@ -7,7 +7,6 @@ import personal.wuqing.rogue.ir.grammar.IRItem
 import personal.wuqing.rogue.ir.grammar.IRProgram
 import personal.wuqing.rogue.ir.grammar.IRStatement
 import personal.wuqing.rogue.utils.DomTree
-import kotlin.math.exp
 
 object CommonSubexpressionElimination {
     private class Expression(val st: IRStatement.WithResult, val block: IRBlock) {
@@ -41,8 +40,9 @@ object CommonSubexpressionElimination {
             a is IRStatement.Normal.ICalc && b is IRStatement.Normal.ICalc ->
                 a.operator == b.operator && same(a.op1, b.op1) && same(a.op2, b.op2)
             a is IRStatement.Normal.Call && b is IRStatement.Normal.Call ->
-                a.function == b.function && !analysis.sideEffect(a.function) &&
-                        (a.args zip b.args).all { (u, v) -> same(u, v) }
+                a.function == b.function && !analysis.sideEffect(a.function) && andersen != null &&
+                        (a.args zip b.args).all { (u, v) -> same(u, v) } &&
+                        check(s.block, t.block, analysis.loaded(a.function), storeInBlock)
             a is IRStatement.Normal.Load && b is IRStatement.Normal.Load ->
                 andersen != null && same(a.src, b.src) && check(s.block, t.block, andersen[a.src], storeInBlock)
             else -> false

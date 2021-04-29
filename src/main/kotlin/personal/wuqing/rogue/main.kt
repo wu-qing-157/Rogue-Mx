@@ -33,7 +33,6 @@ import java.io.FileWriter
 import java.io.IOException
 import java.io.InputStream
 import kotlin.system.exitProcess
-import kotlin.system.measureTimeMillis
 
 const val PROJECT_NAME = "Rogue-Mx"
 val USAGE = ANSI.bold("mxc <sourcefiles> [options]")
@@ -84,7 +83,7 @@ fun fromSource(input: InputStream, output: OutputMethod, source: String, target:
             DeadCodeElimination(ir)
             debugIR(ir, "Dead Code Elimination")
 
-            FunctionInline(ir, repeatForce = 2)
+            FunctionInline(ir, repeatForce = 2, normalLimit = 256, forceLimit = 256)
             UnusedFunctionElimination(ir)
             debugIR(ir, "Function Inline")
 

@@ -86,10 +86,17 @@ object FunctionInline {
         }
     }
 
-    private fun trySimplifyCalleeFunction(node: Node) = node.prev.forEach { trySimplifyFunctionPair(it, node) }
+    private fun trySimplifyCalleeFunction(node: Node, limit: Int = GLOBAL_LIMIT) =
+        node.prev.forEach { trySimplifyFunctionPair(it, node, limit) }
 
     // too small function are likely to use very few called-saved register, so prevent them to inline themselves
-    operator fun invoke(program: IRProgram, repeatForce: Int = 1, preventSmall: Int = 32) {
+    operator fun invoke(
+        program: IRProgram,
+        repeatForce: Int = 1,
+        preventSmall: Int = 32,
+        normalLimit: Int = GLOBAL_LIMIT,
+        forceLimit: Int = 512
+    ) {
         clear()
         nodeMap += program.function.associateWith { Node(it) }
         for (func in program.function) for (block in func.body) for (state in block.normal)
@@ -102,7 +109,7 @@ object FunctionInline {
         for (n in nodeMap.values) if (n.next.isEmpty()) simpleQueue += n
         while (simpleQueue.isNotEmpty()) simpleQueue.minBy { it.size }?.let {
             simpleQueue -= it
-            trySimplifyCalleeFunction(it)
+            trySimplifyCalleeFunction(it, normalLimit)
             it.prev.forEach { p ->
                 p.next -= it
                 if (p.next.isEmpty()) simpleQueue += p
@@ -112,7 +119,7 @@ object FunctionInline {
         repeat(repeatForce) {
             nodeMap.values.sortedBy { it.size }.forEach { n ->
                 n.prev.forEach { p ->
-                    if (p != n || n.size >= preventSmall) trySimplifyFunctionPair(p, n)
+                    if (p != n || n.size >= preventSmall) trySimplifyFunctionPair(p, n, forceLimit)
                 }
             }
         }

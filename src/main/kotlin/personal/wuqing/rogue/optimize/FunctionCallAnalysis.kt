@@ -11,6 +11,7 @@ class FunctionCallAnalysis private constructor(builder: Builder) {
 
     private val sideEffect: Set<IRFunction> = builder.sideEffect
     private val stored: Map<IRFunction, Set<IRItem>> = builder.stored
+    private val loaded: Map<IRFunction, Set<IRItem>> = builder.loaded
     private val use: Map<IRFunction.Declared, Set<IRItem.Global>> = builder.use
     private val def: Map<IRFunction.Declared, Set<IRItem.Global>> = builder.def
     private val useRec: Map<IRFunction.Declared, Set<IRItem.Global>> = builder.useRec
@@ -18,6 +19,7 @@ class FunctionCallAnalysis private constructor(builder: Builder) {
 
     fun sideEffect(func: IRFunction) = func in sideEffect
     fun stored(func: IRFunction) = stored[func] ?: setOf()
+    fun loaded(func: IRFunction) = loaded[func] ?: setOf()
     fun use(func: IRFunction) = use[func] ?: setOf()
     fun def(func: IRFunction) = def[func] ?: setOf()
     fun useRec(func: IRFunction) = useRec[func] ?: setOf()
@@ -58,6 +60,9 @@ class FunctionCallAnalysis private constructor(builder: Builder) {
         val stored = mutableMapOf<IRFunction, MutableSet<IRItem>>()
         private val IRFunction.stored get() = this@Builder.stored.computeIfAbsent(this) { mutableSetOf() }
         private val storedQueue = LinkedList<IRFunction>()
+        val loaded = mutableMapOf<IRFunction, MutableSet<IRItem>>()
+        private val IRFunction.loaded get() = this@Builder.loaded.computeIfAbsent(this) { mutableSetOf() }
+        private val loadedQueue = LinkedList<IRFunction>()
 
         private val next = mutableMapOf<IRFunction.Declared, MutableSet<IRFunction.Declared>>()
         private val prev = mutableMapOf<IRFunction.Declared, MutableSet<IRFunction.Declared>>()
@@ -114,14 +119,21 @@ class FunctionCallAnalysis private constructor(builder: Builder) {
             analyzeSideEffect(program)
             analyzeUseDef(program)
             if (andersen != null) {
-                for (f in program.function) for (b in f.body) for (st in b.normal)
+                for (f in program.function) for (b in f.body) for (st in b.normal) {
                     if (st is IRStatement.Normal.Store) f.stored += andersen[st.dest]
+                    if (st is IRStatement.Normal.Load) f.loaded += andersen[st.src]
+                }
                 storedQueue += program.function
-                while (storedQueue.isNotEmpty()) storedQueue.poll()?.let { f ->
-                    for (caller in callerMap[f] ?: mutableListOf()) if (f.stored.any { it !in caller.stored }) {
-                        caller.stored += f.stored
-                        storedQueue += caller
-                    }
+                loadedQueue += program.function
+                while (true) {
+                    val f = storedQueue.poll() ?: break
+                    for (caller in callerMap[f] ?: mutableListOf())
+                        if (caller.stored.addAll(f.stored)) storedQueue += caller
+                }
+                while (true) {
+                    val f = loadedQueue.poll() ?: break
+                    for (caller in callerMap[f] ?: mutableListOf())
+                        if (caller.loaded.addAll(f.stored)) loadedQueue += caller
                 }
             }
         }

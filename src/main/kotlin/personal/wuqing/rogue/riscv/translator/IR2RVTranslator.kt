@@ -170,6 +170,7 @@ object IR2RVTranslator {
                         is IRItem.Global -> RVInstruction.SG(
                             asRegister(it.src), RVRegister.Virtual(), globalMap[it.dest] ?: error("no global def")
                         )
+                        is IRItem.Const -> RVInstruction.Move(RVRegister.ZERO, RVRegister.ZERO) // Always UB here
                         else -> error("something cannot be saved into found")
                     }
                     is IRStatement.Normal.Alloca -> error("codegen without SSA")
