@@ -18,7 +18,7 @@ AST|Completed
 Semantic|Completed, __pass__ given test suite
 IR|Completed, __pass__ given test suite using naive codegen
 Codegen|Completed, __pass__ given test suite
-Optimize|Much to do, refer to _Optimize_ section
+Optimize|Completed, outperform O1, nearly O2
 GC|I'm thinking peach, it will not be implemented unless I'm spare enough to plant some peaches
 
 ## Known Issues
@@ -27,31 +27,9 @@ GC|I'm thinking peach, it will not be implemented unless I'm spare enough to pla
 
 ## Test Cases
 
-Some scripts are in `test-tool` to automate testing.
-They should be executed with _Z Shell_ in the project root folder.
+The `test-tool` contains some legacy test tools before the whole pipeline is built.
 
-Single-case custom test may fail if `\ ` in output,
-no plan to fix this issue as it is rarely met.
-
-### Semantic Test
-
-`test-tool` no longer supports this test (sad)
-
-Status|Notes
----|---
-187 / 187|__All Passed__
-
-### IR Test
-
-`test-tool` will not support this test until codegen is implemented completely
-
-Status|Notes
----|---
-Some TLE happened|That's because codegen is too naive
-
-### Codegen Test
-
-TODO: not completed, so what to test?
+Refer to [project assignment](https://github.com/peterzheng98/Compiler-2020) for test cases.
 
 ## Optimize
 
