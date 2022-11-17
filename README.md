@@ -253,7 +253,7 @@ as it is needed by `TopLevelTranslator`
 
 #### `ast.ASTNode` `ast.ASTType`
 
-+ `ASTNode` cannot be separated due to the limitation of `sealed class`
++ `ASTNode` cannot be separated due to the limitation of `sealed class` (updated 2 years later, in Kotlin 1.4, why Kotlin does not evolve faster)
 + `ASTType` is separated from `ASTNode`
 to prevent an extremely large source file
 
