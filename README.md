@@ -85,6 +85,8 @@ Requiring Mem2Reg again after this.
 
 TODO: load with DomTree, store with liveness analysis
 
+Not enabled, as this is not a commmon method in compilers, ex., do not work for multi-file situation
+
 ### Andersen Alias Analysis
 
 I finally decide to implement this.
